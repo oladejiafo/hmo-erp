@@ -3,6 +3,7 @@
 namespace App\Http\Controllers\Enrollee;
 
 use App\Http\Controllers\Controller;
+
 use App\Http\Requests\Enrollee\StoreDependentRequest;
 use App\Http\Requests\Enrollee\UpdateDependentRequest;
 use App\Http\Resources\DependentResource;
@@ -11,6 +12,7 @@ use App\Models\Enrollee;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Facades\Log;
 
 class DependentController extends Controller
 {
@@ -38,6 +40,7 @@ class DependentController extends Controller
                 'active_count' => $dependents->where('status', 'active')->count(),
             ],
         ]);
+
     }
 
     /**
@@ -93,6 +96,7 @@ class DependentController extends Controller
      */
     public function show(Enrollee $enrollee, Dependent $dependent): JsonResponse
     {
+        
         /** @disregard P1013 */
         $this->authorize('enrollees.view');
         

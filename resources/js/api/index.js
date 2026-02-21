@@ -75,7 +75,7 @@ export const fetchDependent = async (enrolleeId, dependentId) => {
     const response = await apiClient.get(`/enrollees/${enrolleeId}/dependents/${dependentId}`);
     return response.data;  // This returns { data: dependent }
 };
-
+// export const fetchDependent = (id) => apiClient.get(`/enrollees/${enrolleeId}/dependents/${dependentId}`);
 export const createDependent = async (enrolleeId, data) => {
     const response = await apiClient.post(`/enrollees/${enrolleeId}/dependents`, data);
     return response.data;

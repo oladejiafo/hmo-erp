@@ -14,12 +14,12 @@ export default function DependentDetailPage() {
         queryKey: ['dependent', enrolleeId, dependentId],
         queryFn: () => fetchDependent(enrolleeId, dependentId),
         enabled: !!enrolleeId && !!dependentId, // Add this line
-    });
+    }); 
     
     const dependent = data?.data || data || {};
-    
-    console.log('Dependent data:', data);
 
+    console.log('Dependent data:', data?.data);
+    console.log('Dependent data:', data);
     // const dependent = data?.data?.data || data?.data || data;
     // const dependent = data?.data || {};
     if (isLoading) return <LoadingSpinner />;

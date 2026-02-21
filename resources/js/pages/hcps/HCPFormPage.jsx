@@ -122,196 +122,205 @@ export default function HCPFormPage() {
                     </button>
                 }
             />
-
             <div className="card">
                 <div className="card-body">
                     <form onSubmit={handleSubmit}>
                         <div className="row">
                             <div className="col-md-6">
-                                <FormField
-                                    label="Provider Name"
-                                    name="name"
-                                    value={formData.name}
-                                    onChange={handleChange}
-                                    error={errors.name}
-                                    required
-                                />
+                                <FormField label="Provider Name" error={errors.name} required>
+                                    <input
+                                        type="text"
+                                        name="name"
+                                        value={formData.name}
+                                        onChange={handleChange}
+                                        className="form-control"
+                                    />
+                                </FormField>
                             </div>
                             <div className="col-md-3">
-                                <FormField
-                                    label="Type"
-                                    name="type"
-                                    type="select"
-                                    value={formData.type}
-                                    onChange={handleChange}
-                                    error={errors.type}
-                                    options={[
-                                        { value: 'hospital', label: 'Hospital' },
-                                        { value: 'clinic', label: 'Clinic' },
-                                        { value: 'pharmacy', label: 'Pharmacy' },
-                                        { value: 'lab', label: 'Laboratory' },
-                                        { value: 'specialist', label: 'Specialist' },
-                                    ]}
-                                    required
-                                />
+                                <FormField label="Type" error={errors.type} required>
+                                    <select
+                                        name="type"
+                                        value={formData.type}
+                                        onChange={handleChange}
+                                        className="form-select"
+                                    >
+                                        <option value="">Select Type</option>
+                                        <option value="hospital">Hospital</option>
+                                        <option value="clinic">Clinic</option>
+                                        <option value="pharmacy">Pharmacy</option>
+                                        <option value="lab">Laboratory</option>
+                                        <option value="specialist">Specialist</option>
+                                    </select>
+                                </FormField>
                             </div>
                             <div className="col-md-3">
-                                <FormField
-                                    label="Tier"
-                                    name="tier"
-                                    type="select"
-                                    value={formData.tier}
-                                    onChange={handleChange}
-                                    error={errors.tier}
-                                    options={[
-                                        { value: 'primary', label: 'Primary' },
-                                        { value: 'secondary', label: 'Secondary' },
-                                        { value: 'tertiary', label: 'Tertiary' },
-                                    ]}
-                                    required
-                                />
+                                <FormField label="Tier" error={errors.tier} required>
+                                    <select
+                                        name="tier"
+                                        value={formData.tier}
+                                        onChange={handleChange}
+                                        className="form-select"
+                                    >
+                                        <option value="">Select Tier</option>
+                                        <option value="primary">Primary</option>
+                                        <option value="secondary">Secondary</option>
+                                        <option value="tertiary">Tertiary</option>
+                                    </select>
+                                </FormField>
                             </div>
                         </div>
 
                         <div className="row">
                             <div className="col-md-4">
-                                <FormField
-                                    label="HCP Code"
-                                    name="hcp_code"
-                                    value={formData.hcp_code}
-                                    onChange={handleChange}
-                                    error={errors.hcp_code}
-                                    disabled={isEditing}
-                                    required
-                                />
+                                <FormField label="HCP Code" error={errors.hcp_code} required>
+                                    <input
+                                        type="text"
+                                        name="hcp_code"
+                                        value={formData.hcp_code}
+                                        onChange={handleChange}
+                                        disabled={isEditing}
+                                        className="form-control"
+                                    />
+                                </FormField>
                             </div>
                             <div className="col-md-4">
-                                <FormField
-                                    label="Registration Number"
-                                    name="registration_number"
-                                    value={formData.registration_number}
-                                    onChange={handleChange}
-                                    error={errors.registration_number}
-                                />
+                                <FormField label="Registration Number" error={errors.registration_number}>
+                                    <input
+                                        type="text"
+                                        name="registration_number"
+                                        value={formData.registration_number}
+                                        onChange={handleChange}
+                                        className="form-control"
+                                    />
+                                </FormField>
                             </div>
                             <div className="col-md-4">
-                                <FormField
-                                    label="NHIS Accreditation No"
-                                    name="nhis_accreditation_no"
-                                    value={formData.nhis_accreditation_no}
-                                    onChange={handleChange}
-                                    error={errors.nhis_accreditation_no}
-                                />
+                                <FormField label="NHIS Accreditation No" error={errors.nhis_accreditation_no}>
+                                    <input
+                                        type="text"
+                                        name="nhis_accreditation_no"
+                                        value={formData.nhis_accreditation_no}
+                                        onChange={handleChange}
+                                        className="form-control"
+                                    />
+                                </FormField>
                             </div>
                         </div>
 
                         <div className="row">
                             <div className="col-md-6">
-                                <FormField
-                                    label="Email"
-                                    name="email"
-                                    type="email"
-                                    value={formData.email}
-                                    onChange={handleChange}
-                                    error={errors.email}
-                                    required
-                                />
+                                <FormField label="Email" error={errors.email} required>
+                                    <input
+                                        type="email"
+                                        name="email"
+                                        value={formData.email}
+                                        onChange={handleChange}
+                                        className="form-control"
+                                    />
+                                </FormField>
                             </div>
                             <div className="col-md-6">
-                                <FormField
-                                    label="Phone"
-                                    name="phone"
-                                    value={formData.phone}
-                                    onChange={handleChange}
-                                    error={errors.phone}
-                                    required
-                                />
+                                <FormField label="Phone" error={errors.phone} required>
+                                    <input
+                                        type="text"
+                                        name="phone"
+                                        value={formData.phone}
+                                        onChange={handleChange}
+                                        className="form-control"
+                                    />
+                                </FormField>
                             </div>
                         </div>
 
                         <div className="row">
                             <div className="col-12">
-                                <FormField
-                                    label="Address"
-                                    name="address"
-                                    type="textarea"
-                                    value={formData.address}
-                                    onChange={handleChange}
-                                    error={errors.address}
-                                    rows={2}
-                                    required
-                                />
+                                <FormField label="Address" error={errors.address} required>
+                                    <textarea
+                                        name="address"
+                                        value={formData.address}
+                                        onChange={handleChange}
+                                        className="form-control"
+                                        rows={2}
+                                    />
+                                </FormField>
                             </div>
                         </div>
 
                         <div className="row">
                             <div className="col-md-4">
-                                <FormField
-                                    label="City"
-                                    name="city"
-                                    value={formData.city}
-                                    onChange={handleChange}
-                                    error={errors.city}
-                                    required
-                                />
+                                <FormField label="City" error={errors.city} required>
+                                    <input
+                                        type="text"
+                                        name="city"
+                                        value={formData.city}
+                                        onChange={handleChange}
+                                        className="form-control"
+                                    />
+                                </FormField>
                             </div>
                             <div className="col-md-4">
-                                <FormField
-                                    label="State"
-                                    name="state"
-                                    value={formData.state}
-                                    onChange={handleChange}
-                                    error={errors.state}
-                                    required
-                                />
+                                <FormField label="State" error={errors.state} required>
+                                    <input
+                                        type="text"
+                                        name="state"
+                                        value={formData.state}
+                                        onChange={handleChange}
+                                        className="form-control"
+                                    />
+                                </FormField>
                             </div>
                             <div className="col-md-4">
-                                <FormField
-                                    label="LGA"
-                                    name="lga"
-                                    value={formData.lga}
-                                    onChange={handleChange}
-                                    error={errors.lga}
-                                    required
-                                />
+                                <FormField label="LGA" error={errors.lga} required>
+                                    <input
+                                        type="text"
+                                        name="lga"
+                                        value={formData.lga}
+                                        onChange={handleChange}
+                                        className="form-control"
+                                    />
+                                </FormField>
                             </div>
                         </div>
 
                         <div className="row">
                             <div className="col-md-3">
-                                <FormField
-                                    label="Latitude"
-                                    name="latitude"
-                                    value={formData.latitude}
-                                    onChange={handleChange}
-                                    error={errors.latitude}
-                                />
+                                <FormField label="Latitude" error={errors.latitude}>
+                                    <input
+                                        type="text"
+                                        name="latitude"
+                                        value={formData.latitude}
+                                        onChange={handleChange}
+                                        className="form-control"
+                                    />
+                                </FormField>
                             </div>
                             <div className="col-md-3">
-                                <FormField
-                                    label="Longitude"
-                                    name="longitude"
-                                    value={formData.longitude}
-                                    onChange={handleChange}
-                                    error={errors.longitude}
-                                />
+                                <FormField label="Longitude" error={errors.longitude}>
+                                    <input
+                                        type="text"
+                                        name="longitude"
+                                        value={formData.longitude}
+                                        onChange={handleChange}
+                                        className="form-control"
+                                    />
+                                </FormField>
                             </div>
                             {isEditing && (
                                 <div className="col-md-6">
-                                    <FormField
-                                        label="Status"
-                                        name="status"
-                                        type="select"
-                                        value={formData.status}
-                                        onChange={handleChange}
-                                        error={errors.status}
-                                        options={[
-                                            { value: 'pending', label: 'Pending' },
-                                            { value: 'active', label: 'Active' },
-                                            { value: 'suspended', label: 'Suspended' },
-                                            { value: 'blacklisted', label: 'Blacklisted' },
-                                        ]}
-                                    />
+                                    <FormField label="Status" error={errors.status}>
+                                        <select
+                                            name="status"
+                                            value={formData.status}
+                                            onChange={handleChange}
+                                            className="form-select"
+                                        >
+                                            <option value="pending">Pending</option>
+                                            <option value="active">Active</option>
+                                            <option value="suspended">Suspended</option>
+                                            <option value="blacklisted">Blacklisted</option>
+                                        </select>
+                                    </FormField>
                                 </div>
                             )}
                         </div>

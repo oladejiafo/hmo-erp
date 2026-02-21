@@ -1,25 +1,55 @@
-import React from 'react';
+import React, { useState } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
-import { useQuery } from '@tanstack/react-query';
-import { ArrowLeft, Edit, FileText, User, Building, Calendar, DollarSign, AlertTriangle } from 'lucide-react';
-import { fetchClaim } from '../../api/index';
+import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
+import { ArrowLeft, Edit, FileText, User, Building, Calendar, DollarSign, AlertTriangle, RotateCcw } from 'lucide-react';
+import { fetchClaim, reverseClaim } from '../../api/index';
 import { PageHeader, StatusBadge, LoadingSpinner, ErrorAlert } from '../../components/ui/index';
 import { formatCurrency, formatDate } from '../../utils/format';
+import { toast } from 'react-toastify';
+import { useAuth } from '../../contexts/AuthContext';
 
 export default function ClaimDetailPage() {
     const { id } = useParams();
     const navigate = useNavigate();
+    const queryClient = useQueryClient();
+    const { loading: authLoading } = useAuth();
+    const [showReverseModal, setShowReverseModal] = useState(false);
+    const [reverseReason, setReverseReason] = useState('');
 
     const { data, isLoading, error } = useQuery({
         queryKey: ['claim', id],
         queryFn: () => fetchClaim(id),
+        enabled: !authLoading,
     });
 
+    const reverseMutation = useMutation({
+        mutationFn: (reason) => reverseClaim(id, { reason }),
+        onSuccess: () => {
+            toast.success('Claim reversed successfully');
+            setShowReverseModal(false);
+            queryClient.invalidateQueries({ queryKey: ['claim', id] });
+        },
+        onError: (error) => {
+            toast.error(error.response?.data?.message || 'Failed to reverse claim');
+        },
+    });
+    if (authLoading) return <LoadingSpinner />;
     const claim = data?.data?.data || data;
+
+    const handleReverse = () => {
+        if (reverseReason.length < 10) {
+            toast.error('Please provide a detailed reason (minimum 10 characters)');
+            return;
+        }
+        reverseMutation.mutate(reverseReason);
+    };
 
     if (isLoading) return <LoadingSpinner />;
     if (error) return <ErrorAlert message={error.message} />;
     if (!claim) return <ErrorAlert message="Claim not found" />;
+
+    // Check if claim can be reversed (approved or paid claims)
+    const canReverse = (claim.status === 'approved' || claim.status === 'paid');
 
     return (
         <div>
@@ -34,6 +64,15 @@ export default function ClaimDetailPage() {
                             <ArrowLeft size={18} className="me-1" />
                             Back
                         </button>
+                        {canReverse && (
+                            <button
+                                className="btn btn-outline-danger"
+                                onClick={() => setShowReverseModal(true)}
+                            >
+                                <RotateCcw size={18} className="me-1" />
+                                Reverse
+                            </button>
+                        )}
                     </>
                 }
             />
@@ -168,6 +207,67 @@ export default function ClaimDetailPage() {
                     )}
                 </div>
             </div>
+
+            {/* Reverse Modal */}
+            {showReverseModal && (
+                <div className="modal show d-block" style={{ backgroundColor: 'rgba(0,0,0,0.5)' }}>
+                    <div className="modal-dialog">
+                        <div className="modal-content">
+                            <div className="modal-header">
+                                <h5 className="modal-title">Reverse Claim #{claim.claim_number}</h5>
+                                <button className="btn-close" onClick={() => setShowReverseModal(false)} />
+                            </div>
+                            <div className="modal-body">
+                                <p className="text-muted">
+                                    This will mark the current claim as <strong>reversed</strong>. 
+                                    A new corrected claim will need to be submitted.
+                                </p>
+                                <div className="alert alert-warning">
+                                    <small>
+                                        <strong>Note:</strong> Reversal is permanent and creates an audit trail. 
+                                        If this claim was already paid, finance will be notified.
+                                    </small>
+                                </div>
+                                <label className="form-label fw-semibold">
+                                    Reason for reversal <span className="text-danger">*</span>
+                                </label>
+                                <textarea
+                                    className="form-control"
+                                    rows={3}
+                                    value={reverseReason}
+                                    onChange={(e) => setReverseReason(e.target.value)}
+                                    placeholder="Explain why this claim is being reversed..."
+                                />
+                                <small className="text-muted">
+                                    Minimum 10 characters. This will be recorded in the audit log.
+                                </small>
+                            </div>
+                            <div className="modal-footer">
+                                <button
+                                    className="btn btn-light"
+                                    onClick={() => setShowReverseModal(false)}
+                                >
+                                    Cancel
+                                </button>
+                                <button
+                                    className="btn btn-danger"
+                                    onClick={handleReverse}
+                                    disabled={reverseReason.length < 10 || reverseMutation.isPending}
+                                >
+                                    {reverseMutation.isPending ? (
+                                        <>
+                                            <span className="spinner-border spinner-border-sm me-1" />
+                                            Reversing...
+                                        </>
+                                    ) : (
+                                        'Confirm Reversal'
+                                    )}
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            )}
         </div>
     );
 }

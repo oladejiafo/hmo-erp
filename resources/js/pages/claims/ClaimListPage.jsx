@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import { useNavigate, useSearchParams } from 'react-router-dom';
 import { useQuery } from '@tanstack/react-query';
-import { Plus, Search, Filter, AlertTriangle } from 'lucide-react';
+import { FileText,Plus, Search, Filter, AlertTriangle } from 'lucide-react';
 import { fetchClaims } from '../../api/index';
 import { PageHeader, StatusBadge, Pagination, LoadingSpinner, ErrorAlert, EmptyState } from '../../components/ui/index';
 
@@ -115,7 +115,7 @@ export default function ClaimListPage() {
                         <div className="py-5 text-center"><LoadingSpinner /></div>
                     ) : claims.length === 0 ? (
                         <EmptyState
-                            icon={FileText}
+                            icon={<FileText size={48} />}
                             title="No claims found"
                             description={statusFilter ? `No ${statusFilter.replace('_',' ')} claims.` : 'Submit the first claim to get started.'}
                         />

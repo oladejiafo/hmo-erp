@@ -17,7 +17,7 @@ import {
     AlertTriangle, CheckCircle, Clock
 } from 'lucide-react';
 import {
-    BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip,
+    BarChart, Bar,Cell, XAxis, YAxis, CartesianGrid, Tooltip,
     ResponsiveContainer, LineChart, Line
 } from 'recharts';
 import { fetchDashboard } from '../../api/index';
@@ -40,11 +40,29 @@ export default function DashboardPage() {
 
     const d = data?.data?.data ?? null;
 
+    const getIntelligentGreeting = () => {
+        const hour = new Date().getHours();
+        
+        if (hour >= 5 && hour < 12) {
+            return '🌅 Good morning';
+        } else if (hour >= 12 && hour < 17) {
+            return '☀️ Good afternoon';
+        } else if (hour >= 17 && hour < 21) {
+            return '🌆 Good evening';
+        } else {
+            return '🌙 Good night';
+        }
+    };
     return (
         <div>
             <PageHeader
-                title={`Good ${getGreeting()}, ${user?.name?.split(' ')[0] ?? ''}` }
-                subtitle={`${isHQ() ? 'HQ Overview' : (user?.branch?.name ?? '')} · ${new Date().toLocaleDateString('en-NG', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' })}`}
+                title={`${getIntelligentGreeting()}, ${user?.name?.split(' ')[0] ?? ''}`}
+                subtitle={`${isHQ() ? 'HQ Overview' : (user?.branch?.name ?? '')} · ${new Date().toLocaleDateString('en-NG', { 
+                    weekday: 'long', 
+                    year: 'numeric', 
+                    month: 'long', 
+                    day: 'numeric' 
+                })}`}
             />
 
             {/* ── Key Stats ─────────────────────────────────────────────── */}
@@ -106,17 +124,37 @@ export default function DashboardPage() {
                             </div>
                         ) : (
                                 <ResponsiveContainer width="100%" height={240}>
-                                     {console.log('Chart data:', d?.claims_this_month)}
                                     <BarChart data={d?.claims_this_month ?? []}>
                                         <CartesianGrid strokeDasharray="3 3" stroke="#f0f0f0" />
                                         <XAxis dataKey="week" tick={{ fontSize: 11 }} />
                                         <YAxis yAxisId="left" tick={{ fontSize: 11 }} />
                                         <YAxis yAxisId="right" orientation="right" domain={[0, 100]} tick={{ fontSize: 11 }} />
-                                        <Tooltip formatter={(val, name) =>
-                                            name === 'count' ? [val, 'Claims'] : [`${val?.toFixed(1)}/100`, 'Avg Risk']
-                                        } />
-                                        <Bar yAxisId="left" dataKey="count" fill="#1967d2" radius={[4, 4, 0, 0]} />
-                                        <Line yAxisId="right" type="monotone" dataKey="avg_risk_score" stroke="#e53e3e" dot={false} />
+                                        <Tooltip 
+                                            formatter={(val, name) =>
+                                                name === 'count' ? [val, 'Claims'] : [`${val?.toFixed(1)}/100`, 'Avg Risk']
+                                            } 
+                                        />
+                                        <Bar yAxisId="left" dataKey="count" radius={[4, 4, 0, 0]}>
+                                            {d?.claims_this_month?.map((entry, index) => {
+                                                // Color bars based on avg_risk_score
+                                                let barColor = 'rgb(30, 58, 95)'; // default primary
+                                                if (entry?.avg_risk_score > 70) {
+                                                    barColor = '#e53e3e'; // red - high risk
+                                                } else if (entry?.avg_risk_score > 40) {
+                                                    barColor = '#f59e0b'; // orange - medium risk
+                                                } else {
+                                                    barColor = 'rgb(30, 58, 95)'; // blue - low risk
+                                                }
+                                                return <Cell key={`cell-${index}`} fill={barColor} />;
+                                            })}
+                                        </Bar>
+                                        <Line 
+                                            yAxisId="right" 
+                                            type="monotone" 
+                                            dataKey="avg_risk_score" 
+                                            stroke="#e53e3e" 
+                                            dot={false} 
+                                        />
                                     </BarChart>
                                 </ResponsiveContainer>
                             )}

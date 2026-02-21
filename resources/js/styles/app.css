@@ -1,3 +1,26 @@
 @import "tailwindcss";
 @import "bootstrap/dist/css/bootstrap.min.css";
 @import "react-toastify/dist/ReactToastify.css";
+
+/* rgb(30, 58, 95) */
+
+:root {
+    --primary-color: rgb(30, 58, 95);
+    --primary-dark: #15304f;
+    --primary-light: #2d6a9f;
+}
+
+/* Sidebar background */
+.sidebar {
+    background: var(--primary-color) !important;
+}
+
+/* Primary buttons */
+.btn-primary {
+    background: var(--primary-color);
+    border: none;
+}
+
+.btn-primary:hover {
+    background: var(--primary-dark);
+}

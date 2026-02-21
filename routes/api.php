@@ -57,17 +57,6 @@ use Illuminate\Support\Facades\Route;
     // ── Authenticated + Branch-Isolated Routes ────────────────────────────────
     Route::middleware(['auth:sanctum', 'branch.isolation'])->group(function () {
 
-        // // ── Auth / Profile ────────────────────────────────────────────────────
-        // Route::prefix('auth')->group(function () {
-        //     Route::get('me', [AuthController::class, 'me']);
-        //     Route::post('logout', [AuthController::class, 'logout']);
-        //     Route::post('logout-all', [AuthController::class, 'logoutAll']);
-        //     Route::post('change-password', [AuthController::class, 'changePassword']);
-        //     Route::post('2fa/setup', [AuthController::class, 'setup2FA']);
-        //     Route::post('2fa/confirm', [AuthController::class, 'confirm2FA']);
-        //     Route::post('2fa/disable', [AuthController::class, 'disable2FA']);
-        // });
-
         // ── Branches ──────────────────────────────────────────────────────────
         Route::middleware('permission:branches.view')
              ->prefix('branches')
@@ -171,13 +160,15 @@ use Illuminate\Support\Facades\Route;
                  Route::get('{enrollee}/dependents', [DependentController::class, 'index']);
                  Route::post('{enrollee}/dependents', [DependentController::class, 'store'])
                       ->middleware('permission:enrollees.edit');
+                 Route::get('{enrollee}/dependents/{dependent}', [DependentController::class, 'show']);
                  Route::put('{enrollee}/dependents/{dependent}', [DependentController::class, 'update'])
                       ->middleware('permission:enrollees.edit');
                  Route::delete('{enrollee}/dependents/{dependent}', [DependentController::class, 'destroy'])
                       ->middleware('permission:enrollees.edit');
              });
 
-        // ── HCPs ──────────────────────────────────────────────────────────────
+        
+             // ── HCPs ──────────────────────────────────────────────────────────────
         Route::middleware('permission:hcps.view')
              ->prefix('hcps')
              ->group(function () {

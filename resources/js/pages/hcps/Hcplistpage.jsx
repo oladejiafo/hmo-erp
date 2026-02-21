@@ -85,7 +85,7 @@ export default function HCPListPage() {
                 {/* Table */}
                 <div className="card-body p-0">
                     {isLoading ? <div className="py-5 text-center"><LoadingSpinner text="Loading..."/></div>
-                    : hcps.length===0 ? <EmptyState icon={Building} title="No providers found" description="Register your first health care provider."
+                    : hcps.length===0 ? <EmptyState icon={<Building size={48} />} title="No providers found" description="Register your first health care provider."
                         action={hasPermission('hcps.create')&&<button className="btn btn-primary btn-sm" onClick={()=>navigate('/hcps/new')}>Register HCP</button>}/>
                     : (
                         <div className="table-responsive">

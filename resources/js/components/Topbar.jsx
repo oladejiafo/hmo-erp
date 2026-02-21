@@ -65,8 +65,8 @@ export default function Topbar({ onToggleSidebar }) {
                             data-bs-toggle="dropdown"
                             aria-expanded={dropdownOpen}
                         >
-                            <div className="bg-primary text-white rounded-circle d-flex align-items-center justify-content-center" 
-                                 style={{ width: '32px', height: '32px' }}>
+                            <div className="text-white rounded-circle d-flex align-items-center justify-content-center" 
+                                 style={{ backgroundColor: 'rgb(30, 58, 95)', width: '32px', height: '32px' }}>
                                 {user?.name?.charAt(0) || 'U'}
                             </div>
                             <span className="d-none d-md-inline">{user?.name || 'User'}</span>
