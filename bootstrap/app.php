@@ -1,0 +1,100 @@
+<?php
+
+/**
+ * FILE LOCATION: bootstrap/app.php
+ *
+ * Laravel 12 application bootstrap.
+ *
+ * ROUTE FILES:
+ *   web.php  → catch-all, serves React SPA for all non-API URLs
+ *   api.php  → all REST endpoints under /api/v1/
+ *
+ * AUTH STRATEGY: Bearer token (Sanctum personal access tokens)
+ *   - No session auth, no CSRF cookies, no stateful SPA middleware
+ *   - EnsureFrontendRequestsAreStateful is intentionally REMOVED
+ *     It causes redirects to /register for token-based API calls
+ *   - All auth is via Authorization: Bearer <token> header
+ *   - Tokens are stored in localStorage under 'hmo_token'
+ *
+ * MIDDLEWARE ORDER (API group):
+ *   1. ForceJsonResponse   → always JSON, never HTML error pages
+ *   2. Laravel defaults    → throttle, etc.
+ *   3. auth:sanctum        → per-route, in api.php
+ *   4. branch.isolation    → per-route, in api.php
+ *   5. permission          → per-route, in api.php
+ */
+
+use App\Http\Middleware\BranchIsolation;
+use App\Http\Middleware\CheckPermission;
+use App\Http\Middleware\ForceJsonResponse;
+use Illuminate\Foundation\Application;
+use Illuminate\Foundation\Configuration\Exceptions;
+use Illuminate\Foundation\Configuration\Middleware;
+use Illuminate\Http\Request;
+use Symfony\Component\HttpKernel\Exception\NotFoundHttpException;
+
+return Application::configure(basePath: dirname(__DIR__))
+    ->withRouting(
+        web:      __DIR__ . '/../routes/web.php',
+        api:      __DIR__ . '/../routes/api.php',
+        commands: __DIR__ . '/../routes/console.php',
+        apiPrefix: '',
+        health:   '/up',
+    )
+    ->withMiddleware(function (Middleware $middleware) {
+
+        // Always return JSON for API routes — must be the very first middleware
+        // so even authentication errors return JSON, not HTML redirects
+        $middleware->prependToGroup('api', ForceJsonResponse::class);
+
+        // Named middleware aliases (used in routes via ->middleware('alias'))
+        $middleware->alias([
+            'permission'       => CheckPermission::class,
+            'branch.isolation' => BranchIsolation::class,
+        ]);
+
+        // ── IMPORTANT: EnsureFrontendRequestsAreStateful is intentionally omitted ──
+        // That middleware is for cookie/session based SPA auth (e.g. Inertia/Breeze).
+        // We use Bearer token auth via Sanctum personal access tokens.
+        // Including it causes:
+        //   1. CSRF verification on API requests that don't send CSRF cookies
+        //   2. Redirects to /register when session verification fails
+        //   3. Interference with Authorization: Bearer <token> header auth
+    })
+    ->withExceptions(function (Exceptions $exceptions) {
+
+        $exceptions->render(function (NotFoundHttpException $e, Request $request) {
+            if ($request->expectsJson()) {
+                return response()->json([
+                    'message' => 'Resource not found.'
+                ], 404);
+            }
+        });
+    
+        $exceptions->render(function (\Illuminate\Auth\AuthenticationException $e, Request $request) {
+            if ($request->expectsJson()) {
+                return response()->json([
+                    'message' => 'Unauthenticated.'
+                ], 401);
+            }
+        });
+    
+        $exceptions->render(function (\Illuminate\Validation\ValidationException $e, Request $request) {
+            if ($request->expectsJson()) {
+                return response()->json([
+                    'message' => 'Validation failed.',
+                    'errors'  => $e->errors(),
+                ], 422);
+            }
+        });
+    
+        $exceptions->render(function (\Spatie\Permission\Exceptions\UnauthorizedException $e, Request $request) {
+            if ($request->expectsJson()) {
+                return response()->json([
+                    'message' => 'You do not have permission to perform this action.'
+                ], 403);
+            }
+        });
+    
+    })
+    ->create();

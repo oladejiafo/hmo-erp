@@ -1,0 +1,163 @@
+import React, { useState } from 'react';
+import { useNavigate, useLocation } from 'react-router-dom';
+import { useForm } from 'react-hook-form';
+import { zodResolver } from '@hookform/resolvers/zod';
+import { z } from 'zod';
+import { toast } from 'react-toastify';
+import { Eye, EyeOff, ShieldCheck } from 'lucide-react';
+import { useAuth } from '../../contexts/AuthContext';
+
+const loginSchema = z.object({
+    email:    z.string().email('Enter a valid email address'),
+    password: z.string().min(1, 'Password is required'),
+    otp:      z.string().optional(),
+});
+
+export default function LoginPage() {
+    const { login }          = useAuth();
+    const navigate           = useNavigate();
+    const location           = useLocation();
+    const [showPass, setShowPass]       = useState(false);
+    const [requires2FA, setRequires2FA] = useState(false);
+    const [submitting, setSubmitting]   = useState(false);
+
+    const from = location.state?.from?.pathname ?? '/';
+
+    const { register, handleSubmit, formState: { errors }, setError } = useForm({
+        resolver: zodResolver(loginSchema),
+    });
+
+    const onSubmit = async (data) => {
+        setSubmitting(true);
+        try {
+            const result = await login(data.email, data.password, data.otp || null);
+
+            if (result.requires_2fa) {
+                setRequires2FA(true);
+                toast.info('Enter your 6-digit authenticator code.');
+                return;
+            }
+
+            toast.success('Login successful. Welcome back!');
+            navigate(from, { replace: true });
+
+        } catch (err) {
+            const errors = err.response?.data?.errors ?? {};
+            if (errors.email)    setError('email',    { message: errors.email[0] });
+            if (errors.password) setError('password', { message: errors.password[0] });
+            if (errors.otp)      setError('otp',      { message: errors.otp[0] });
+
+            if (!Object.keys(errors).length) {
+                toast.error(err.response?.data?.message ?? 'Login failed. Please try again.');
+            }
+        } finally {
+            setSubmitting(false);
+        }
+    };
+
+    return (
+        <>
+            <h5 className="fw-bold mb-1">
+                {requires2FA ? 'Two-Factor Authentication' : 'Sign In'}
+            </h5>
+            <p className="text-muted mb-4" style={{ fontSize: 13 }}>
+                {requires2FA
+                    ? 'Enter the 6-digit code from your authenticator app.'
+                    : 'Enter your credentials to access the system.'}
+            </p>
+
+            <form onSubmit={handleSubmit(onSubmit)} noValidate>
+                {/* Email — hidden after 2FA step */}
+                {!requires2FA && (
+                    <>
+                        <div className="mb-3">
+                            <label className="form-label fw-semibold" style={{ fontSize: 13 }}>
+                                Email Address
+                            </label>
+                            <input
+                                type="email"
+                                className={`form-control ${errors.email ? 'is-invalid' : ''}`}
+                                placeholder="you@hmosystem.ng"
+                                {...register('email')}
+                                autoComplete="email"
+                            />
+                            {errors.email && (
+                                <div className="invalid-feedback">{errors.email.message}</div>
+                            )}
+                        </div>
+
+                        <div className="mb-4">
+                            <label className="form-label fw-semibold" style={{ fontSize: 13 }}>
+                                Password
+                            </label>
+                            <div className="input-group">
+                                <input
+                                    type={showPass ? 'text' : 'password'}
+                                    className={`form-control border-end-0 ${errors.password ? 'is-invalid' : ''}`}
+                                    placeholder="Your password"
+                                    {...register('password')}
+                                    autoComplete="current-password"
+                                />
+                                <button
+                                    type="button"
+                                    className="btn btn-outline-secondary"
+                                    onClick={() => setShowPass(p => !p)}
+                                    tabIndex={-1}
+                                >
+                                    {showPass ? <EyeOff size={16} /> : <Eye size={16} />}
+                                </button>
+                                {errors.password && (
+                                    <div className="invalid-feedback">{errors.password.message}</div>
+                                )}
+                            </div>
+                        </div>
+                    </>
+                )}
+
+                {/* OTP step */}
+                {requires2FA && (
+                    <div className="mb-4">
+                        <div className="text-center mb-3">
+                            <ShieldCheck size={40} className="text-primary mb-2" />
+                        </div>
+                        <label className="form-label fw-semibold" style={{ fontSize: 13 }}>
+                            Authenticator Code
+                        </label>
+                        <input
+                            type="text"
+                            className={`form-control form-control-lg text-center ${errors.otp ? 'is-invalid' : ''}`}
+                            placeholder="000 000"
+                            maxLength={6}
+                            {...register('otp')}
+                            autoComplete="one-time-code"
+                            autoFocus
+                        />
+                        {errors.otp && (
+                            <div className="invalid-feedback">{errors.otp.message}</div>
+                        )}
+                        <div className="mt-2 text-center">
+                            <button
+                                type="button"
+                                className="btn btn-link btn-sm p-0"
+                                onClick={() => setRequires2FA(false)}
+                            >
+                                ← Back to login
+                            </button>
+                        </div>
+                    </div>
+                )}
+
+                <button
+                    type="submit"
+                    className="btn btn-primary w-100"
+                    disabled={submitting}
+                >
+                    {submitting
+                        ? <><span className="spinner-border spinner-border-sm me-2" />Signing in...</>
+                        : requires2FA ? 'Verify Code' : 'Sign In'
+                    }
+                </button>
+            </form>
+        </>
+    );
+}
