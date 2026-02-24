@@ -17,7 +17,7 @@ class Enrollee extends Model
     use BelongsToBranch, HasAuditLog, GeneratesUniqueId, SoftDeletes;
 
     protected $fillable = [
-        'branch_id', 'corporate_id', 'plan_id', 'enrollee_id',
+        'branch_id', 'corporate_id','user_id', 'plan_id', 'enrollee_id',
         'first_name', 'last_name', 'middle_name', 'date_of_birth', 'gender',
         'phone', 'email', 'address', 'state_of_residence', 'lga',
         'photo_path', 'nin', 'staff_id', 'primary_hcp_id',
@@ -33,6 +33,13 @@ class Enrollee extends Model
     ];
 
     // ─── Helpers ──────────────────────────────────────────────────────────────
+    /**
+     * Get the user account associated with this enrollee
+     */
+    public function user()
+    {
+        return $this->belongsTo(User::class, 'user_id');
+    }
 
     public function getFullNameAttribute(): string
     {

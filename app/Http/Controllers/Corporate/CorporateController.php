@@ -13,6 +13,14 @@ use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Str;
 
+use App\Models\User;
+use Illuminate\Support\Facades\Hash;
+use App\Mail\CorporateWelcomeMail;
+use Illuminate\Support\Facades\Mail;
+use Illuminate\Support\Facades\Log;
+use Illuminate\Support\Facades\DB;
+
+
 class CorporateController extends Controller
 {
     public function __construct(
@@ -49,6 +57,56 @@ class CorporateController extends Controller
     }
 
     public function store(StoreCorporateRequest $request): JsonResponse
+    {
+        $validated = $request->validated();
+    
+        // Auto-generate corporate code if not provided
+        if (empty($validated['code'])) {
+            $validated['code'] = Corporate::generateUniqueId('CORP', 'code', 5);
+        }
+    
+        $corporate = DB::transaction(function () use ($validated, $request) {
+            // Create corporate
+            $corporate = Corporate::create($validated);
+    
+            // 🔥 AUTO-CREATE USER ACCOUNT for primary contact
+            if ($request->has('primary_contact_email') && $request->has('primary_contact_name')) {
+                $tempPassword = Str::random(10);
+                $user = User::create([
+                    'name' => $request->primary_contact_name,
+                    'email' => $request->primary_contact_email,
+                    'password' => Hash::make($tempPassword),
+                    'branch_id' => $corporate->branch_id,
+                    'user_type' => 'corporate_user',
+                    'corporate_id' => $corporate->id,
+                    'status' => 'active',
+                    'password_changed_at' => null,
+                ]);
+    
+                // Assign corporate role
+                $user->assignRole('corporate_user');
+    
+                // Grant portal access permission
+                $user->givePermissionTo('portal.corporate.access');
+    
+                // Send welcome email
+                try {
+                    Mail::to($user->email)->send(new CorporateWelcomeMail($corporate, $user, $tempPassword));
+                } catch (\Exception $e) {
+                    Log::error('Failed to send corporate welcome email: ' . $e->getMessage());
+                }
+            }
+    
+            return $corporate;
+        });
+    
+        return response()->json([
+            'message' => 'Corporate created successfully. Login credentials sent to primary contact.',
+            'data'    => new CorporateResource($corporate->load('branch', 'contacts', 'plans')),
+        ], 201);
+    }
+
+    public function storeXX(StoreCorporateRequest $request): JsonResponse
     {
         $validated = $request->validated();
 

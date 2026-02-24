@@ -5,7 +5,7 @@ import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { ReactQueryDevtools } from '@tanstack/react-query-devtools';
 import { ToastContainer } from 'react-toastify';
 import { AuthProvider } from './contexts/AuthContext';
-import AppRouter from './router/AppRouter';
+import AppRouter from './router/AppRouterX';
 
 // Styles
 import 'bootstrap/dist/css/bootstrap.min.css';

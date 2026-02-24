@@ -34,6 +34,7 @@ function App() {
         <QueryClientProvider client={queryClient}>
             <BrowserRouter>
                 <AuthProvider>
+
                     <AppRouter />
                     <ToastContainer
                         position="top-right"

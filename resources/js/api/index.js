@@ -53,7 +53,6 @@ export const markInvoicePaid = (corporateId, invoiceId, data) =>
 
 // ============= ENROLLEES =============
 export const fetchEnrollees = (params) => apiClient.get('/enrollees', { params });
-
 export const fetchEnrollee = (id) => apiClient.get(`/enrollees/${id}`);
 export const createEnrollee = (data) => apiClient.post('/enrollees', data);
 export const updateEnrollee = (id, data) => apiClient.put(`/enrollees/${id}`, data);
@@ -73,9 +72,9 @@ export const fetchDependents = async (enrolleeId, params) => {
 
 export const fetchDependent = async (enrolleeId, dependentId) => {
     const response = await apiClient.get(`/enrollees/${enrolleeId}/dependents/${dependentId}`);
-    return response.data;  // This returns { data: dependent }
+    return response.data;
 };
-// export const fetchDependent = (id) => apiClient.get(`/enrollees/${enrolleeId}/dependents/${dependentId}`);
+
 export const createDependent = async (enrolleeId, data) => {
     const response = await apiClient.post(`/enrollees/${enrolleeId}/dependents`, data);
     return response.data;
@@ -90,6 +89,7 @@ export const deleteDependent = async (enrolleeId, dependentId) => {
     const response = await apiClient.delete(`/enrollees/${enrolleeId}/dependents/${dependentId}`);
     return response.data;
 };
+
 // ============= HCPs =============
 export const fetchHCPs = (params) => apiClient.get('/hcps', { params });
 export const fetchHCP = (id) => apiClient.get(`/hcps/${id}`);
@@ -156,6 +156,9 @@ export const fetchClaimFraudFlags = (id) => apiClient.get(`/claims/${id}/fraud-f
 export const reviewFraudFlag = (id, flagId, data) => 
     apiClient.patch(`/claims/${id}/fraud-flags/${flagId}/review`, data);
 
+// ✅ Add these missing exports
+export const fetchFraudFlags = (id) => apiClient.get(`/claims/${id}/fraud-flags`);
+
 // ============= CLAIM DOCUMENTS =============
 export const fetchClaimDocuments = (claimId) => 
     apiClient.get(`/claims/${claimId}/documents`);
@@ -172,6 +175,7 @@ export const downloadClaimDocument = (claimId, documentId) =>
     apiClient.get(`/claims/${claimId}/documents/${documentId}/download`, {
         responseType: 'blob'
     });
+
 
 // ============= FINANCE =============
 export const fetchPaymentBatches = (params) => apiClient.get('/finance/batches', { params });
@@ -201,12 +205,91 @@ export const fetchClaimsByHCP = (params) => apiClient.get('/reports/claims-by-hc
 export const fetchClaimsByType = (params) => apiClient.get('/reports/claims-by-type', { params });
 export const fetchCostByCorporate = (params) => apiClient.get('/reports/cost-by-corporate', { params });
 export const fetchHighCostEnrollees = (params) => apiClient.get('/reports/high-cost-enrollees', { params });
-
+export const fetchHCPPerformanceReport = (params) => apiClient.get('/reports/hcp-performance', { params }); // ← RENAMED
 export const fetchBranchComparison = (params) => apiClient.get('/reports/branch-comparison', { params });
 export const fetchFraudHeatmap = (params) => apiClient.get('/reports/fraud-heatmap', { params });
 
 // ============= AUDIT LOGS =============
 export const fetchAuditLogs = (params) => apiClient.get('/reports/audit-logs', { params });
+
+// ============= 🆕 PRE-AUTHORISATION (PA) =============
+export const fetchPARequests = (params) => apiClient.get('/pre-auth', { params }).then(r => r.data);
+export const fetchPARequest = (id) => apiClient.get(`/pre-auth/${id}`).then(r => r.data);
+export const submitPARequest = (data) => apiClient.post('/pre-auth', data);
+export const approvePA = (id, data) => apiClient.post(`/pre-auth/${id}/approve`, data);
+export const declinePA = (id, data) => apiClient.post(`/pre-auth/${id}/decline`, data);
+export const fetchPAStats = () => apiClient.get('/pre-auth/stats').then(r => r.data);
+export const revokePA = (id, data) => apiClient.post(`/pre-auth/${id}/revoke`, data);
+export const validatePACode = (data) => apiClient.post('/pre-auth/validate-code', data);
+export const fetchPATATReport = (params) => apiClient.get('/reports/pa-tat', { params }).then(r => r.data);
+export const exportPATATReport = (params) => apiClient.get('/reports/pa-tat/export', { params, responseType: 'blob' });
+
+// ============= 🆕 CAPITATION =============
+export const fetchCapitationRuns = (params) => apiClient.get('/finance/capitation', { params }).then(r => r.data);
+export const fetchCapitationRun = (id) => apiClient.get(`/finance/capitation/${id}`).then(r => r.data);
+export const generateCapitationRun = (data) => apiClient.post('/finance/capitation/generate', data);
+export const approveCapitationRun = (id) => apiClient.post(`/finance/capitation/${id}/approve`);
+export const fetchCapitationSummary = (params) => apiClient.get('/finance/capitation/summary', { params }).then(r => r.data);
+
+// ============= 🆕 CAPITATION RECORD ADJUSTMENT =============
+export const adjustCapitationRecord = (runId, recordId, data) => 
+    apiClient.patch(`/finance/capitation/${runId}/records/${recordId}`, data).then(r => r.data);
+
+// ============= 🆕 CAPITATION RATES =============
+export const fetchCapitationRates = (params) => 
+    apiClient.get('/finance/capitation/rates', { params }).then(r => r.data);
+
+export const createCapitationRate = (data) => 
+    apiClient.post('/finance/capitation/rates', data).then(r => r.data);
+
+export const updateCapitationRate = (id, data) => 
+    apiClient.put(`/finance/capitation/rates/${id}`, data).then(r => r.data);
+
+export const deleteCapitationRate = (id) => 
+    apiClient.delete(`/finance/capitation/rates/${id}`).then(r => r.data);
+
+// ============= 🆕 SLA / OPERATIONS =============
+export const fetchSLADashboard = () => apiClient.get('/reports/sla-dashboard').then(r => r.data);
+export const fetchOverdueClaims = (params) => apiClient.get('/reports/overdue-claims', { params }).then(r => r.data);
+
+// ============= 🆕 COMPLIANCE CALENDAR =============
+export const fetchFilings = (params) => apiClient.get('/compliance/filings', { params }).then(r => r.data);
+export const fetchFiling = (id) => apiClient.get(`/compliance/filings/${id}`).then(r => r.data);
+export const createFiling = (data) => apiClient.post('/compliance/filings', data);
+export const updateFiling = (id, data) => apiClient.put(`/compliance/filings/${id}`, data);
+export const uploadFilingDoc = (id, formData) => apiClient.post(`/compliance/filings/${id}/documents`, formData, { 
+    headers: { 'Content-Type': 'multipart/form-data' } 
+});
+
+// ============= 🆕 NOTIFICATIONS / ALERTS =============
+export const fetchNotifications = (params) => apiClient.get('/notifications', { params }).then(r => r.data);
+export const markNotificationRead = (id) => apiClient.patch(`/notifications/${id}/read`);
+export const markAllNotificationsRead = () => apiClient.post('/notifications/mark-all-read');
+export const fetchNotificationCount = () => apiClient.get('/notifications/unread-count').then(r => r.data);
+
+// ============= 🆕 CORPORATE SELF-SERVICE PORTAL =============
+export const fetchCorpPortalDashboard = () => apiClient.get('/portal/corporate/dashboard').then(r => r.data);
+export const fetchCorpPortalEnrollees = (params) => apiClient.get('/portal/corporate/enrollees', { params }).then(r => r.data);
+export const fetchCorpPortalInvoices = (params) => apiClient.get('/portal/corporate/invoices', { params }).then(r => r.data);
+export const fetchCorpPortalClaims = (params) => apiClient.get('/portal/corporate/claims', { params }).then(r => r.data);
+export const corpPortalAddEnrollee = (data) => apiClient.post('/portal/corporate/enrollees', data);
+export const corpPortalRemoveEnrollee = (id) => apiClient.delete(`/portal/corporate/enrollees/${id}`);
+export const corpPortalBulkUpload = (fd) => apiClient.post('/portal/corporate/enrollees/bulk', fd, { 
+    headers: { 'Content-Type': 'multipart/form-data' } 
+});
+export const fetchCorpPortalProfile = () => apiClient.get('/portal/corporate/profile').then(r => r.data);
+export const updateCorpPortalProfile = (data) => apiClient.put('/portal/corporate/profile', data);
+
+// ============= 🆕 ENROLLEE SELF-SERVICE PORTAL =============
+export const fetchEnrolleePortalDashboard = () => apiClient.get('/portal/enrollee/dashboard').then(r => r.data);
+export const fetchEnrolleePortalIDCard = () => apiClient.get('/portal/enrollee/id-card').then(r => r.data);
+export const fetchEnrolleePortalBenefits = () => apiClient.get('/portal/enrollee/benefits').then(r => r.data);
+export const fetchEnrolleePortalClaims = (p) => apiClient.get('/portal/enrollee/claims', { params: p }).then(r => r.data);
+export const fetchEnrolleePortalHCPs = (p) => apiClient.get('/portal/enrollee/find-hcp', { params: p }).then(r => r.data);
+export const fetchEnrolleePortalComplaints = (p) => apiClient.get('/portal/enrollee/complaints', { params: p }).then(r => r.data);
+export const submitEnrolleeComplaint = (d) => apiClient.post('/portal/enrollee/complaints', d);
+export const fetchEnrolleePortalProfile = () => apiClient.get('/portal/enrollee/profile').then(r => r.data);
+export const updateEnrolleePortalProfile = (d) => apiClient.put('/portal/enrollee/profile', d);
 
 // ============= USERS =============
 export const fetchUsers = (params) => apiClient.get('/users', { params });
@@ -223,6 +306,7 @@ export const fetchRole = (id) => apiClient.get(`/roles/${id}`);
 export const fetchPermissions = () => apiClient.get('/permissions');
 export const syncRolePermissions = (id, data) => 
     apiClient.put(`/roles/${id}/permissions`, data);
+
 
 export default {
     // Auth
@@ -248,7 +332,7 @@ export default {
     fetchEnrolleeBenefitSummary,
     
     // Dependents
-    fetchDependents, createDependent, updateDependent, deleteDependent,
+    fetchDependents, fetchDependent, createDependent, updateDependent, deleteDependent,
     
     // HCPs
     fetchHCPs, fetchHCP, createHCP, updateHCP, accreditHCP, blacklistHCP,
@@ -265,8 +349,9 @@ export default {
     
     // Claims
     fetchClaims, fetchClaim, createClaim, processClaim, approveClaim, rejectClaim,
-    assignClaim, reverseClaim, fetchClaimTimeline, fetchClaimFraudFlags, reviewFraudFlag,
+    assignClaim, reverseClaim, fetchClaimTimeline, fetchFraudFlags,fetchClaimFraudFlags, reviewFraudFlag,
     
+
     // Claim Documents
     fetchClaimDocuments, uploadClaimDocument, downloadClaimDocument,
     
@@ -275,13 +360,46 @@ export default {
     approvePaymentBatch, exportBankFile, fetchLedger, fetchLedgerSummary,
     generateRemittance, downloadRemittance,
     
+    // 🆕 Capitation (runs)
+    fetchCapitationRuns, fetchCapitationRun, generateCapitationRun, approveCapitationRun,
+    fetchCapitationSummary,
+    
+    // 🆕 Capitation Rates (ADD THESE)
+    fetchCapitationRates, createCapitationRate, updateCapitationRate, deleteCapitationRate,
+    
+    // 🆕 Capitation Record Adjustment (ADD THIS)
+    adjustCapitationRecord,
+    
     // Reports
     fetchDashboard, fetchClaimsAging, fetchClaimsByHCP, fetchClaimsByType,
-    fetchCostByCorporate, fetchHighCostEnrollees, fetchHCPPerformance,
+    fetchCostByCorporate, fetchHighCostEnrollees, fetchHCPPerformanceReport,
     fetchBranchComparison, fetchFraudHeatmap,
+    
+    // 🆕 SLA & Operations
+    fetchSLADashboard, fetchOverdueClaims,
     
     // Audit Logs
     fetchAuditLogs,
+    
+    // 🆕 Compliance
+    fetchFilings, fetchFiling, createFiling, updateFiling, uploadFilingDoc,
+    
+    // 🆕 Pre-Authorisation
+    fetchPARequests, fetchPARequest, submitPARequest, approvePA, declinePA, fetchPAStats,
+    revokePA, validatePACode, fetchPATATReport, exportPATATReport,
+    
+    // 🆕 Notifications
+    fetchNotifications, markNotificationRead, markAllNotificationsRead, fetchNotificationCount,
+    
+    // 🆕 Corporate Portal
+    fetchCorpPortalDashboard, fetchCorpPortalEnrollees, fetchCorpPortalInvoices,
+    fetchCorpPortalClaims, corpPortalAddEnrollee, corpPortalRemoveEnrollee,
+    corpPortalBulkUpload, fetchCorpPortalProfile, updateCorpPortalProfile,
+    
+    // 🆕 Enrollee Portal
+    fetchEnrolleePortalDashboard, fetchEnrolleePortalIDCard, fetchEnrolleePortalBenefits,
+    fetchEnrolleePortalClaims, fetchEnrolleePortalHCPs, fetchEnrolleePortalComplaints,
+    submitEnrolleeComplaint, fetchEnrolleePortalProfile, updateEnrolleePortalProfile,
     
     // Users
     fetchUsers, fetchUser, createUser, updateUser, deleteUser,

@@ -14,7 +14,7 @@ class AuthService
     /**
      * Authenticate user credentials, enforce 2FA, return token.
      */
-    public function login(array $credentials, string $ip): array
+    public function loginxx(array $credentials, string $ip): array
     {
         /** @var User $user */
         $user = User::with('branch')
@@ -66,6 +66,77 @@ class AuthService
             'expires_at'   => $expiresAt->toISOString(),
             'user'         => $this->formatUserPayload($user),
         ];
+    }
+
+    // app/Services/AuthService.php
+    public function login(array $credentials, string $ip): array
+    {
+        /** @var User $user */
+        $user = User::with('branch','corporate', 'enrollee')
+            ->where('email', $credentials['email'])
+            ->first();
+
+        if (! $user || ! Hash::check($credentials['password'], $user->password)) {
+            throw ValidationException::withMessages([
+                'email' => ['These credentials do not match our records.'],
+            ]);
+        }
+
+        if ($user->status !== 'active') {
+            throw ValidationException::withMessages([
+                'email' => ["Your account has been {$user->status}. Contact your administrator."],
+            ]);
+        }
+
+        // 2FA gate (your existing code)
+        if ($user->two_factor_enabled) {
+            if (empty($credentials['otp'])) {
+                return ['requires_2fa' => true, 'message' => 'OTP code required.'];
+            }
+
+            $valid = $this->google2FA->verifyKey(
+                $user->two_factor_secret,
+                (string) $credentials['otp']
+            );
+
+            if (! $valid) {
+                throw ValidationException::withMessages([
+                    'otp' => ['Invalid OTP code. Please try again.'],
+                ]);
+            }
+        }
+
+        // ✅ NEW: Check if password needs to be changed (first login)
+        $requiresPasswordChange = $user->password_changed_at === null;
+
+        // Revoke all previous tokens to enforce single-session per user
+        $user->tokens()->delete();
+
+        $expiresAt = now()->addHours(config('hmo.token_lifetime_hours', 12));
+        $token     = $user->createToken('hmo-erp', ['*'], $expiresAt);
+
+        $user->recordLogin($ip);
+
+        // ✅ MODIFIED: Include requires_password_change in response
+        return [
+            'requires_2fa' => false,
+            'requires_password_change' => $requiresPasswordChange,
+            'token'        => $token->plainTextToken,
+            'expires_at'   => $expiresAt->toISOString(),
+            'user'         => $this->formatUserPayload($user),
+        ];
+    }
+
+    // Add a new method to handle password change after first login
+    public function setInitialPassword(User $user, string $newPassword): void
+    {
+        $user->update([
+            'password' => Hash::make($newPassword),
+            'password_changed_at' => now(),
+        ]);
+
+        // Force re-login on all devices after password change
+        $user->tokens()->delete();
     }
 
     public function logout(User $user): void
@@ -163,6 +234,21 @@ class AuthService
                 'name' => $user->branch->name,
                 'code' => $user->branch->code,
                 'type' => $user->branch->type,
+            ] : null,
+            'corporate'          => $user->corporate ? [ // Add this
+                'id'   => $user->corporate->id,
+                'name' => $user->corporate->name,
+                'code' => $user->corporate->code,
+            ] : null,
+            'enrollee'           => $user->enrollee ? [ // ADD THIS
+                'id'            => $user->enrollee->id,
+                'enrollee_id'   => $user->enrollee->enrollee_id,
+                'first_name'    => $user->enrollee->first_name,
+                'last_name'     => $user->enrollee->last_name,
+                'date_of_birth' => $user->enrollee->date_of_birth,
+                'gender'        => $user->enrollee->gender,
+                'phone'         => $user->enrollee->phone,
+                'photo'         => $user->enrollee->photo,
             ] : null,
             'roles'       => $user->getRoleNames(),
             'permissions' => $user->getAllPermissions()->pluck('name'),

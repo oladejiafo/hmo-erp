@@ -21,8 +21,11 @@ use App\Http\Controllers\Reports\DashboardController;
 use App\Http\Controllers\Reports\ReportController;
 use App\Http\Controllers\Settings\RoleController;
 use App\Http\Controllers\Settings\UserController;
+use App\Http\Controllers\PreAuthController;
+use App\Http\Controllers\Finance\CapitationController;
 use Illuminate\Support\Facades\Route;
 
+use EApp\Http\Controllers\Portal\EnrolleePortalController;
 /*
 |--------------------------------------------------------------------------
 | HMO ERP API Routes
@@ -42,6 +45,7 @@ use Illuminate\Support\Facades\Route;
         Route::post('forgot-password', [AuthController::class, 'forgotPassword']);
         Route::post('reset-password', [AuthController::class, 'resetPassword']);
     });
+    Route::middleware('auth:sanctum')->post('auth/set-initial-password', [AuthController::class, 'setInitialPassword']);
 
     // ── Authenticated (NO branch isolation) ───────────────────
     Route::middleware('auth:sanctum')->prefix('auth')->group(function () {
@@ -168,7 +172,7 @@ use Illuminate\Support\Facades\Route;
              });
 
         
-             // ── HCPs ──────────────────────────────────────────────────────────────
+        // ── HCPs ──────────────────────────────────────────────────────────────
         Route::middleware('permission:hcps.view')
              ->prefix('hcps')
              ->group(function () {
@@ -213,7 +217,8 @@ use Illuminate\Support\Facades\Route;
                       ->middleware('permission:hcps.bank_details');
                  Route::delete('{hcp}/bank-details/{bankDetail}', [HcpBankDetailController::class, 'destroy'])
                       ->middleware('permission:hcps.bank_details');
-             });
+        });
+
 
         // ── Claims ────────────────────────────────────────────────────────────
         Route::middleware('permission:claims.view')
@@ -275,6 +280,24 @@ use Illuminate\Support\Facades\Route;
                       ->middleware('permission:finance.remittance');
                  Route::get('remittance/{payment}/download', [RemittanceController::class, 'download'])
                       ->middleware('permission:finance.remittance');
+
+
+                // Capitation routes require a specific sub-permission
+                Route::middleware('permission:finance.capitation')
+                ->prefix('capitation')
+                ->group(function () {
+                    // Rates management
+                    Route::get('/rates', [CapitationController::class, 'rateIndex']);
+                    Route::post('/rates',[CapitationController::class, 'rateStore']);
+                    
+                    // Capitation runs
+                    Route::get('/', [CapitationController::class, 'index']);           // List runs
+                    Route::get('/summary', [CapitationController::class, 'summary']);        // Dashboard summary
+                    Route::post('/generate', [CapitationController::class, 'generate']);       // Create new run
+                    Route::get('/{run}', [CapitationController::class, 'show']);           // View run details
+                    Route::post('/{run}/approve',[CapitationController::class, 'approve']);        // Approve & create batch
+                    Route::patch('/{run}/records/{record}',[CapitationController::class, 'adjustRecord']);   // Adjust individual HCP
+                });
              });
 
         // ── Reports & Analytics ───────────────────────────────────────────────
@@ -304,4 +327,56 @@ use Illuminate\Support\Facades\Route;
                       ->middleware('permission:reports.export');
              });
     });
+
+    // Pre-Authorisation
+    Route::prefix('pre-auth')->middleware(['auth:sanctum', 'branch.scope'])->group(function () {
+        Route::get('/',                  [PreAuthController::class, 'index']);
+        Route::post('/',                 [PreAuthController::class, 'store']);
+        Route::get('/stats',             [PreAuthController::class, 'stats']);
+        Route::post('/validate-code',    [PreAuthController::class, 'validateCode']);
+        Route::get('/{pa}',              [PreAuthController::class, 'show']);
+        Route::post('/{pa}/approve',     [PreAuthController::class, 'approve']);
+        Route::post('/{pa}/decline',     [PreAuthController::class, 'decline']);
+        Route::post('/{pa}/revoke',      [PreAuthController::class, 'revoke']);
+        Route::get('/{pa}/download',     [PreAuthController::class, 'downloadLetter']);
+    });
+
+    // PA TAT Report (under /reports)
+    // Route::prefix('reports')->middleware(['auth:sanctum'])->group(function () {
+    //     // ...existing report routes...
+    //     Route::get('/pa-tat',        [PAReportController::class, 'tatSummary']);
+    //     Route::get('/pa-tat/export', [PAReportController::class, 'exportTAT']);
+    // });
+
+    // ============= PORTAL ROUTES =============
+    Route::middleware(['auth:sanctum'])->prefix('portal')->group(function () {
+        
+        // Enrollee Portal Routes
+        Route::prefix('enrollee')->group(function () {
+            Route::get('/dashboard', [App\Http\Controllers\Portal\EnrolleePortalController::class, 'dashboard']);
+            Route::get('/id-card', [App\Http\Controllers\Portal\EnrolleePortalController::class, 'idCard']);
+            Route::get('/id-card/download', [App\Http\Controllers\Portal\EnrolleePortalController::class, 'downloadIdCard']);
+            Route::get('/benefits', [App\Http\Controllers\Portal\EnrolleePortalController::class, 'benefits']);
+            Route::get('/claims', [App\Http\Controllers\Portal\EnrolleePortalController::class, 'claims']);
+            Route::get('/find-hcp', [App\Http\Controllers\Portal\EnrolleePortalController::class, 'findHcp']);
+            Route::get('/complaints', [App\Http\Controllers\Portal\EnrolleePortalController::class, 'complaints']);
+            Route::post('/complaints', [App\Http\Controllers\Portal\EnrolleePortalController::class, 'submitComplaint']);
+        });
+        
+        // Corporate Portal Routes (add later)
+        Route::prefix('corporate')->group(function () {
+            Route::get('/dashboard', [App\Http\Controllers\Portal\CorporatePortalController::class, 'dashboard']);
+            Route::get('/enrollees', [App\Http\Controllers\Portal\CorporatePortalController::class, 'enrollees']);
+            Route::post('/enrollees', [App\Http\Controllers\Portal\CorporatePortalController::class, 'addEnrollee']);
+            Route::delete('/enrollees/{id}', [App\Http\Controllers\Portal\CorporatePortalController::class, 'removeEnrollee']);
+            Route::post('/enrollees/bulk', [App\Http\Controllers\Portal\CorporatePortalController::class, 'bulkUploadEnrollees']);
+            Route::get('/claims', [App\Http\Controllers\Portal\CorporatePortalController::class, 'claims']);
+            Route::post('/claims/export', [App\Http\Controllers\Portal\CorporatePortalController::class, 'exportClaims']);
+            Route::get('/invoices', [App\Http\Controllers\Portal\CorporatePortalController::class, 'invoices']);
+            Route::get('/profile', [App\Http\Controllers\Portal\CorporatePortalController::class, 'profile']);
+            Route::put('/profile', [App\Http\Controllers\Portal\CorporatePortalController::class, 'updateProfile']);
+        });
+        
+    });
+
 // });

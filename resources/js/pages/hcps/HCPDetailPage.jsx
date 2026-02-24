@@ -20,6 +20,11 @@ import { PageHeader, StatusBadge, LoadingSpinner, ErrorAlert, ConfirmModal } fro
 import { useAuth } from '../../contexts/AuthContext';
 import { formatCurrency, formatDate } from '../../utils/format';
 
+// ── Inline suspend API (until api/index gets patch) ─────────────────────────
+import client from '../../api/client';
+const suspendHCP = (id, data) => client.patch(`/hcps/${id}/suspend`, data);
+const reactivateHCP = (id) => client.patch(`/hcps/${id}/reactivate`);
+
 const STATUS_COLOR = { pending: 'warning', active: 'success', suspended: 'secondary', blacklisted: 'danger', terminated: 'dark' };
 const TIER_COLOR = { primary: 'info', secondary: 'primary', tertiary: 'success' };
 const CATEGORIES = ['consultation', 'procedure', 'laboratory', 'radiology', 'drug', 'surgery', 'dental', 'optical', 'physiotherapy', 'maternity', 'emergency'];
@@ -32,6 +37,8 @@ export default function HCPDetailPage() {
     const [tab, setTab] = useState('overview');
     const [blacklistModal, setBM] = useState(false);
     const [blacklistReason, setBR] = useState('');
+    const [suspendModal, setSM] = useState(false);
+    const [suspendReason, setSR] = useState('');
     const [tariffModal, setTM] = useState(false);
     const [editingTariff, setET] = useState(null);
     const [contractModal, setCM] = useState(false);
@@ -41,21 +48,20 @@ export default function HCPDetailPage() {
         queryKey: ['hcp', id],
         queryFn: () => fetchHCP(id)
     });
-    
 
     // Fetch tariffs when tab is tariffs
     const { data: tariffData, isLoading: tLoad } = useQuery({
         queryKey: ['hcp-tariffs', id],
         queryFn: () => fetchTariffs(id),
-        enabled: !!id, // Always enabled when id exists, but data only used when tab matches
+        enabled: !!id,
     });
 
     // Fetch contracts when tab is contracts
-const { data: contractData, isLoading: contractsLoading } = useQuery({
-    queryKey: ['hcp-contracts', id],
-    queryFn: () => fetchContracts(id),
-    enabled: !!id,
-});
+    const { data: contractData, isLoading: contractsLoading } = useQuery({
+        queryKey: ['hcp-contracts', id],
+        queryFn: () => fetchContracts(id),
+        enabled: !!id,
+    });
 
     // Fetch performance when tab is performance
     const { data: perfData, isLoading: perfLoading } = useQuery({
@@ -66,7 +72,6 @@ const { data: contractData, isLoading: contractsLoading } = useQuery({
 
     // Safely extract HCP data
     const hcp = hcpData?.data?.data || hcpData || {};
-
 
     const inv = () => qc.invalidateQueries({ queryKey: ['hcp', id] });
 
@@ -82,6 +87,18 @@ const { data: contractData, isLoading: contractsLoading } = useQuery({
         onError: (e) => toast.error(e.response?.data?.message ?? 'Failed.'),
     });
 
+    const suspendM = useMutation({
+        mutationFn: () => suspendHCP(id, { reason: suspendReason }),
+        onSuccess: () => { toast.success('HCP suspended temporarily.'); setSM(false); inv(); },
+        onError: (e) => toast.error(e.response?.data?.message ?? 'Failed.'),
+    });
+
+    const reactivateM = useMutation({
+        mutationFn: () => reactivateHCP(id),
+        onSuccess: () => { toast.success('HCP reactivated.'); inv(); },
+        onError: (e) => toast.error(e.response?.data?.message ?? 'Failed.'),
+    });
+
     if (isLoading) return <div className="d-flex justify-content-center py-5"><LoadingSpinner /></div>;
     if (error) return <ErrorAlert error={error} />;
     if (!hcp || Object.keys(hcp).length === 0) return <ErrorAlert message="HCP not found" />;
@@ -89,6 +106,7 @@ const { data: contractData, isLoading: contractsLoading } = useQuery({
     const canEdit = hasPermission('hcps.edit');
     const canAccredit = hasPermission('hcps.accredit');
     const canBlacklist = hasPermission('hcps.blacklist');
+    const canSuspend = hasPermission('hcps.suspend');
     const canTariffs = hasPermission('hcps.tariffs');
     const canContracts = hasPermission('hcps.contracts');
 
@@ -162,6 +180,18 @@ const { data: contractData, isLoading: contractsLoading } = useQuery({
                         <button className="btn btn-success btn-sm d-flex align-items-center gap-1"
                             onClick={() => accreditM.mutate()} disabled={accreditM.isPending}>
                             <CheckCircle size={14} /> {accreditM.isPending ? 'Accrediting…' : 'Accredit'}
+                        </button>
+                    )}
+                    {canSuspend && hcp.status === 'active' && (
+                        <button className="btn btn-warning btn-sm d-flex align-items-center gap-1"
+                                onClick={() => setSM(true)}>
+                            <AlertTriangle size={14}/> Suspend
+                        </button>
+                    )}
+                    {canSuspend && hcp.status === 'suspended' && (
+                        <button className="btn btn-outline-success btn-sm d-flex align-items-center gap-1"
+                                onClick={() => reactivateM.mutate()} disabled={reactivateM.isPending}>
+                            <CheckCircle size={14}/> {reactivateM.isPending ? 'Reactivating…' : 'Reactivate'}
                         </button>
                     )}
                     {canBlacklist && !['blacklisted', 'terminated'].includes(hcp.status) && (
@@ -527,6 +557,44 @@ const { data: contractData, isLoading: contractsLoading } = useQuery({
                                     <button className="btn btn-danger" disabled={blacklistReason.length < 10 || blacklistM.isPending}
                                         onClick={() => blacklistM.mutate()}>
                                         {blacklistM.isPending ? 'Processing…' : 'Confirm Blacklist'}
+                                    </button>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </>
+            )}
+
+            {/* Suspend Modal */}
+            {suspendModal && (
+                <>
+                    <div className="modal-backdrop fade show" />
+                    <div className="modal d-block">
+                        <div className="modal-dialog modal-dialog-centered">
+                            <div className="modal-content">
+                                <div className="modal-header border-0">
+                                    <h6 className="modal-title d-flex align-items-center gap-2">
+                                        <AlertTriangle size={16} className="text-warning" /> Suspend HCP Temporarily
+                                    </h6>
+                                    <button className="btn-close" onClick={() => setSM(false)} />
+                                </div>
+                                <div className="modal-body">
+                                    <p className="text-muted" style={{ fontSize: 13 }}>
+                                        Suspending <strong>{hcp.name}</strong> will prevent new PA requests and claims from this provider. This is a temporary measure pending investigation or improvement.
+                                    </p>
+                                    <label className="form-label fw-semibold" style={{ fontSize: 13 }}>Reason for Suspension <span className="text-danger">*</span></label>
+                                    <textarea className="form-control" rows={3} value={suspendReason}
+                                        onChange={e => setSR(e.target.value)}
+                                        placeholder="Describe why this HCP is being suspended (quality issue, fraud investigation, etc.)..." />
+                                    <div className="form-text mt-1" style={{ fontSize: 11 }}>
+                                        The provider will be notified. Use Blacklist for permanent/confirmed fraud cases.
+                                    </div>
+                                </div>
+                                <div className="modal-footer border-0">
+                                    <button className="btn btn-light" onClick={() => setSM(false)}>Cancel</button>
+                                    <button className="btn btn-warning" disabled={suspendReason.length < 10 || suspendM.isPending}
+                                        onClick={() => suspendM.mutate()}>
+                                        {suspendM.isPending ? 'Suspending…' : 'Confirm Suspension'}
                                     </button>
                                 </div>
                             </div>

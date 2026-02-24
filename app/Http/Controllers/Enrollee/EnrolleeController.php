@@ -19,6 +19,13 @@ use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Auth;
 
+use App\Models\User;
+use Illuminate\Support\Facades\Hash;
+use Illuminate\Support\Str;
+use App\Mail\EnrolleeWelcomeMail;
+use Illuminate\Support\Facades\Mail;
+use Illuminate\Support\Facades\Log;
+
 class EnrolleeController extends Controller
 {
     public function __construct(
@@ -59,6 +66,61 @@ class EnrolleeController extends Controller
     }
 
     public function store(StoreEnrolleeRequest $request): JsonResponse
+    {
+        $validated = $request->validated();
+    
+        $enrollee = DB::transaction(function () use ($validated) {
+            // Generate unique enrollee ID
+            $validated['enrollee_id'] = Enrollee::generateUniqueId(
+                config('hmo.enrollee_id_prefix', 'HMO'),
+                'enrollee_id',
+                6
+            );
+    
+            // Create enrollee
+            $enrollee = Enrollee::create($validated);
+    
+            // Auto-issue digital card on enrollment
+            $this->cardService->issue($enrollee, Auth::id());
+    
+            // 🔥 AUTO-CREATE USER ACCOUNT for portal access
+            $tempPassword = Str::random(10); // Generate random password
+            $user = User::create([
+                'name' => $enrollee->first_name . ' ' . $enrollee->last_name,
+                'email' => $enrollee->email,
+                'password' => Hash::make($tempPassword),
+                'branch_id' => $enrollee->branch_id,
+                'user_type' => 'enrollee_user',
+                'enrollee_id' => $enrollee->id,
+                'status' => 'active',
+                'password_changed_at' => null, // Force password change on first login
+            ]);
+    
+            // Assign enrollee role
+            $user->assignRole('enrollee_user');
+    
+            // Grant portal access permission
+            $user->givePermissionTo('portal.enrollee.access');
+    
+            // Send welcome email with login credentials
+            try {
+                Mail::to($enrollee->email)->send(new EnrolleeWelcomeMail($enrollee, $tempPassword));
+            } catch (\Exception $e) {
+                Log::error('Failed to send welcome email: ' . $e->getMessage());
+            }
+    
+            return $enrollee;
+        });
+    
+        return response()->json([
+            'message' => 'Enrollee registered successfully. Digital card issued. Login credentials sent to email.',
+            'data'    => new EnrolleeResource(
+                $enrollee->load(['corporate', 'branch', 'activeCard', 'plan'])
+            ),
+        ], 201);
+    }
+
+    public function storeXX(StoreEnrolleeRequest $request): JsonResponse
     {
         $validated = $request->validated();
 

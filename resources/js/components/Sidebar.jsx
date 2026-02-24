@@ -2,8 +2,8 @@ import React from 'react';
 import { NavLink, useLocation } from 'react-router-dom';
 import {
     LayoutDashboard, Building2, Users, Building, FileText,
-    CreditCard, BarChart3, Settings, Shield, ChevronRight,
-    GitBranch, ScrollText,
+    CreditCard, BarChart3, Settings, Shield, ShieldCheck,  // ← add ShieldCheck
+    ChevronRight, GitBranch, ScrollText,
 } from 'lucide-react';
 import { useAuth } from '../contexts/AuthContext';
 
@@ -34,6 +34,14 @@ const navItems = [
         permission: 'hcps.view',
         shortLabel: 'HCPs',
     },
+    {
+        label:      'Pre-Authorisation',
+        icon:       ShieldCheck,
+        path:       '/pre-auth',
+        permission: 'pa.view',
+        shortLabel: 'Pre-Auth',
+    },
+
     {
         label:      'Claims',
         icon:       FileText,

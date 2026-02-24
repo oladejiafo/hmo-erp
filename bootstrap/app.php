@@ -26,6 +26,7 @@
 
 use App\Http\Middleware\BranchIsolation;
 use App\Http\Middleware\CheckPermission;
+use App\Http\Middleware\BranchScope;
 use App\Http\Middleware\ForceJsonResponse;
 use Illuminate\Foundation\Application;
 use Illuminate\Foundation\Configuration\Exceptions;
@@ -51,6 +52,7 @@ return Application::configure(basePath: dirname(__DIR__))
         $middleware->alias([
             'permission'       => CheckPermission::class,
             'branch.isolation' => BranchIsolation::class,
+            'branch.scope' => BranchScope::class,
         ]);
 
         // ── IMPORTANT: EnsureFrontendRequestsAreStateful is intentionally omitted ──

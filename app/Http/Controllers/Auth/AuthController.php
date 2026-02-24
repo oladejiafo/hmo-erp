@@ -9,12 +9,13 @@ use App\Http\Requests\Auth\Toggle2FARequest;
 use App\Services\AuthService;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
+use App\Models\User;
 
 class AuthController extends Controller
 {
     public function __construct(protected AuthService $authService) {}
 
-    public function login(LoginRequest $request): JsonResponse
+    public function loginXX(LoginRequest $request): JsonResponse
     {
         $result = $this->authService->login(
             $request->only('email', 'password', 'otp'),
@@ -34,9 +35,65 @@ class AuthController extends Controller
         ]);
     }
 
+    public function login(LoginRequest $request): JsonResponse
+    {
+        $result = $this->authService->login(
+            $request->only('email', 'password', 'otp'),
+            $request->ip()
+        );
+    
+        if ($result['requires_2fa'] ?? false) {
+            return response()->json([
+                'message'      => $result['message'],
+                'requires_2fa' => true,
+            ], 200);
+        }
+    
+        // ✅ NEW: Check if password change is required
+        if ($result['requires_password_change'] ?? false) {
+            return response()->json([
+                'message' => 'First login detected. Please set your password.',
+                'requires_password_change' => true,
+                'data' => [
+                    'token' => $result['token'],
+                    'user' => $result['user'],
+                ],
+            ]);
+        }
+    
+        return response()->json([
+            'message' => 'Login successful.',
+            'data'    => $result,
+        ]);
+    }
+    
+    // ✅ NEW: Add endpoint for setting initial password
+    public function setInitialPassword(Request $request): JsonResponse
+    {
+        $request->validate([
+            'password' => ['required', 'string', 'min:8', 'confirmed'],
+        ]);
+    
+        /** @var User $user */
+        $user = $request->user();
+        
+        // Check if password was already changed
+        if ($user->password_changed_at !== null) {
+            return response()->json([
+                'message' => 'Password already set. Please use change password endpoint.',
+            ], 400);
+        }
+    
+        $this->authService->setInitialPassword($user, $request->password);
+    
+        return response()->json([
+            'message' => 'Password set successfully. You can now continue.',
+        ]);
+    }
+    
     public function me(Request $request): JsonResponse
     {
-        $user = $request->user()->load('branch');
+        $user = $request->user()->load('branch', 'corporate', 'enrollee');
 
         return response()->json([
             'data' => [
@@ -48,6 +105,9 @@ class AuthController extends Controller
                 'two_factor_enabled' => $user->two_factor_enabled,
                 'last_login_at'      => $user->last_login_at,
                 'branch'             => $user->branch,
+                'corporate'          => $user->corporate,
+                'enrollee'           => $user->enrollee,
+                'user_type'          => $user->user_type,
                 'roles'              => $user->getRoleNames(),
                 'permissions'        => $user->getAllPermissions()->pluck('name')->sort()->values(),
             ],

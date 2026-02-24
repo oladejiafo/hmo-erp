@@ -12,22 +12,34 @@
  * the card wrapper and HMO ERP branding. Do NOT add your own card here.
  */
 
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
 import { Eye, EyeOff, ShieldCheck } from 'lucide-react';
 import { toast } from 'react-toastify';
 import { useAuth } from '../../contexts/AuthContext';
+import { useSearchParams } from 'react-router-dom';
 
 export default function LoginPage() {
     const { login }   = useAuth();
     const navigate    = useNavigate();
     const location    = useLocation();
+    const [searchParams] = useSearchParams();
 
     const [showPass, setShowPass]       = useState(false);
     const [requires2FA, setRequires2FA] = useState(false);
     const [submitting, setSubmitting]   = useState(false);
     const [errors, setErrors]           = useState({});
     const [formData, setFormData]       = useState({ email: '', password: '', otp: '' });
+
+    // Check for error messages in URL
+    useEffect(() => {
+        const error = searchParams.get('error');
+        const message = searchParams.get('message');
+        
+        if (error === 'unauthorized_portal') {
+            toast.error(message || 'You do not have permission to access this portal. Please contact your administrator.');
+        }
+    }, [searchParams]);
 
     // Redirect target after login (defaults to dashboard)
     const from = location.state?.from?.pathname ?? '/';

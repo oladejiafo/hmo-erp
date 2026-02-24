@@ -24,6 +24,10 @@ return new class extends Migration
             $table->string('email', 150)->unique();
             $table->string('phone', 20)->nullable();
             $table->string('password');
+
+            $table->foreignId('corporate_id')->nullable()->constrained()->nullOnDelete();
+            $table->string('user_type')->nullable()->index();
+            
             $table->string('two_factor_secret')->nullable();
             $table->boolean('two_factor_enabled')->default(false);
             $table->enum('status', ['active', 'inactive', 'suspended'])->default('active');

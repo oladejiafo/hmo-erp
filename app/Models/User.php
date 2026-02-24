@@ -27,6 +27,10 @@ class User extends Authenticatable
         'status',
         'last_login_at',
         'last_login_ip',
+        'password_changed_at',
+        'user_type',
+        'corporate_id',
+        'enrollee_id'
     ];
 
     protected $hidden = [
@@ -39,8 +43,10 @@ class User extends Authenticatable
         'password'           => 'hashed',
         'two_factor_enabled' => 'boolean',
         'last_login_at'      => 'datetime',
+        'password_changed_at' => 'datetime', 
     ];
 
+    
     // ─── Relationships ────────────────────────────────────────────────────────
 
     public function branch(): BelongsTo
@@ -51,6 +57,16 @@ class User extends Authenticatable
     public function branchRoles(): HasMany
     {
         return $this->hasMany(UserBranchRole::class);
+    }
+
+    public function corporate()
+    {
+        return $this->belongsTo(Corporate::class, 'corporate_id');
+    }
+
+    public function enrollee()
+    {
+        return $this->belongsTo(Enrollee::class, 'enrollee_id');
     }
 
     public function auditLogs(): HasMany

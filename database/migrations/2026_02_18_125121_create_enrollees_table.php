@@ -19,6 +19,12 @@ return new class extends Migration
             $table->foreignId('corporate_id')
                   ->constrained()
                   ->restrictOnDelete();
+            
+            $table->foreignId('user_id')
+                  ->nullable()
+                  ->constrained()
+                  ->nullOnDelete();
+            
             $table->foreignId('plan_id')
                   ->nullable()
                   ->constrained('corporate_plans')
