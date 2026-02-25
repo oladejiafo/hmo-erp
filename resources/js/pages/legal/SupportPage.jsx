@@ -6,7 +6,11 @@ import {
 } from 'lucide-react';
 import { PageHeader } from '../../components/ui';
 
+import { useAuth } from '../../contexts/AuthContext';
+
 export default function SupportPage() {
+    const { user } = useAuth();
+
     const [openFaq, setOpenFaq] = useState(null);
     const [formData, setFormData] = useState({
         name: '',
@@ -70,8 +74,9 @@ export default function SupportPage() {
     return (
         <div className="container py-4">
             <div className="mb-4">
-                <Link to="/" className="btn btn-outline-secondary btn-sm">
-                    <ArrowLeft size={16} className="me-1" /> Back to Dashboard
+                <Link to={user ? "/" : "/login"} className="btn btn-outline-secondary btn-sm">
+                    <ArrowLeft size={16} className="me-1" /> 
+                    {user ? 'Go Back to Dashboard' : 'Back to Login'}
                 </Link>
             </div>
 

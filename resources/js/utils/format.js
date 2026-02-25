@@ -38,3 +38,24 @@ export const formatPercentage = (value) => {
 export const formatNumber = (value) => {
     return new Intl.NumberFormat('en-US').format(value || 0);
 };
+
+/**
+ * Format currency in compact notation (e.g., 1.2M, 500K)
+ */
+export const compactCurrency = (value) => {
+    if (value === null || value === undefined) return '—';
+    
+    const num = parseFloat(value);
+    if (isNaN(num)) return '—';
+    
+    if (num >= 1_000_000_000) {
+        return `₦${(num / 1_000_000_000).toFixed(1)}B`;
+    }
+    if (num >= 1_000_000) {
+        return `₦${(num / 1_000_000).toFixed(1)}M`;
+    }
+    if (num >= 1_000) {
+        return `₦${(num / 1_000).toFixed(1)}K`;
+    }
+    return `₦${num.toFixed(0)}`;
+};

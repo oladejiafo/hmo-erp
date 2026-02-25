@@ -165,4 +165,36 @@ class AuthController extends Controller
 
         return response()->json(['message' => '2FA disabled.']);
     }
+
+    public function forgotPassword(Request $request): JsonResponse
+    {
+        $request->validate([
+            'email' => ['required', 'email', 'exists:users,email'],
+        ]);
+
+        $result = $this->authService->sendPasswordResetLink($request->email);
+
+        return response()->json([
+            'message' => $result['message'],
+        ], $result['status'] ?? 200);
+    }
+
+    public function resetPassword(Request $request): JsonResponse
+    {
+        $request->validate([
+            'token' => ['required', 'string'],
+            'email' => ['required', 'email', 'exists:users,email'],
+            'password' => ['required', 'string', 'min:8', 'confirmed'],
+        ]);
+
+        $result = $this->authService->resetPassword(
+            $request->email,
+            $request->password,
+            $request->token
+        );
+
+        return response()->json([
+            'message' => $result['message'],
+        ], $result['status'] ?? 200);
+    }
 }

@@ -21,6 +21,8 @@ export default function UsersPage() {
         queryFn: () => fetchUsers(filters),
     });
 
+    console.log('API Response:', data); // Debug: see what structure you're getting
+
     const handleFilterChange = (e) => {
         const { name, value } = e.target;
         setFilters(prev => ({ ...prev, [name]: value, page: 1 }));
@@ -28,6 +30,15 @@ export default function UsersPage() {
 
     if (isLoading) return <LoadingSpinner />;
     if (error) return <ErrorAlert message={error.message} />;
+
+    // SAFELY extract users array - try different possible structures
+    const users = data?.data || data?.users || data || [];
+    const usersArray = Array.isArray(users) ? users : 
+                       (users.data && Array.isArray(users.data)) ? users.data : 
+                       [];
+
+    // SAFELY extract meta for pagination
+    const meta = data?.meta || data?.pagination || null;
 
     return (
         <div>
@@ -111,21 +122,24 @@ export default function UsersPage() {
                                 </tr>
                             </thead>
                             <tbody>
-                                {data?.data?.length > 0 ? (
-                                    data.data.map((user) => (
+                                {usersArray.length > 0 ? (
+                                    usersArray.map((user) => (
                                         <tr key={user.id}>
                                             <td>
                                                 <div className="fw-bold">{user.name}</div>
                                                 <small className="text-muted">{user.phone}</small>
                                             </td>
                                             <td>{user.email}</td>
-                                            <td>{user.branch?.name || 'N/A'}</td>
+                                            <td>{user.branch?.name || user.branch_name || 'N/A'}</td>
                                             <td>
                                                 {user.roles?.map(role => (
-                                                    <span key={role.id} className="badge bg-info me-1">
-                                                        {role.display_name || role.name}
+                                                    <span key={role.id || role} className="badge bg-info me-1">
+                                                        {role.display_name || role.name || role}
                                                     </span>
                                                 ))}
+                                                {!user.roles?.length && user.role && (
+                                                    <span className="badge bg-info me-1">{user.role}</span>
+                                                )}
                                             </td>
                                             <td>
                                                 <StatusBadge status={user.status} />
@@ -162,10 +176,10 @@ export default function UsersPage() {
                         </table>
                     </div>
 
-                    {data?.meta && (
+                    {meta && (
                         <Pagination
-                            currentPage={data.meta.current_page}
-                            lastPage={data.meta.last_page}
+                            currentPage={meta.current_page || meta.page}
+                            lastPage={meta.last_page || meta.total_pages}
                             onPageChange={(page) => setFilters(prev => ({ ...prev, page }))}
                         />
                     )}

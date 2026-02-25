@@ -43,25 +43,20 @@ return Application::configure(basePath: dirname(__DIR__))
         health:   '/up',
     )
     ->withMiddleware(function (Middleware $middleware) {
-
-        // Always return JSON for API routes — must be the very first middleware
-        // so even authentication errors return JSON, not HTML redirects
         $middleware->prependToGroup('api', ForceJsonResponse::class);
-
-        // Named middleware aliases (used in routes via ->middleware('alias'))
+        
         $middleware->alias([
             'permission'       => CheckPermission::class,
             'branch.isolation' => BranchIsolation::class,
-            'branch.scope' => BranchScope::class,
+            'branch.scope'     => BranchScope::class,
         ]);
-
-        // ── IMPORTANT: EnsureFrontendRequestsAreStateful is intentionally omitted ──
-        // That middleware is for cookie/session based SPA auth (e.g. Inertia/Breeze).
-        // We use Bearer token auth via Sanctum personal access tokens.
-        // Including it causes:
-        //   1. CSRF verification on API requests that don't send CSRF cookies
-        //   2. Redirects to /register when session verification fails
-        //   3. Interference with Authorization: Bearer <token> header auth
+        
+        // Add this - handle unauthenticated requests without redirects
+        $middleware->redirectGuestsTo(function ($request) {
+            if ($request->expectsJson()) {
+                return response()->json(['message' => 'Unauthenticated.'], 401);
+            }
+        });
     })
     ->withExceptions(function (Exceptions $exceptions) {
 

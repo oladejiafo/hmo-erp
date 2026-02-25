@@ -18,6 +18,11 @@ export default function EnrolleeListPage() {
     const [corporate, setCorporate] = useState('');
     const [page, setPage]         = useState(1);
 
+    console.log('🔍 Component rendering - auth check:', { 
+        hasPermission: hasPermission('enrollees.view'),
+        user: useAuth().user?.id 
+    });
+
     const { data, isLoading, error, refetch } = useQuery({
         queryKey: ['enrollees', { search, status, corporate, page }],
         queryFn:  () => fetchEnrollees({ search: search || undefined, status: status || undefined, corporate_id: corporate || undefined, page }),

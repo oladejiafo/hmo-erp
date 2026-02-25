@@ -205,6 +205,24 @@ export const AuthProvider = ({ children }) => {
         }
     };
 
+    const forgotPassword = async (email) => {
+        try {
+            const response = await apiClient.post('/auth/forgot-password', { email });
+            return response.data;
+        } catch (error) {
+            throw error;
+        }
+    };
+    
+    const resetPassword = async (data) => {
+        try {
+            const response = await apiClient.post('/auth/reset-password', data);
+            return response.data;
+        } catch (error) {
+            throw error;
+        }
+    };
+
     // ── Logout ───────────────────────────────────────────────────────────
     const logout = async () => {
         try {
@@ -292,6 +310,8 @@ export const AuthProvider = ({ children }) => {
         token,
         login,
         logout,
+        forgotPassword,  // ← Add this
+        resetPassword,   // ← Add this
         setInitialPassword, // ✅ NEW: Added this function
         hasPermission,
         hasAnyRole,

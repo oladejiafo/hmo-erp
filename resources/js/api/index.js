@@ -159,6 +159,9 @@ export const reviewFraudFlag = (id, flagId, data) =>
 // ✅ Add these missing exports
 export const fetchFraudFlags = (id) => apiClient.get(`/claims/${id}/fraud-flags`);
 
+export const suspendHCP = (id, data) => apiClient.patch(`/hcps/${id}/suspend`, data);
+export const reactivateHCP = (id) => apiClient.patch(`/hcps/${id}/reactivate`);
+
 // ============= CLAIM DOCUMENTS =============
 export const fetchClaimDocuments = (claimId) => 
     apiClient.get(`/claims/${claimId}/documents`);
@@ -175,7 +178,7 @@ export const downloadClaimDocument = (claimId, documentId) =>
     apiClient.get(`/claims/${claimId}/documents/${documentId}/download`, {
         responseType: 'blob'
     });
-
+export const submitClaim = (data) => apiClient.post('/claims', data);
 
 // ============= FINANCE =============
 export const fetchPaymentBatches = (params) => apiClient.get('/finance/batches', { params });
@@ -248,6 +251,8 @@ export const updateCapitationRate = (id, data) =>
 export const deleteCapitationRate = (id) => 
     apiClient.delete(`/finance/capitation/rates/${id}`).then(r => r.data);
 
+export const saveCapitationRate = createCapitationRate; 
+
 // ============= 🆕 SLA / OPERATIONS =============
 export const fetchSLADashboard = () => apiClient.get('/reports/sla-dashboard').then(r => r.data);
 export const fetchOverdueClaims = (params) => apiClient.get('/reports/overdue-claims', { params }).then(r => r.data);
@@ -260,6 +265,10 @@ export const updateFiling = (id, data) => apiClient.put(`/compliance/filings/${i
 export const uploadFilingDoc = (id, formData) => apiClient.post(`/compliance/filings/${id}/documents`, formData, { 
     headers: { 'Content-Type': 'multipart/form-data' } 
 });
+
+// Add these new compliance functions
+export const fetchComplianceSummary = () => apiClient.get('/compliance/filings/summary').then(r => r.data);
+export const completeFiling = (id, data) => apiClient.post(`/compliance/filings/${id}/complete`, data);
 
 // ============= 🆕 NOTIFICATIONS / ALERTS =============
 export const fetchNotifications = (params) => apiClient.get('/notifications', { params }).then(r => r.data);
@@ -299,6 +308,7 @@ export const updateUser = (id, data) => apiClient.put(`/users/${id}`, data);
 export const deleteUser = (id) => apiClient.delete(`/users/${id}`);
 export const toggleUserStatus = (id) => apiClient.patch(`/users/${id}/status`);
 export const assignUserRoles = (id, data) => apiClient.post(`/users/${id}/roles`, data);
+export const fetchUserById = (id) => apiClient.get(`/users/${id}`);
 
 // ============= ROLES & PERMISSIONS =============
 export const fetchRoles = (params) => apiClient.get('/roles', { params });
@@ -335,7 +345,7 @@ export default {
     fetchDependents, fetchDependent, createDependent, updateDependent, deleteDependent,
     
     // HCPs
-    fetchHCPs, fetchHCP, createHCP, updateHCP, accreditHCP, blacklistHCP,
+    fetchHCPs, fetchHCP, createHCP, updateHCP, accreditHCP, blacklistHCP, suspendHCP, reactivateHCP,
     fetchHCPPerformance, fetchHCPPaymentHistory,
     
     // Tariffs
@@ -348,10 +358,9 @@ export default {
     fetchBankDetails, createBankDetail, verifyBankDetail, deleteBankDetail,
     
     // Claims
-    fetchClaims, fetchClaim, createClaim, processClaim, approveClaim, rejectClaim,
+    fetchClaims, fetchClaim, createClaim, processClaim, approveClaim, rejectClaim, submitClaim,  
     assignClaim, reverseClaim, fetchClaimTimeline, fetchFraudFlags,fetchClaimFraudFlags, reviewFraudFlag,
     
-
     // Claim Documents
     fetchClaimDocuments, uploadClaimDocument, downloadClaimDocument,
     
@@ -365,10 +374,10 @@ export default {
     fetchCapitationSummary,
     
     // 🆕 Capitation Rates (ADD THESE)
-    fetchCapitationRates, createCapitationRate, updateCapitationRate, deleteCapitationRate,
+    fetchCapitationRates, createCapitationRate, saveCapitationRate, updateCapitationRate, deleteCapitationRate,
     
     // 🆕 Capitation Record Adjustment (ADD THIS)
-    adjustCapitationRecord,
+    adjustCapitationRecord, 
     
     // Reports
     fetchDashboard, fetchClaimsAging, fetchClaimsByHCP, fetchClaimsByType,
@@ -382,8 +391,9 @@ export default {
     fetchAuditLogs,
     
     // 🆕 Compliance
-    fetchFilings, fetchFiling, createFiling, updateFiling, uploadFilingDoc,
-    
+    fetchFilings, fetchFiling, fetchComplianceSummary,  // ← add fetchComplianceSummary
+    createFiling, updateFiling, completeFiling, uploadFilingDoc,  // ← add completeFiling
+
     // 🆕 Pre-Authorisation
     fetchPARequests, fetchPARequest, submitPARequest, approvePA, declinePA, fetchPAStats,
     revokePA, validatePACode, fetchPATATReport, exportPATATReport,
@@ -402,7 +412,7 @@ export default {
     submitEnrolleeComplaint, fetchEnrolleePortalProfile, updateEnrolleePortalProfile,
     
     // Users
-    fetchUsers, fetchUser, createUser, updateUser, deleteUser,
+    fetchUsers, fetchUser,fetchUserById, createUser, updateUser, deleteUser,
     toggleUserStatus, assignUserRoles,
     
     // Roles

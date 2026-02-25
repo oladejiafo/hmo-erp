@@ -49,6 +49,18 @@ class RolePermissionSeeder extends Seeder
         // ── Reports ───────────────────────────────────────────────────────────
         'reports.branch', 'reports.all_branches', 'reports.audit_logs',
         'reports.export', 'reports.fraud_heatmap',
+
+        // ── Pre-Authorisation (PA) — Phase 2 ─────────────────────────────────
+        'pa.view',               // See PA queue, detail, TAT report
+        'pa.request',            // Submit a new PA request
+        'pa.approve_standard',   // Desk Officer — first step for all tiers
+        'pa.approve_high_value', // Medical Director — ₦500k–₦2M tier
+        'pa.approve_critical',   // CEO — above ₦2M tier
+        'pa.decline',            // Decline any active PA / revoke approved code
+
+        // ── Compliance Calendar — Phase 4 ─────────────────────────────────────
+        'compliance.view',       // See filings, calendar
+        'compliance.manage',     // Create/update filings, mark complete, upload docs
     ];
 
     /**
@@ -87,6 +99,11 @@ class RolePermissionSeeder extends Seeder
                 'claims.view', 'claims.process', 'claims.assign', 'claims.fraud_view',
                 'finance.view', 'finance.ledger_view',
                 'reports.branch', 'reports.export',
+
+                // PA
+                'pa.view', 'pa.approve_standard', 'pa.approve_high_value', 'pa.decline',
+                // Compliance
+                'compliance.view', 'compliance.manage',
             ],
         ],
         'claims_supervisor' => [
@@ -97,6 +114,7 @@ class RolePermissionSeeder extends Seeder
                 'claims.assign', 'claims.fraud_view', 'claims.fraud_review',
                 'finance.view',
                 'reports.branch', 'reports.fraud_heatmap',
+                'pa.view', 'pa.approve_standard', 'pa.decline',
             ],
         ],
         'claims_officer' => [
@@ -105,6 +123,7 @@ class RolePermissionSeeder extends Seeder
                 'hcps.view',
                 'claims.view', 'claims.process', 'claims.reject',
                 'reports.branch',
+                'pa.view', 'pa.request', 'pa.approve_standard', 'pa.decline',
             ],
         ],
         'finance_officer' => [
@@ -115,6 +134,7 @@ class RolePermissionSeeder extends Seeder
                 'finance.view', 'finance.batch_create', 'finance.batch_approve',
                 'finance.ledger_view', 'finance.remittance', 'finance.capitation',
                 'reports.branch', 'reports.export',
+                'pa.view',
             ],
         ],
         'enrollment_officer' => [
@@ -123,6 +143,7 @@ class RolePermissionSeeder extends Seeder
                 'enrollees.view', 'enrollees.create', 'enrollees.edit',
                 'hcps.view',
                 'reports.branch',
+                'pa.view',
             ],
         ],
         'auditor' => [
@@ -137,6 +158,30 @@ class RolePermissionSeeder extends Seeder
                 'finance.view', 'finance.ledger_view',
                 'reports.branch', 'reports.all_branches',
                 'reports.audit_logs', 'reports.export', 'reports.fraud_heatmap',
+                'pa.view', 'compliance.view',
+            ],
+        ],
+        'medical_director' => [
+            'permissions' => [
+                'enrollees.view',
+                'hcps.view',
+                'claims.view', 'claims.fraud_view',
+                'reports.branch',
+                // PA — can view queue, do Desk Officer first step, and full MD sign-off
+                'pa.view', 'pa.approve_standard', 'pa.approve_high_value', 'pa.decline',
+            ],
+        ],
+        'ceo' => [
+            'permissions' => [
+                'branches.view',
+                'corporates.view',
+                'enrollees.view',
+                'hcps.view',
+                'claims.view',
+                'finance.view', 'finance.ledger_view',
+                'reports.branch', 'reports.all_branches', 'reports.export',
+                // PA — CEO final approval tier only
+                'pa.view', 'pa.approve_critical', 'pa.decline',
             ],
         ],
     ];

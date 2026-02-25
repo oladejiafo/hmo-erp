@@ -4,6 +4,7 @@ import { Shield, Edit, Save } from 'lucide-react';
 import { fetchRoles, fetchPermissions, syncRolePermissions } from '../../api/index';
 import { PageHeader, LoadingSpinner, ErrorAlert } from '../../components/ui/index';
 
+
 export default function RolesPage() {
     const [selectedRole, setSelectedRole] = useState(null);
     const [selectedPermissions, setSelectedPermissions] = useState({});
@@ -71,7 +72,7 @@ export default function RolesPage() {
     if (rolesLoading || permissionsLoading) return <LoadingSpinner />;
 
     const roles = rolesData?.data?.data ?? [];  //data?.data?.data ?? [];
-    const permissions = permissionsData?.data?.data|| {};
+    const permissions = permissionsData?.data?.data || {};
 
     return (
         <div>
@@ -89,6 +90,7 @@ export default function RolesPage() {
                         </div>
                         <div className="list-group list-group-flush">
                             {roles.map((role) => (
+                                
                                 <button
                                     key={role.id}
                                     className={`list-group-item list-group-item-action d-flex align-items-center ${selectedRole?.id === role.id ? 'active' : ''}`}

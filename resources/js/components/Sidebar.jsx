@@ -2,10 +2,12 @@ import React from 'react';
 import { NavLink, useLocation } from 'react-router-dom';
 import {
     LayoutDashboard, Building2, Users, Building, FileText,
-    CreditCard, BarChart3, Settings, Shield, ShieldCheck,  // ← add ShieldCheck
-    ChevronRight, GitBranch, ScrollText,
+    CreditCard, BarChart3, Settings, Shield, ShieldCheck, Upload, // ← add ShieldCheck
+    ChevronRight, GitBranch, ScrollText, CalendarDays, Bell, Sparkles
 } from 'lucide-react';
 import { useAuth } from '../contexts/AuthContext';
+import { useQuery } from '@tanstack/react-query';
+import { fetchPAStats, fetchNotificationCount } from '../api/index';
 
 const navItems = [
     {
@@ -53,6 +55,33 @@ const navItems = [
         icon:       CreditCard,
         path:       '/finance',
         permission: 'finance.view',
+    },
+    {
+        label:      'Compliance',        // ← NEW
+        icon:       CalendarDays,        // ← NEW
+        path:       '/compliance',       // ← NEW
+        permission: 'compliance.view',   // ← NEW
+    },
+    {
+        label:      'AI Tools',              // ← NEW
+        icon:       Sparkles,                 // ← Import Sparkles from lucide-react
+        path:       '/ai-tools',              // ← NEW
+        permission: 'ai.tools',                // ← NEW
+        shortLabel: 'AI Tools',
+    },
+    {
+        label:      'Alerts',             // ← NEW
+        icon:       Bell,                 // ← NEW
+        path:       '/alerts',            // ← NEW
+        permission: null,                 // ← NEW - All authenticated staff see their own alerts
+        badgeKey:   'alerts',              // ← NEW - for notification badges
+    },
+    {
+        label:      'Import / Export',  // ← NEW
+        icon:       Upload,              // ← Import Upload from lucide-react
+        path:       '/import',           // ← NEW
+        permission: 'import.enrollees',  // ← Uses any import permission
+        shortLabel: 'Import',
     },
     {
         label:      'Reports',
@@ -208,6 +237,34 @@ export default function Sidebar({ collapsed }) {
 function SidebarItem({ item, active, collapsed }) {
     const Icon = item.icon;
 
+    // PA pending badge
+    const { data: paStats } = item.path === '/pre-auth'
+        ? useQuery({ 
+            queryKey: ['pa-stats'], 
+            queryFn: fetchPAStats, 
+            refetchInterval: 60000, 
+            staleTime: 30000 
+          })
+        : { data: null };
+
+    // Alerts/notification count badge
+    const { data: notifData } = item.badgeKey === 'alerts'
+        ? useQuery({
+            queryKey:       ['notification-count'],
+            queryFn:        fetchNotificationCount,
+            refetchInterval: 30000,
+            staleTime:       15000,
+          })
+        : { data: null };
+
+    const pendingCount  = paStats?.data?.pending_count ?? 0;
+    const overdueCount  = paStats?.data?.overdue_count ?? 0;
+    const showPABadge   = item.path === '/pre-auth' && pendingCount > 0;
+
+    const unreadCount   = notifData?.data?.count ?? 0;
+    const criticalCount = notifData?.data?.critical ?? 0;
+    const showAlertBadge = item.badgeKey === 'alerts' && unreadCount > 0;
+
     return (
         <NavLink
             to={item.path}
@@ -227,6 +284,7 @@ function SidebarItem({ item, active, collapsed }) {
                 whiteSpace:      'nowrap',
                 overflow:        'hidden',
                 transition:      'all 0.15s',
+                position:        'relative',
             }}
             onMouseEnter={e => {
                 if (!active) e.currentTarget.style.background = 'rgba(255,255,255,0.06)';
@@ -237,9 +295,55 @@ function SidebarItem({ item, active, collapsed }) {
                 if (!active) e.currentTarget.style.color = 'rgba(255,255,255,0.6)';
             }}
         >
-            <Icon size={18} style={{ flexShrink: 0 }} />
+            <div style={{ position: 'relative', flexShrink: 0 }}>
+                <Icon size={18} />
+                {showPABadge && (
+                    <span style={{
+                        position: 'absolute', top: -6, right: -6,
+                        minWidth: 16, height: 16, borderRadius: 8,
+                        background: overdueCount > 0 ? '#ef4444' : '#f59e0b',
+                        color: '#fff', fontSize: 9, fontWeight: 700,
+                        display: 'flex', alignItems: 'center', justifyContent: 'center',
+                        padding: '0 3px', border: '1.5px solid #1e3a5f',
+                    }}>
+                        {pendingCount > 99 ? '99+' : pendingCount}
+                    </span>
+                )}
+                {showAlertBadge && (
+                    <span style={{
+                        position: 'absolute', top: -6, right: -6,
+                        minWidth: 16, height: 16, borderRadius: 8,
+                        background: criticalCount > 0 ? '#ef4444' : '#f59e0b',
+                        color: '#fff', fontSize: 9, fontWeight: 700,
+                        display: 'flex', alignItems: 'center', justifyContent: 'center',
+                        padding: '0 3px', border: '1.5px solid #1e3a5f',
+                    }}>
+                        {unreadCount > 99 ? '99+' : unreadCount}
+                    </span>
+                )}
+            </div>
             {!collapsed && (
-                <span className="ms-3">{item.shortLabel ?? item.label}</span>
+                <span className="ms-3 flex-grow-1">{item.shortLabel ?? item.label}</span>
+            )}
+            {!collapsed && showPABadge && !active && (
+                <span style={{
+                    fontSize: 10, fontWeight: 700, padding: '1px 6px',
+                    borderRadius: 8, marginLeft: 4,
+                    background: overdueCount > 0 ? 'rgba(239,68,68,0.2)' : 'rgba(245,158,11,0.2)',
+                    color: overdueCount > 0 ? '#fca5a5' : '#fde68a',
+                }}>
+                    {pendingCount}
+                </span>
+            )}
+            {!collapsed && showAlertBadge && !active && (
+                <span style={{
+                    fontSize: 10, fontWeight: 700, padding: '1px 6px',
+                    borderRadius: 8, marginLeft: 4,
+                    background: criticalCount > 0 ? 'rgba(239,68,68,0.2)' : 'rgba(245,158,11,0.2)',
+                    color: criticalCount > 0 ? '#fca5a5' : '#fde68a',
+                }}>
+                    {unreadCount}
+                </span>
             )}
         </NavLink>
     );

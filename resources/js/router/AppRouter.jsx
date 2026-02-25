@@ -31,6 +31,7 @@ import EnrolleeLayout  from '../layouts/portals/EnrolleeLayout';
 
 // ── Auth pages ─────────────────────────────────────────────────────────────
 import LoginPage               from '../pages/auth/LoginPage';
+import ForgotPasswordPage from '../pages/auth/ForgotPassword';
 import SetInitialPasswordPage  from '../pages/auth/SetInitialPasswordPage';
 
 // ── HMO Staff pages ────────────────────────────────────────────────────────
@@ -74,6 +75,10 @@ import RolesPage           from '../pages/settings/RolesPage';
 import BranchesPage        from '../pages/settings/BranchesPage';
 import ProfilePage         from '../pages/settings/ProfilePage';
 
+import UserFormPage from '../pages/settings/UserFormPage';
+import UserDetailPage from '../pages/settings/UserDetailPage';
+
+import TermsPage from '../pages/legal/TermsPage';
 import PrivacyPolicyPage   from '../pages/legal/PrivacyPolicyPage';
 import SupportPage         from '../pages/legal/SupportPage';
 import NotFoundPage        from '../pages/NotFoundPage';
@@ -92,6 +97,14 @@ import MyBenefitsPage        from '../pages/portals/enrollee/MyBenefitsPage';
 import MyClaimsPage          from '../pages/portals/enrollee/MyClaimsPage';
 import FindHCPPage           from '../pages/portals/enrollee/FindHCPPage';
 import MyComplaintsPage      from '../pages/portals/enrollee/MyComplaintsPage';
+
+// Add these new page imports
+import SLADashboardPage    from '../pages/reports/SLADashboardPage';
+import FraudHeatmapPage    from '../pages/reports/FraudHeatmapPage';
+import AlertsPage          from '../pages/alerts/AlertsPage';
+import CompliancePage      from '../pages/compliance/CompliancePage';
+import ImportExportPage    from '../pages/import/ImportExportPage';
+import AIToolsPage         from '../pages/ai/AIToolsPage';
 
 // ── Route guards ───────────────────────────────────────────────────────────
 import ProtectedRoute  from './ProtectedRoute';
@@ -174,11 +187,12 @@ export default function AppRouter() {
                     path="/login"
                     element={user ? <Navigate to="/" replace /> : <LoginPage />}
                 />
+                <Route path="/forgot-password" element={<ForgotPasswordPage />} />
             </Route>
             <Route path="/set-password" element={<SetInitialPasswordPage />} />
             <Route path="/privacy-policy" element={<PrivacyPolicyPage />} />
-            <Route path="/support"        element={<SupportPage />} />
-
+                <Route path="/support"        element={<SupportPage />} />
+                <Route path="/terms" element={<TermsPage />} />
 
             {/* ══════════════════════════════════════════════════════════════
                 HMO STAFF — AppLayout (full sidebar + topbar shell)
@@ -189,6 +203,10 @@ export default function AppRouter() {
 
                 {/* Dashboard */}
                 <Route index element={<DashboardPage />} />
+
+                <Route path="/privacy-policy" element={<PrivacyPolicyPage />} />
+                <Route path="/support"        element={<SupportPage />} />
+                <Route path="/terms" element={<TermsPage />} />
 
                 {/* ── Corporates (HMO staff view — /corporates NOT /corporate) ── */}
                 <Route path="corporates">
@@ -347,6 +365,30 @@ export default function AppRouter() {
                     } />
                 </Route>
 
+                {/* ── Alerts / Notification Centre (all staff) ── */}
+                <Route path="alerts" element={<AlertsPage />} />
+
+                {/* ── Compliance Calendar ── */}
+                <Route path="compliance" element={
+                    <PermissionRoute permission="compliance.view">
+                        <CompliancePage />
+                    </PermissionRoute>
+                } />
+
+                {/* ── AI Tools ── */}
+                <Route path="ai-tools" element={
+                    <PermissionRoute permission="ai.tools">
+                        <AIToolsPage />
+                    </PermissionRoute>
+                } />
+
+                {/* ── Imports ── */}
+                <Route path="import" element={
+                        <PermissionRoute permission="import.enrollees">
+                            <ImportExportPage />
+                        </PermissionRoute>
+                } />
+
                 {/* ── Reports ── */}
                 <Route path="reports">
                     <Route index element={
@@ -359,6 +401,21 @@ export default function AppRouter() {
                             <AuditLogPage />
                         </PermissionRoute>
                     } />
+
+                    {/* ➕ NEW: SLA Dashboard */}
+                    <Route path="sla" element={
+                        <PermissionRoute permission="reports.branch">
+                            <SLADashboardPage />
+                        </PermissionRoute>
+                    } />
+                    
+                    {/* ➕ NEW: Fraud Heatmap */}
+                    <Route path="fraud-heatmap" element={
+                        <PermissionRoute permission="reports.fraud_heatmap">
+                            <FraudHeatmapPage />
+                        </PermissionRoute>
+                    } />
+
                 </Route>
 
                 {/* ── Settings ── */}
@@ -366,6 +423,22 @@ export default function AppRouter() {
                     <Route path="users" element={
                         <PermissionRoute permission="users.view">
                             <UsersPage />
+                        </PermissionRoute>
+                    } />
+
+                    <Route path="users/new" element={
+                        <PermissionRoute permission="users.create">
+                            <UserFormPage />
+                        </PermissionRoute>
+                    } />
+                    <Route path="users/:id" element={
+                        <PermissionRoute permission="users.view">
+                            <UserDetailPage />
+                        </PermissionRoute>
+                    } />
+                    <Route path="users/:id/edit" element={
+                        <PermissionRoute permission="users.edit">
+                            <UserFormPage />
                         </PermissionRoute>
                     } />
                     <Route path="roles" element={

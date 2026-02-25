@@ -1,0 +1,203 @@
+<?php
+
+namespace App\Http\Controllers\AI;
+
+use App\Http\Controllers\Controller;
+use Illuminate\Http\Request;
+use Illuminate\Http\JsonResponse;
+use Illuminate\Support\Facades\Http;
+use Illuminate\Support\Facades\Log;
+
+class AIController extends Controller
+{
+    protected string $serviceUrl;
+    protected string $serviceKey;
+    protected int $timeout;
+
+    public function __construct()
+    {
+        $this->serviceUrl = config('services.ai.url', env('AI_SERVICE_URL', 'http://localhost:8001'));
+        $this->serviceKey = config('services.ai.key', env('AI_SERVICE_KEY'));
+        $this->timeout = config('services.ai.timeout', env('AI_SERVICE_TIMEOUT', 30));
+    }
+
+    /**
+     * Forward request to AI microservice with graceful fallback
+     */
+    protected function forwardRequest(string $endpoint, array $payload, array $fallback): JsonResponse
+    {
+        try {
+            $response = Http::timeout($this->timeout)
+                ->withHeaders(['X-AI-Key' => $this->serviceKey])
+                ->post($this->serviceUrl . $endpoint, $payload);
+
+            if ($response->successful()) {
+                return response()->json($response->json());
+            }
+            
+            Log::warning('AI service error', [
+                'endpoint' => $endpoint,
+                'status' => $response->status(),
+                'body' => $response->body()
+            ]);
+            
+        } catch (\Exception $e) {
+            Log::error('AI service unavailable', [
+                'endpoint' => $endpoint,
+                'error' => $e->getMessage()
+            ]);
+        }
+
+        // Graceful fallback
+        return response()->json($fallback);
+    }
+
+    public function classifyDocument(Request $request): JsonResponse
+    {
+        $request->validate([
+            'claim_id' => 'sometimes|exists:claims,id',
+            'document_text' => 'required_without:claim_id|string',
+        ]);
+
+        return $this->forwardRequest('/classify', $request->all(), [
+            'claim_type' => 'Unknown',
+            'icd_codes' => [],
+            'pa_required' => false,
+            'confidence' => 0,
+            'reasoning' => 'AI service unavailable. Using fallback rules.',
+        ]);
+    }
+
+    public function smartRoute(Request $request): JsonResponse
+    {
+        $request->validate([
+            'claim_id' => 'required|exists:claims,id',
+        ]);
+
+        // Get claim data for context
+        $claim = \App\Models\Claim::with(['hcp', 'enrollee'])->find($request->claim_id);
+        
+        $payload = [
+            'claim_amount' => $claim->total_amount_claimed,
+            'claim_type' => $claim->claim_type,
+            'risk_score' => $claim->risk_score,
+            'pa_status' => $claim->pa_status,
+            'fraud_flags' => $claim->fraudFlags()->count(),
+            'hcp_tier' => $claim->hcp?->tier,
+        ];
+
+        return $this->forwardRequest('/route', $payload, [
+            'queue' => $this->ruleBasedRouting($claim),
+            'eta' => '24-48 hours',
+            'reasoning' => 'AI service unavailable. Using standard routing rules.',
+        ]);
+    }
+
+    public function ocrDocument(Request $request): JsonResponse
+    {
+        $request->validate([
+            'document_id' => 'sometimes|exists:claim_documents,id',
+            'file' => 'required_without:document_id|file|mimes:pdf,jpg,jpeg,png|max:10240',
+        ]);
+
+        // Handle file upload if present
+        if ($request->hasFile('file')) {
+            $file = $request->file('file');
+            $base64File = base64_encode(file_get_contents($file->path()));
+            $payload = [
+                'filename' => $file->getClientOriginalName(),
+                'content_type' => $file->getMimeType(),
+                'content' => $base64File,
+            ];
+        } else {
+            // Get document from database
+            $document = \App\Models\ClaimDocument::find($request->document_id);
+            $payload = [
+                'filename' => $document->filename,
+                'content_type' => $document->mime_type,
+                'content' => base64_encode($document->getContent()),
+            ];
+        }
+
+        return $this->forwardRequest('/ocr', $payload, [
+            'patient_name' => null,
+            'service_date' => null,
+            'diagnosis' => null,
+            'items' => [],
+            'total_amount' => null,
+            'provider_name' => null,
+            'raw_text' => 'OCR service unavailable.',
+            'confidence_scores' => [],
+        ]);
+    }
+
+    public function summarizeReport(Request $request): JsonResponse
+    {
+        $request->validate([
+            'report_type' => 'required|string',
+            'report_data' => 'required|array',
+            'report_data.*' => 'array',
+        ]);
+
+        return $this->forwardRequest('/summarise', $request->all(), [
+            'summary' => 'AI summary unavailable.',
+            'bullets' => ['Please try again later.'],
+            'key_metric' => 'N/A',
+            'recommendation' => 'Manual review recommended.',
+        ]);
+    }
+
+    public function fraudClusters(): JsonResponse
+    {
+        // Get last 3 months of fraud flags
+        $flags = \App\Models\FraudFlag::with('claim')
+            ->where('created_at', '>=', now()->subMonths(3))
+            ->get()
+            ->map(fn($f) => [
+                'flag_type' => $f->flag_type,
+                'score' => $f->score,
+                'amount' => $f->claim?->total_amount_claimed ?? 0,
+                'hour' => $f->created_at->hour,
+            ])
+            ->toArray();
+
+        return $this->forwardRequest('/cluster', ['flags' => $flags], [
+            'clusters' => [],
+            'noise_points' => 0,
+            'fallback_reason' => 'Clustering service unavailable.',
+        ]);
+    }
+
+    public function chat(Request $request): JsonResponse
+    {
+        $request->validate([
+            'messages' => 'required|array',
+            'messages.*.role' => 'required|in:user,assistant',
+            'messages.*.content' => 'required|string',
+            'persona' => 'sometimes|in:staff,enrollee,finance',
+        ]);
+
+        // Add system stats for context
+        if ($request->input('persona', 'staff') === 'staff') {
+            $stats = [
+                'total_claims' => \App\Models\Claim::count(),
+                'pending_claims' => \App\Models\Claim::whereIn('status', ['submitted', 'auto_validated'])->count(),
+                'active_enrollees' => \App\Models\Enrollee::where('status', 'active')->count(),
+                'today' => now()->format('Y-m-d'),
+            ];
+            $request->merge(['system_stats' => $stats]);
+        }
+
+        return $this->forwardRequest('/chat', $request->all(), [
+            'message' => 'I apologize, but the AI assistant is currently unavailable. Please try again later or contact support.',
+        ]);
+    }
+
+    protected function ruleBasedRouting($claim): string
+    {
+        if ($claim->risk_score >= 70) return 'supervisor';
+        if ($claim->total_amount_claimed > 2000000) return 'finance';
+        if ($claim->fraudFlags()->count() > 0) return 'medical_review';
+        return 'standard';
+    }
+}

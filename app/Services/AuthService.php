@@ -7,6 +7,10 @@ use Illuminate\Support\Facades\Hash;
 use Illuminate\Validation\ValidationException;
 use PragmaRX\Google2FA\Google2FA;
 
+use Illuminate\Support\Facades\Password;
+use Illuminate\Support\Str;
+
+
 class AuthService
 {
     public function __construct(protected Google2FA $google2FA) {}
@@ -137,6 +141,54 @@ class AuthService
 
         // Force re-login on all devices after password change
         $user->tokens()->delete();
+    }
+
+
+    public function sendPasswordResetLink(string $email): array
+    {
+        $status = Password::sendResetLink(['email' => $email]);
+    
+        if ($status === Password::RESET_LINK_SENT) {
+            return [
+                'message' => 'Password reset link sent to your email.',
+                'status' => 200,
+            ];
+        }
+    
+        return [
+            'message' => 'Unable to send reset link. Please try again.',
+            'status' => 400,
+        ];
+    }
+    
+    public function resetPassword(string $email, string $password, string $token): array
+    {
+        $status = Password::reset(
+            [
+                'email' => $email,
+                'password' => $password,
+                'password_confirmation' => $password,
+                'token' => $token,
+            ],
+            function ($user, $password) {
+                $user->forceFill([
+                    'password' => Hash::make($password),
+                    'remember_token' => Str::random(60),
+                ])->save();
+            }
+        );
+    
+        if ($status === Password::PASSWORD_RESET) {
+            return [
+                'message' => 'Password reset successful. You can now log in with your new password.',
+                'status' => 200,
+            ];
+        }
+    
+        return [
+            'message' => 'Invalid token or email. Please request a new reset link.',
+            'status' => 400,
+        ];
     }
 
     public function logout(User $user): void

@@ -25,7 +25,15 @@ use App\Http\Controllers\PreAuthController;
 use App\Http\Controllers\Finance\CapitationController;
 use Illuminate\Support\Facades\Route;
 
-use EApp\Http\Controllers\Portal\EnrolleePortalController;
+use App\Http\Controllers\Compliance\ComplianceController;
+use App\Http\Controllers\NotificationController;
+use App\Http\Controllers\Reports\SLAController;
+use App\Http\Controllers\Portal\EnrolleePortalController;
+
+use App\Http\Controllers\AI\AIController;
+use App\Http\Controllers\ImportController;
+use App\Http\Controllers\ExportController;
+
 /*
 |--------------------------------------------------------------------------
 | HMO ERP API Routes
@@ -37,7 +45,6 @@ use EApp\Http\Controllers\Portal\EnrolleePortalController;
 |--------------------------------------------------------------------------
 */
 
-// Route::prefix('v1')->group(function () {
 
     // ── Public Routes (no auth required) ─────────────────────────────────────
     Route::prefix('auth')->group(function () {
@@ -75,7 +82,7 @@ use EApp\Http\Controllers\Portal\EnrolleePortalController;
                       ->middleware('permission:branches.delete');
                  Route::patch('{branch}/status', [BranchController::class, 'toggleStatus'])
                       ->middleware('permission:branches.edit');
-             });
+        });
 
         // ── Users ─────────────────────────────────────────────────────────────
         Route::middleware('permission:users.view')
@@ -93,7 +100,7 @@ use EApp\Http\Controllers\Portal\EnrolleePortalController;
                       ->middleware('permission:users.suspend');
                  Route::post('{user}/roles', [UserController::class, 'syncRoles'])
                       ->middleware('permission:users.assign_roles');
-             });
+        });
 
         // ── Roles & Permissions ───────────────────────────────────────────────
         Route::middleware('permission:roles.view')
@@ -103,7 +110,8 @@ use EApp\Http\Controllers\Portal\EnrolleePortalController;
                  Route::get('{role}', [RoleController::class, 'show']);
                  Route::put('{role}/permissions', [RoleController::class, 'syncPermissions'])
                       ->middleware('permission:roles.manage');
-             });
+        });
+
         Route::middleware('permission:roles.view')
              ->get('permissions', [RoleController::class, 'allPermissions']);
 
@@ -138,7 +146,7 @@ use EApp\Http\Controllers\Portal\EnrolleePortalController;
                       ->middleware('permission:corporates.invoices');
                  Route::patch('{corporate}/invoices/{invoice}/mark-paid', [CorporateInvoiceController::class, 'markPaid'])
                       ->middleware('permission:corporates.invoices');
-             });
+        });
 
         // ── Enrollees ─────────────────────────────────────────────────────────
         Route::middleware('permission:enrollees.view')
@@ -169,9 +177,8 @@ use EApp\Http\Controllers\Portal\EnrolleePortalController;
                       ->middleware('permission:enrollees.edit');
                  Route::delete('{enrollee}/dependents/{dependent}', [DependentController::class, 'destroy'])
                       ->middleware('permission:enrollees.edit');
-             });
+        });
 
-        
         // ── HCPs ──────────────────────────────────────────────────────────────
         Route::middleware('permission:hcps.view')
              ->prefix('hcps')
@@ -219,7 +226,6 @@ use EApp\Http\Controllers\Portal\EnrolleePortalController;
                       ->middleware('permission:hcps.bank_details');
         });
 
-
         // ── Claims ────────────────────────────────────────────────────────────
         Route::middleware('permission:claims.view')
              ->prefix('claims')
@@ -251,7 +257,7 @@ use EApp\Http\Controllers\Portal\EnrolleePortalController;
                       ->middleware('permission:claims.fraud_view');
                  Route::patch('{claim}/fraud-flags/{flag}/review', [ClaimController::class, 'reviewFraudFlag'])
                       ->middleware('permission:claims.fraud_review');
-             });
+        });
 
         // ── Finance ───────────────────────────────────────────────────────────
         Route::middleware('permission:finance.view')
@@ -298,7 +304,7 @@ use EApp\Http\Controllers\Portal\EnrolleePortalController;
                     Route::post('/{run}/approve',[CapitationController::class, 'approve']);        // Approve & create batch
                     Route::patch('/{run}/records/{record}',[CapitationController::class, 'adjustRecord']);   // Adjust individual HCP
                 });
-             });
+        });
 
         // ── Reports & Analytics ───────────────────────────────────────────────
         Route::middleware('permission:reports.branch')
@@ -325,7 +331,77 @@ use EApp\Http\Controllers\Portal\EnrolleePortalController;
                  // Exports
                  Route::post('export', [ReportController::class, 'export'])
                       ->middleware('permission:reports.export');
-             });
+
+                // ── SLA Monitoring ─────────────────────────────────────────────────
+                Route::get('sla-dashboard',  [SLAController::class, 'dashboard']);
+                Route::get('overdue-claims', [SLAController::class, 'overdueClaims']);
+                Route::post('sla/breach-scan', [SLAController::class, 'scanBreaches']);
+
+
+        });
+
+        // ── Compliance Calendar ───────────────────────────────────────────────
+        Route::middleware('permission:compliance.view')
+            ->prefix('compliance')
+            ->group(function () {
+                Route::get('filings',                            [ComplianceController::class, 'index']);
+                Route::get('filings/summary',                    [ComplianceController::class, 'summary']);
+                Route::get('filings/{filing}',                   [ComplianceController::class, 'show']);
+                Route::post('filings',                           [ComplianceController::class, 'store'])
+                    ->middleware('permission:compliance.manage');
+                Route::put('filings/{filing}',                   [ComplianceController::class, 'update'])
+                    ->middleware('permission:compliance.manage');
+                Route::post('filings/{filing}/complete',         [ComplianceController::class, 'complete'])
+                    ->middleware('permission:compliance.manage');
+                Route::post('filings/{filing}/documents',        [ComplianceController::class, 'uploadDocument'])
+                    ->middleware('permission:compliance.manage');
+                Route::delete('filings/{filing}/documents/{doc}',[ComplianceController::class, 'deleteDocument'])
+                    ->middleware('permission:compliance.manage');
+        });
+
+        // ── AI Tools (requires new permission: ai.tools) ─────────────────────────
+        Route::middleware('permission:ai.tools')
+            ->prefix('ai')
+            ->group(function () {
+                Route::post('classify-document', [AIController::class, 'classifyDocument']);
+                Route::post('smart-route', [AIController::class, 'smartRoute']);
+                Route::post('ocr-document', [AIController::class, 'ocrDocument']);
+                Route::post('summarize-report', [AIController::class, 'summarizeReport']);
+                Route::get('fraud-clusters', [AIController::class, 'fraudClusters']);
+                Route::post('chat', [AIController::class, 'chat']);
+        });
+
+        // ── Import / Export ─────────────────────────────────────────────────────
+        Route::middleware('permission:import.enrollees')
+            ->prefix('import')
+            ->group(function () {
+                Route::post('enrollees', [ImportController::class, 'enrollees']);
+                Route::post('tariffs', [ImportController::class, 'tariffs']);
+                Route::post('hcps', [ImportController::class, 'hcps']);
+                Route::get('template/{type}', [ImportController::class, 'downloadTemplate']);
+        });
+
+        Route::middleware('permission:reports.export')
+            ->prefix('export')
+            ->group(function () {
+                
+                Route::get('claims-aging', [ExportController::class, 'claimsAging']);
+                Route::get('claims-by-hcp', [ExportController::class, 'claimsByHcp']);
+                Route::get('cost-by-corporate', [ExportController::class, 'costByCorporate']);
+                Route::get('high-cost-enrollees', [ExportController::class, 'highCostEnrollees']);
+                Route::get('branch-comparison', [ExportController::class, 'branchComparison']);
+                Route::get('enrollees', [ExportController::class, 'enrollees']);
+                Route::get('hcps', [ExportController::class, 'hcps']);
+                Route::get('tariffs', [ExportController::class, 'tariffs']);
+        });
+
+    });
+
+    Route::prefix('notifications')->middleware('auth:sanctum')->group(function () {
+        Route::get('/',              [NotificationController::class, 'index']);
+        Route::get('/unread-count',  [NotificationController::class, 'unreadCount']);
+        Route::patch('/{notification}/read', [NotificationController::class, 'markRead']);
+        Route::post('/mark-all-read',[NotificationController::class, 'markAllRead']);
     });
 
     // Pre-Authorisation
@@ -379,4 +455,4 @@ use EApp\Http\Controllers\Portal\EnrolleePortalController;
         
     });
 
-// });
+    

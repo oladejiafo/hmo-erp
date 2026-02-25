@@ -33,6 +33,9 @@ export default function Footer() {
                 <Link to="/privacy-policy" className="text-muted text-decoration-none" style={{ fontSize: 11 }}>
                     Privacy Policy
                 </Link>
+                <Link to="/terms" className="text-muted  text-decoration-none d-block" style={{ fontSize: 11 }}>
+                    Terms & Conditions
+                </Link>
                 <Link to="/support" className="text-muted text-decoration-none" style={{ fontSize: 11 }}>
                     Support
                 </Link>

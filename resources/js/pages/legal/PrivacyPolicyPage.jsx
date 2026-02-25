@@ -2,13 +2,17 @@ import React from 'react';
 import { Link } from 'react-router-dom';
 import { ArrowLeft, Shield, Lock, Eye, Database, Mail } from 'lucide-react';
 import { PageHeader } from '../../components/ui';
+import { useAuth } from '../../contexts/AuthContext';
 
 export default function PrivacyPolicyPage() {
+    const { user } = useAuth();
+
     return (
         <div className="container py-4">
             <div className="mb-4">
-                <Link to="/" className="btn btn-outline-secondary btn-sm">
-                    <ArrowLeft size={16} className="me-1" /> Back to Dashboard
+               <Link to={user ? "/" : "/login"} className="btn btn-outline-secondary btn-sm">
+                    <ArrowLeft size={16} className="me-1" /> 
+                    {user ? 'Go Back to Dashboard' : 'Back to Login'}
                 </Link>
             </div>
 

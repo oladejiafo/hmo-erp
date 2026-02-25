@@ -28,6 +28,7 @@ use Illuminate\Support\Facades\Log;
 
 class EnrolleeController extends Controller
 {
+    
     public function __construct(
         protected EnrolleeCardService $cardService
     ) {}

@@ -13,7 +13,7 @@
  */
 
 import React, { useState, useEffect } from 'react';
-import { useNavigate, useLocation } from 'react-router-dom';
+import { useNavigate, useLocation, Link } from 'react-router-dom';
 import { Eye, EyeOff, ShieldCheck } from 'lucide-react';
 import { toast } from 'react-toastify';
 import { useAuth } from '../../contexts/AuthContext';
@@ -137,7 +137,7 @@ export default function LoginPage() {
                         </div>
 
                         {/* Password */}
-                        <div className="mb-4">
+                        <div className="mb-2">
                             <label className="form-label fw-semibold" style={{ fontSize: 13 }}>
                                 Password
                             </label>
@@ -166,6 +166,17 @@ export default function LoginPage() {
                                     </div>
                                 )}
                             </div>
+                        </div>
+
+                        {/* Forgot Password Link */}
+                        <div className="text-end mb-4">
+                            <Link 
+                                to="/forgot-password" 
+                                className="text-decoration-none small"
+                                style={{ fontSize: 12 }}
+                            >
+                                Forgot password?
+                            </Link>
                         </div>
                     </>
                 ) : (
@@ -215,6 +226,14 @@ export default function LoginPage() {
                         : requires2FA ? 'Verify Code' : 'Sign In'
                     }
                 </button>
+
+                {/* Terms acceptance text */}
+                <p className="text-center text-muted mt-4 small" style={{ fontSize: 11 }}>
+                    By signing in, you agree to our{' '}
+                    <Link to="/terms" className="text-decoration-none">Terms of Service</Link>
+                    {' '}and{' '}
+                    <Link to="/privacy-policy" className="text-decoration-none">Privacy Policy</Link>.
+                </p>
             </form>
         </>
     );
