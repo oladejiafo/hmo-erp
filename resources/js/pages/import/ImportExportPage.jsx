@@ -69,12 +69,61 @@ export default function ImportExportPage() {
         maxFiles: 1,
     });
 
-    const downloadTemplate = (type) => {
-        window.location.href = `/api/import/template/${type}`;
+    const downloadTemplate = (type, e) => {
+        e.stopPropagation();
+        toast.info(`Preparing ${type} template...`);
+        
+        fetch(`/api/import/template/${type}`)
+            .then(response => {
+                if (!response.ok) {
+                    throw new Error('Template download failed');
+                }
+                return response.blob();
+            })
+            .then(blob => {
+                const url = window.URL.createObjectURL(blob);
+                const a = document.createElement('a');
+                a.href = url;
+                a.download = `${type}_template.csv`;
+                document.body.appendChild(a);
+                a.click();
+                window.URL.revokeObjectURL(url);
+                document.body.removeChild(a);
+                toast.success('Template downloaded');
+            })
+            .catch(error => {
+                console.error('Template download error:', error);
+                toast.error('Failed to download template');
+            });
     };
 
     const exportData = (type) => {
-        window.location.href = `/api/export/${type}`;
+        // Show loading toast
+        toast.info(`Preparing ${type} export...`);
+        
+        // Use fetch to handle errors better
+        fetch(`/api/export/${type}`)
+            .then(response => {
+                if (!response.ok) {
+                    throw new Error('Export failed');
+                }
+                return response.blob();
+            })
+            .then(blob => {
+                const url = window.URL.createObjectURL(blob);
+                const a = document.createElement('a');
+                a.href = url;
+                a.download = `${type}-${new Date().toISOString().split('T')[0]}.csv`;
+                document.body.appendChild(a);
+                a.click();
+                window.URL.revokeObjectURL(url);
+                document.body.removeChild(a);
+                toast.success('Export completed');
+            })
+            .catch(error => {
+                console.error('Export error:', error);
+                toast.error('Export failed. Please try again.');
+            });
     };
 
     const tabs = [
@@ -141,23 +190,23 @@ export default function ImportExportPage() {
                             <div className="list-group list-group-flush">
                                 {importTypes.map(type => (
                                     hasPermission(type.permission) && (
-                                        <button
+                                        <div
                                             key={type.id}
                                             className={`list-group-item list-group-item-action d-flex align-items-center gap-2 ${importType === type.id ? 'active' : ''}`}
                                             onClick={() => setImportType(type.id)}
+                                            style={{ cursor: 'pointer' }}
                                         >
                                             <type.icon size={18} />
                                             <span className="flex-grow-1">{type.label}</span>
-                                            <button
+                                            <span
                                                 className="btn btn-sm btn-link"
-                                                onClick={(e) => {
-                                                    e.stopPropagation();
-                                                    downloadTemplate(type.id);
-                                                }}
+                                                onClick={(e) => downloadTemplate(type.id, e)}
+                                                role="button"
+                                                tabIndex={0}
                                             >
                                                 <Download size={14} /> Template
-                                            </button>
-                                        </button>
+                                            </span>
+                                        </div>
                                     )
                                 ))}
                             </div>
@@ -170,9 +219,13 @@ export default function ImportExportPage() {
                                 <h6 className="fw-bold mb-3">Upload File</h6>
                                 <p className="text-muted small mb-4">
                                     Upload a CSV file with the correct column headers. 
-                                    <a href="#" className="ms-2" onClick={() => downloadTemplate(importType)}>
+                                    <span
+                                        className="ms-2 text-primary"
+                                        onClick={(e) => downloadTemplate(importType, e)}
+                                        style={{ cursor: 'pointer', textDecoration: 'underline' }}
+                                    >
                                         Download template
-                                    </a>
+                                    </span>
                                 </p>
 
                                 <div

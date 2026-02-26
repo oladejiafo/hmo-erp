@@ -59,21 +59,30 @@ class Corporate extends Model
     }
 
     // ─── Relationships ────────────────────────────────────────────────────────
+    public function plans(): \Illuminate\Database\Eloquent\Relations\HasMany
+    {
+        return $this->hasMany(Plan::class);
+    }
+    
+    public function activePlans(): \Illuminate\Database\Eloquent\Relations\HasMany
+    {
+        return $this->hasMany(Plan::class)->where('status', 'active');
+    }
 
     public function contacts(): HasMany
     {
         return $this->hasMany(CorporateContact::class);
     }
 
-    public function plans(): HasMany
-    {
-        return $this->hasMany(CorporatePlan::class);
-    }
+    // public function plans(): HasMany
+    // {
+    //     return $this->hasMany(CorporatePlan::class);
+    // }
 
-    public function activePlans(): HasMany
-    {
-        return $this->hasMany(CorporatePlan::class)->where('status', 'active');
-    }
+    // public function activePlans(): HasMany
+    // {
+    //     return $this->hasMany(CorporatePlan::class)->where('status', 'active');
+    // }
 
     public function invoices(): HasMany
     {

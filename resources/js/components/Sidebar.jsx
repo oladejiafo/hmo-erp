@@ -1,122 +1,176 @@
+/**
+ * FILE: resources/js/components/layout/Sidebar.jsx
+ *
+ * Changes from original:
+ *  - Financial group now lists Capitation as its own sidebar entry (no longer
+ *    only reachable via a tab inside FinancePage)
+ *  - FFS Providers entry added under Financial (permission-gated: finance.ffs)
+ *  - Payment-model badge on HCPs nav item removed (kept clean); badge logic
+ *    stays at HCP detail level
+ */
 import React from 'react';
 import { NavLink, useLocation } from 'react-router-dom';
 import {
     LayoutDashboard, Building2, Users, Building, FileText,
-    CreditCard, BarChart3, Settings, Shield, ShieldCheck, Upload, // ← add ShieldCheck
-    ChevronRight, GitBranch, ScrollText, CalendarDays, Bell, Sparkles
+    CreditCard, BarChart3, Settings, Shield, ShieldCheck, Upload,
+    ChevronRight, GitBranch, ScrollText, CalendarDays, Bell, Sparkles,
+    Activity, Layers,
 } from 'lucide-react';
 import { useAuth } from '../contexts/AuthContext';
 import { useQuery } from '@tanstack/react-query';
 import { fetchPAStats, fetchNotificationCount } from '../api/index';
 
+// ─── Nav items ───────────────────────────────────────────────────────────────
+
 const navItems = [
+    // Core Operations
     {
-        label:      'Dashboard',
-        icon:       LayoutDashboard,
-        path:       '/',
-        exact:      true,
-        permission: null, // Everyone sees the dashboard
+        label: 'Dashboard',
+        icon: LayoutDashboard,
+        path: '/',
+        exact: true,
+        permission: null,
+        group: 'core',
     },
     {
-        label:      'Corporates',
-        icon:       Building2,
-        path:       '/corporates',
-        permission: 'corporates.view',
-    },
-    {
-        label:      'Enrollees',
-        icon:       Users,
-        path:       '/enrollees',
-        permission: 'enrollees.view',
-    },
-    {
-        label:      'Health Care Providers',
-        icon:       Building,
-        path:       '/hcps',
-        permission: 'hcps.view',
-        shortLabel: 'HCPs',
-    },
-    {
-        label:      'Pre-Authorisation',
-        icon:       ShieldCheck,
-        path:       '/pre-auth',
+        label: 'Pre-Authorisation',
+        icon: ShieldCheck,
+        path: '/pre-auth',
         permission: 'pa.view',
         shortLabel: 'Pre-Auth',
+        group: 'core',
+    },
+    {
+        label: 'Claims',
+        icon: FileText,
+        path: '/claims',
+        permission: 'claims.view',
+        group: 'core',
+    },
+    { 
+        label:'Bulk Import', 
+        path:'/claims/import', 
+        icon:Upload, 
+        permission:'claims.import' ,
+        group: 'core',
     },
 
+
+    // Master Data
+    // {
+    //     label: 'Health Plans',
+    //     path: '/plans',
+    //     icon: ShieldCheck,
+    //     permission: 'plans.view',
+    //     group: 'master',
+    // },
     {
-        label:      'Claims',
-        icon:       FileText,
-        path:       '/claims',
-        permission: 'claims.view',
+        label: 'Corporates',
+        icon: Building2,
+        path: '/corporates',
+        permission: 'corporates.view',
+        group: 'master',
     },
     {
-        label:      'Finance',
-        icon:       CreditCard,
-        path:       '/finance',
+        label: 'Enrollees',
+        icon: Users,
+        path: '/enrollees',
+        permission: 'enrollees.view',
+        group: 'master',
+    },
+    {
+        label: 'Health Care Providers',
+        icon: Building,
+        path: '/hcps',
+        permission: 'hcps.view',
+        shortLabel: 'HCPs',
+        group: 'master',
+    },
+
+    // Financial — expanded: Finance, Capitation, FFS each get their own row
+    {
+        label: 'Finance & Payments',
+        icon: CreditCard,
+        path: '/finance',
         permission: 'finance.view',
+        group: 'financial',
+        // exact match so /finance/capitation doesn't highlight this item
+        exact: true,
     },
     {
-        label:      'Compliance',        // ← NEW
-        icon:       CalendarDays,        // ← NEW
-        path:       '/compliance',       // ← NEW
-        permission: 'compliance.view',   // ← NEW
+        label: 'Capitation',
+        icon: Activity,
+        path: '/finance/capitation',
+        permission: 'finance.capitation',
+        group: 'financial',
     },
     {
-        label:      'AI Tools',              // ← NEW
-        icon:       Sparkles,                 // ← Import Sparkles from lucide-react
-        path:       '/ai-tools',              // ← NEW
-        permission: 'ai.tools',                // ← NEW
-        shortLabel: 'AI Tools',
+        label: 'FFS Providers',
+        icon: Layers,
+        path: '/finance/ffs',
+        permission: 'finance.ffs',
+        group: 'financial',
     },
     {
-        label:      'Alerts',             // ← NEW
-        icon:       Bell,                 // ← NEW
-        path:       '/alerts',            // ← NEW
-        permission: null,                 // ← NEW - All authenticated staff see their own alerts
-        badgeKey:   'alerts',              // ← NEW - for notification badges
-    },
-    {
-        label:      'Import / Export',  // ← NEW
-        icon:       Upload,              // ← Import Upload from lucide-react
-        path:       '/import',           // ← NEW
-        permission: 'import.enrollees',  // ← Uses any import permission
-        shortLabel: 'Import',
-    },
-    {
-        label:      'Reports',
-        icon:       BarChart3,
-        path:       '/reports',
+        label: 'Reports',
+        icon: BarChart3,
+        path: '/reports',
         permission: 'reports.branch',
+        group: 'financial',
+    },
+
+    // System & Tools
+    {
+        label: 'AI Tools',
+        icon: Sparkles,
+        path: '/ai-tools',
+        permission: 'ai.tools',
+        shortLabel: 'AI Tools',
+        group: 'system',
+    },
+    {
+        label: 'Alerts Center',
+        icon: Bell,
+        path: '/alerts',
+        permission: null,
+        badgeKey: 'alerts',
+        group: 'system',
+    },
+    {
+        label: 'Import / Export',
+        icon: Upload,
+        path: '/import',
+        permission: 'import.enrollees',
+        shortLabel: 'Import / Export',
+        group: 'system',
+    },
+    {
+        label: 'Compliance',
+        icon: CalendarDays,
+        path: '/compliance',
+        permission: 'compliance.view',
+        group: 'system',
     },
 ];
 
 const settingsItems = [
-    {
-        label:      'Users',
-        icon:       Users,
-        path:       '/settings/users',
-        permission: 'users.view',
-    },
-    {
-        label:      'Roles',
-        icon:       Shield,
-        path:       '/settings/roles',
-        permission: 'roles.view',
-    },
-    {
-        label:      'Branches',
-        icon:       GitBranch,
-        path:       '/settings/branches',
-        permission: 'branches.view',
-    },
-    {
-        label:      'Audit Log',
-        icon:       ScrollText,
-        path:       '/reports/audit-logs',
-        permission: 'reports.audit_logs',
-    },
+    { label: 'Users',     icon: Users,      path: '/settings/users',       permission: 'users.view',    group: 'admin' },
+    { label: 'Roles',     icon: Shield,     path: '/settings/roles',       permission: 'roles.view',    group: 'admin' },
+    { label: 'Branches',  icon: GitBranch,  path: '/settings/branches',    permission: 'branches.view', group: 'admin' },
+    { label: 'Audit Log', icon: ScrollText, path: '/reports/audit-logs',   permission: 'reports.audit_logs', group: 'admin' },
 ];
+
+const groupTitles = {
+    core:      'Core Operations',
+    master:    'Master Data',
+    financial: 'Financial',
+    system:    'System & Tools',
+    admin:     'Administration',
+};
+
+const groupOrder = ['core', 'master', 'financial', 'system', 'admin'];
+
+// ─── Sidebar ─────────────────────────────────────────────────────────────────
 
 export default function Sidebar({ collapsed }) {
     const { hasPermission, user } = useAuth();
@@ -127,23 +181,30 @@ export default function Sidebar({ collapsed }) {
         return location.pathname.startsWith(path);
     };
 
-    const visibleItems      = navItems.filter(i => !i.permission || hasPermission(i.permission));
-    const visibleSettings   = settingsItems.filter(i => !i.permission || hasPermission(i.permission));
+    const visibleNavItems  = navItems.filter(i => !i.permission || hasPermission(i.permission));
+    const visibleSettings  = settingsItems.filter(i => !i.permission || hasPermission(i.permission));
+    const allVisibleItems  = [...visibleNavItems, ...visibleSettings];
+
+    const groupedItems = allVisibleItems.reduce((acc, item) => {
+        const g = item.group || 'other';
+        if (!acc[g]) acc[g] = [];
+        acc[g].push(item);
+        return acc;
+    }, {});
 
     const sidebarStyle = {
-        width:      collapsed ? 64 : 260,
-        minWidth:   collapsed ? 64 : 260,
+        width:    collapsed ? 64 : 260,
+        minWidth: collapsed ? 64 : 260,
         background: '#1e3a5f',
         transition: 'width 0.2s ease, min-width 0.2s ease',
-        overflowX:  'hidden',
-        overflowY:  'auto',
-        zIndex:     100,
+        overflowX: 'hidden',
+        overflowY: 'auto',
+        zIndex: 100,
     };
-
-    // Add this debug line
 
     return (
         <nav className="d-flex flex-column text-white" style={sidebarStyle}>
+
             {/* Logo */}
             <div
                 className="d-flex align-items-center px-3 border-bottom border-white border-opacity-10"
@@ -169,41 +230,38 @@ export default function Sidebar({ collapsed }) {
                 )}
             </div>
 
-            {/* Main Navigation */}
+            {/* Navigation groups */}
             <div className="flex-grow-1 py-3">
-                {visibleItems.map(item => (
-                    <SidebarItem
-                        key={item.path}
-                        item={item}
-                        active={isActive(item.path, item.exact)}
-                        collapsed={collapsed}
-                    />
-                ))}
+                {groupOrder.map(groupKey => {
+                    const items = groupedItems[groupKey];
+                    if (!items || items.length === 0) return null;
 
-                {/* Settings group */}
-                {visibleSettings.length > 0 && (
-                    <>
-                        <div className="px-3 pt-3 pb-1">
+                    return (
+                        <React.Fragment key={groupKey}>
                             {!collapsed && (
-                                <span className="text-uppercase text-white-50"
-                                      style={{ fontSize: 10, letterSpacing: 1 }}>
-                                    Administration
-                                </span>
+                                <div className="px-3 pt-3 pb-1">
+                                    <span
+                                        className="text-uppercase text-white-50"
+                                        style={{ fontSize: 10, letterSpacing: 1 }}
+                                    >
+                                        {groupTitles[groupKey] || groupKey}
+                                    </span>
+                                </div>
                             )}
-                        </div>
-                        {visibleSettings.map(item => (
-                            <SidebarItem
-                                key={item.path}
-                                item={item}
-                                active={isActive(item.path)}
-                                collapsed={collapsed}
-                            />
-                        ))}
-                    </>
-                )}
+                            {items.map(item => (
+                                <SidebarItem
+                                    key={item.path}
+                                    item={item}
+                                    active={isActive(item.path, item.exact)}
+                                    collapsed={collapsed}
+                                />
+                            ))}
+                        </React.Fragment>
+                    );
+                })}
             </div>
 
-            {/* Profile link at bottom */}
+            {/* Profile */}
             <div className="border-top border-white border-opacity-10 p-3">
                 <NavLink
                     to="/settings/profile"
@@ -234,36 +292,28 @@ export default function Sidebar({ collapsed }) {
     );
 }
 
+// ─── SidebarItem ─────────────────────────────────────────────────────────────
+
 function SidebarItem({ item, active, collapsed }) {
     const Icon = item.icon;
 
-    // PA pending badge
     const { data: paStats } = item.path === '/pre-auth'
-        ? useQuery({ 
-            queryKey: ['pa-stats'], 
-            queryFn: fetchPAStats, 
-            refetchInterval: 60000, 
-            staleTime: 30000 
-          })
+        ? useQuery({ queryKey: ['pa-stats'], queryFn: fetchPAStats, refetchInterval: 60000, staleTime: 30000 })
         : { data: null };
 
-    // Alerts/notification count badge
     const { data: notifData } = item.badgeKey === 'alerts'
-        ? useQuery({
-            queryKey:       ['notification-count'],
-            queryFn:        fetchNotificationCount,
-            refetchInterval: 30000,
-            staleTime:       15000,
-          })
+        ? useQuery({ queryKey: ['notification-count'], queryFn: fetchNotificationCount, refetchInterval: 30000, staleTime: 15000 })
         : { data: null };
 
     const pendingCount  = paStats?.data?.pending_count ?? 0;
     const overdueCount  = paStats?.data?.overdue_count ?? 0;
     const showPABadge   = item.path === '/pre-auth' && pendingCount > 0;
-
     const unreadCount   = notifData?.data?.count ?? 0;
     const criticalCount = notifData?.data?.critical ?? 0;
     const showAlertBadge = item.badgeKey === 'alerts' && unreadCount > 0;
+
+    // FFS Providers item gets a distinct accent colour
+    const isFFS = item.path === '/finance/ffs';
 
     return (
         <NavLink
@@ -271,31 +321,41 @@ function SidebarItem({ item, active, collapsed }) {
             end={item.exact}
             title={collapsed ? item.label : undefined}
             style={{
-                display:         'flex',
-                alignItems:      'center',
-                padding:         '10px 12px',
-                margin:          '2px 8px',
-                borderRadius:    8,
-                textDecoration:  'none',
-                color:           active ? '#ffffff' : 'rgba(255,255,255,0.6)',
-                background:      active ? 'rgba(255,255,255,0.12)' : 'transparent',
-                fontWeight:      active ? 600 : 400,
-                fontSize:        14,
-                whiteSpace:      'nowrap',
-                overflow:        'hidden',
-                transition:      'all 0.15s',
-                position:        'relative',
+                display:        'flex',
+                alignItems:     'center',
+                padding:        '10px 12px',
+                margin:         '2px 8px',
+                borderRadius:   8,
+                textDecoration: 'none',
+                color:      active ? '#ffffff' : isFFS ? 'rgba(255,255,255,0.75)' : 'rgba(255,255,255,0.6)',
+                background: active
+                    ? isFFS ? 'rgba(99,102,241,0.25)' : 'rgba(255,255,255,0.12)'
+                    : 'transparent',
+                fontWeight: active ? 600 : 400,
+                fontSize:   14,
+                whiteSpace: 'nowrap',
+                overflow:   'hidden',
+                transition: 'all 0.15s',
+                position:   'relative',
+                borderLeft: isFFS && !active ? '2px solid rgba(99,102,241,0.4)' : undefined,
             }}
             onMouseEnter={e => {
-                if (!active) e.currentTarget.style.background = 'rgba(255,255,255,0.06)';
-                if (!active) e.currentTarget.style.color = '#ffffff';
+                if (!active) {
+                    e.currentTarget.style.background = isFFS
+                        ? 'rgba(99,102,241,0.15)'
+                        : 'rgba(255,255,255,0.06)';
+                    e.currentTarget.style.color = '#ffffff';
+                }
             }}
             onMouseLeave={e => {
-                if (!active) e.currentTarget.style.background = 'transparent';
-                if (!active) e.currentTarget.style.color = 'rgba(255,255,255,0.6)';
+                if (!active) {
+                    e.currentTarget.style.background = 'transparent';
+                    e.currentTarget.style.color = isFFS ? 'rgba(255,255,255,0.75)' : 'rgba(255,255,255,0.6)';
+                }
             }}
         >
-            <div style={{ position: 'relative', flexShrink: 0 }}>
+            {/* Icon + optional badge */}
+            <div style={{ position: 'relative', flexShrink: 0, color: isFFS && !active ? '#a5b4fc' : 'inherit' }}>
                 <Icon size={18} />
                 {showPABadge && (
                     <span style={{
@@ -322,25 +382,29 @@ function SidebarItem({ item, active, collapsed }) {
                     </span>
                 )}
             </div>
+
+            {/* Label */}
             {!collapsed && (
-                <span className="ms-3 flex-grow-1">{item.shortLabel ?? item.label}</span>
+                <span className="ms-3 flex-grow-1" style={{ color: isFFS && !active ? '#a5b4fc' : 'inherit' }}>
+                    {item.shortLabel ?? item.label}
+                </span>
             )}
+
+            {/* Inline count badges */}
             {!collapsed && showPABadge && !active && (
                 <span style={{
-                    fontSize: 10, fontWeight: 700, padding: '1px 6px',
-                    borderRadius: 8, marginLeft: 4,
+                    fontSize: 10, fontWeight: 700, padding: '1px 6px', borderRadius: 8, marginLeft: 4,
                     background: overdueCount > 0 ? 'rgba(239,68,68,0.2)' : 'rgba(245,158,11,0.2)',
-                    color: overdueCount > 0 ? '#fca5a5' : '#fde68a',
+                    color:      overdueCount > 0 ? '#fca5a5' : '#fde68a',
                 }}>
                     {pendingCount}
                 </span>
             )}
             {!collapsed && showAlertBadge && !active && (
                 <span style={{
-                    fontSize: 10, fontWeight: 700, padding: '1px 6px',
-                    borderRadius: 8, marginLeft: 4,
+                    fontSize: 10, fontWeight: 700, padding: '1px 6px', borderRadius: 8, marginLeft: 4,
                     background: criticalCount > 0 ? 'rgba(239,68,68,0.2)' : 'rgba(245,158,11,0.2)',
-                    color: criticalCount > 0 ? '#fca5a5' : '#fde68a',
+                    color:      criticalCount > 0 ? '#fca5a5' : '#fde68a',
                 }}>
                     {unreadCount}
                 </span>

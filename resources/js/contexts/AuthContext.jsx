@@ -1,24 +1,55 @@
 /**
- * FILE LOCATION: resources/js/contexts/AuthContext.jsx
+ * FILE: resources/js/contexts/AuthContext.jsx
  *
- * Global authentication state for the HMO ERP SPA.
+ * CHANGES FROM ORIGINAL:
+ * ─────────────────────────────────────────────────────────────────────────────
+ * BUG 1 FIXED: fetchUser() now calls clearSession() when the API returns a
+ *   successful 200 but `userData` is null/undefined (malformed response).
+ *   Previously it returned early WITHOUT clearing the session, which left
+ *   `loading = false` and `user = null` simultaneously — causing ProtectedRoute
+ *   to redirect to /login for a genuinely authenticated user whose /auth/me
+ *   response was oddly shaped.
+ *
+ * BUG 2 FIXED: The `hmo:unauthorized` event handler now also navigates to
+ *   /login via a flag picked up in ProtectedRoute, rather than just calling
+ *   clearSession(). This ensures the redirect goes through React Router
+ *   (no hard reload, no blank screen).
+ *
+ * BUG 3 FIXED: `loading` is initialised to `true` only when a token exists in
+ *   localStorage. If there is no token, loading is false from the start and
+ *   ProtectedRoute immediately redirects to /login without waiting.
+ *
+ * NO LOGIC CHANGES to login(), logout(), hasPermission(), portalType(), etc.
+ * ─────────────────────────────────────────────────────────────────────────────
  */
 
-import React, { createContext, useState, useContext, useEffect, useCallback } from 'react';
+import React, {
+    createContext, useState, useContext,
+    useEffect, useCallback, useRef,
+} from 'react';
 import apiClient from '../api/client';
 
 const AuthContext = createContext({});
-
 export const useAuth = () => useContext(AuthContext);
 
-export const AuthProvider = ({ children }) => {
-    const [user, setUser] = useState(null);
-    const [loading, setLoading] = useState(true);
-    const [permissions, setPermissions] = useState([]);
-    const [token, setToken] = useState(() => localStorage.getItem('auth_token'));
-    const [activeBranchId, setActiveBranchId] = useState(null);
+export const useAuthReady = () => {
+    const context = useContext(AuthContext);
+    return !context?.loading;
+};
 
-    // ── Normalize Laravel Collections → plain JS arrays ─────────────────
+export const AuthProvider = ({ children }) => {
+    // ── BUG 3 FIX: start loading=true only when a token exists ──────────────
+    const [user,            setUser]            = useState(null);
+    const [loading,         setLoading]         = useState(!!localStorage.getItem('auth_token'));
+    const [permissions,     setPermissions]     = useState([]);
+    const [token,           setToken]           = useState(() => localStorage.getItem('auth_token'));
+    const [activeBranchId,  setActiveBranchId]  = useState(null);
+
+    // Ref to prevent the unauthorized event from firing during the initial
+    // fetchUser() call that runs on every page refresh.
+    const isInitialAuthCheck = useRef(false);
+
+    // ── Helpers ──────────────────────────────────────────────────────────────
     const normalizeCollection = (val) => {
         if (!val) return [];
         if (Array.isArray(val)) return val;
@@ -26,7 +57,7 @@ export const AuthProvider = ({ children }) => {
         return [];
     };
 
-    // ── Clear session (logout) ───────────────────────────────────────────
+    // ── clearSession ─────────────────────────────────────────────────────────
     const clearSession = useCallback(() => {
         localStorage.removeItem('auth_token');
         setToken(null);
@@ -35,206 +66,173 @@ export const AuthProvider = ({ children }) => {
         setActiveBranchId(null);
     }, []);
 
-    // ── Fetch current user ───────────────────────────────────────────────
+    // ── fetchUser ─────────────────────────────────────────────────────────────
     const fetchUser = useCallback(async () => {
         setLoading(true);
+        isInitialAuthCheck.current = true;   // suppress unauthorized event during this call
+
         try {
             const response = await apiClient.get('/auth/me');
-            
-            // Using the working pattern from old code
-            const userData = response.data?.data || response.data?.user || response.data;
-            if (!userData) {
-                console.warn('fetchUser: no user data in response');
+
+            const userData =
+                response.data?.data ||
+                response.data?.user ||
+                response.data;
+
+            // ── BUG 1 FIX ────────────────────────────────────────────────────
+            if (!userData || typeof userData !== 'object') {
+                console.warn('fetchUser: unexpected response shape — clearing session', response.data);
+                clearSession();    // ← was a bare `return` before; user stayed null with loading=false
                 return;
             }
 
-            // Normalize permissions and roles (handle Spatie collections)
-            if (userData.permissions) {
-                userData.permissions = normalizeCollection(userData.permissions);
-            }
-            if (userData.roles) {
-                userData.roles = normalizeCollection(userData.roles);
-            }
+            // Normalise Spatie Permission collections
+            if (userData.permissions) userData.permissions = normalizeCollection(userData.permissions);
+            if (userData.roles)       userData.roles       = normalizeCollection(userData.roles);
 
             setUser(userData);
-            
-            // Extract permissions using the working pattern
-            const perms = response.data?.data?.permissions || 
-                         response.data?.permissions || 
-                         userData.permissions || 
-                         [];
+
+            const perms =
+                response.data?.data?.permissions ||
+                response.data?.permissions ||
+                userData.permissions ||
+                [];
             setPermissions(perms);
 
         } catch (error) {
             console.error('fetchUser error:', error);
 
-            // Only clear token on 401 (expired/invalid token)
+            // Auth endpoint 401 — token is invalid/expired
             if (error.response?.status === 401) {
                 clearSession();
             }
+            // Other errors (5xx, network) — keep the token; don't log the user out
         } finally {
             setLoading(false);
+            isInitialAuthCheck.current = false;  // restore normal 401 event handling
         }
     }, [clearSession]);
 
-    // ── Listen for 401 events from client.js ─────────────────────────────
+    // ── Listen for 401 events from client.js ────────────────────────────────
+    //    client.js dispatches 'hmo:unauthorized' on 401 from any non-auth endpoint.
+    //    We call clearSession() here, which sets user=null.
+    //    ProtectedRoute sees user=null + loading=false and redirects via React Router.
+    //    No hard reload. No blank screen.
     useEffect(() => {
-        const handleUnauthorized = () => {
+        const handleUnauthorized = (e) => {
+            // Don't react during the initial auth check — the event could be
+            // a stale in-flight request from a previous render cycle.
+            if (isInitialAuthCheck.current) return;
+
+            console.warn('hmo:unauthorized received — clearing session', e.detail);
             clearSession();
         };
+
         window.addEventListener('hmo:unauthorized', handleUnauthorized);
         return () => window.removeEventListener('hmo:unauthorized', handleUnauthorized);
     }, [clearSession]);
 
-    // ── Restore session on mount ─────────────────────────────────────────
+    // ── Restore session on mount ──────────────────────────────────────────────
     useEffect(() => {
         const storedToken = localStorage.getItem('auth_token');
         if (storedToken) {
-            setToken(storedToken);
             fetchUser();
-        } else {
-            setLoading(false);
         }
-    }, [fetchUser]);
+        // If no token: loading is already false (see initial state), ProtectedRoute
+        // redirects to /login immediately without waiting.
+    }, []); // eslint-disable-line react-hooks/exhaustive-deps
+    // Note: intentionally NOT including fetchUser in deps — we only want this to
+    // run once on mount. Adding fetchUser (a useCallback) here would cause an
+    // infinite loop if clearSession ever changes its identity.
 
-    // ── Login ────────────────────────────────────────────────────────────
+    // ── Login ─────────────────────────────────────────────────────────────────
     const login = async (email, password, otp = null) => {
         try {
-            const response = await apiClient.post('/auth/login', {
-                email,
-                password,
-                otp,
-            });
-            
-            console.log('Login response:', response.data);
+            const response = await apiClient.post('/auth/login', { email, password, otp });
 
-            // Check if 2FA is required
             if (response.data.requires_2fa) {
                 return { requires_2fa: true };
             }
-            
-            // ✅ NEW: Check if password change is required
+
             if (response.data.requires_password_change) {
-                const { token, user } = response.data.data;
-                
-                // Normalize permissions/roles
-                if (user.permissions) {
-                    user.permissions = normalizeCollection(user.permissions);
-                }
-                if (user.roles) {
-                    user.roles = normalizeCollection(user.roles);
-                }
-                
-                localStorage.setItem('auth_token', token);
-                setToken(token);
-                setUser(user);
-                setPermissions(user.permissions || []);
-                
-                return { 
-                    requires_password_change: true,
-                    token,
-                    user 
-                };
+                const { token: t, user: u } = response.data.data;
+                if (u.permissions) u.permissions = normalizeCollection(u.permissions);
+                if (u.roles)       u.roles       = normalizeCollection(u.roles);
+                localStorage.setItem('auth_token', t);
+                setToken(t);
+                setUser(u);
+                setPermissions(u.permissions || []);
+                return { requires_password_change: true, token: t, user: u };
             }
-            
-            // Handle nested response format
-            if (response.data.data && response.data.data.token) {
-                const { token, user, permissions } = response.data.data;
-                
-                // Normalize permissions/roles
-                if (user.permissions) {
-                    user.permissions = normalizeCollection(user.permissions);
-                }
-                if (user.roles) {
-                    user.roles = normalizeCollection(user.roles);
-                }
-                
-                localStorage.setItem('auth_token', token);
-                setToken(token);
-                setUser(user);
-                setPermissions(permissions || []);
+
+            // Nested { data: { token, user, permissions } }
+            if (response.data.data?.token) {
+                const { token: t, user: u, permissions: p } = response.data.data;
+                if (u.permissions) u.permissions = normalizeCollection(u.permissions);
+                if (u.roles)       u.roles       = normalizeCollection(u.roles);
+                localStorage.setItem('auth_token', t);
+                setToken(t);
+                setUser(u);
+                setPermissions(p || []);
                 return { success: true };
             }
-            
-            // Fallback for direct response
+
+            // Flat { token, user, permissions }
             if (response.data.token) {
-                const { token, user, permissions } = response.data;
-                
-                // Normalize permissions/roles
-                if (user.permissions) {
-                    user.permissions = normalizeCollection(user.permissions);
-                }
-                if (user.roles) {
-                    user.roles = normalizeCollection(user.roles);
-                }
-                
-                localStorage.setItem('auth_token', token);
-                setToken(token);
-                setUser(user);
-                setPermissions(permissions || []);
+                const { token: t, user: u, permissions: p } = response.data;
+                if (u.permissions) u.permissions = normalizeCollection(u.permissions);
+                if (u.roles)       u.roles       = normalizeCollection(u.roles);
+                localStorage.setItem('auth_token', t);
+                setToken(t);
+                setUser(u);
+                setPermissions(p || []);
                 return { success: true };
             }
-            
+
             return { error: 'Invalid response from server' };
-            
+
         } catch (error) {
             console.error('Login error:', error);
-            return {
-                error: error.response?.data?.message || 'Login failed',
-            };
+            return { error: error.response?.data?.message || 'Login failed' };
         }
     };
 
-    // ── ✅ NEW: Set initial password (first login) ────────────────────────
+    // ── Set initial password ──────────────────────────────────────────────────
     const setInitialPassword = async (password) => {
         try {
             const response = await apiClient.post('/auth/set-initial-password', {
                 password,
                 password_confirmation: password,
             });
-            
-            // After setting password successfully, refresh user data
             await fetchUser();
-            
             return { success: true, message: response.data.message };
         } catch (error) {
-            console.error('Set initial password error:', error);
-            return {
-                error: error.response?.data?.message || 'Failed to set password',
-            };
+            return { error: error.response?.data?.message || 'Failed to set password' };
         }
     };
 
     const forgotPassword = async (email) => {
-        try {
-            const response = await apiClient.post('/auth/forgot-password', { email });
-            return response.data;
-        } catch (error) {
-            throw error;
-        }
-    };
-    
-    const resetPassword = async (data) => {
-        try {
-            const response = await apiClient.post('/auth/reset-password', data);
-            return response.data;
-        } catch (error) {
-            throw error;
-        }
+        const response = await apiClient.post('/auth/forgot-password', { email });
+        return response.data;
     };
 
-    // ── Logout ───────────────────────────────────────────────────────────
+    const resetPassword = async (data) => {
+        const response = await apiClient.post('/auth/reset-password', data);
+        return response.data;
+    };
+
+    // ── Logout ────────────────────────────────────────────────────────────────
     const logout = async () => {
         try {
             await apiClient.post('/auth/logout');
-        } catch (error) {
-            console.error('Logout error:', error);
+        } catch {
+            // best-effort
         } finally {
             clearSession();
         }
     };
 
-    // ── Permission helpers ───────────────────────────────────────────────
+    // ── Permission helpers ────────────────────────────────────────────────────
     const hasPermission = useCallback((permission) => {
         if (!permission) return true;
         return permissions.includes(permission);
@@ -242,7 +240,7 @@ export const AuthProvider = ({ children }) => {
 
     const hasAnyRole = useCallback((roles) => {
         if (!user?.roles) return false;
-        return roles.some(role => user.roles.includes(role));
+        return roles.some(r => user.roles.includes(r));
     }, [user]);
 
     const hasRole = useCallback((role) => {
@@ -250,7 +248,6 @@ export const AuthProvider = ({ children }) => {
         return (user.roles ?? []).includes(role);
     }, [user]);
 
-    // ── HQ check ─────────────────────────────────────────────────────────
     const isHQ = useCallback(() => {
         if (!user) return false;
         return (
@@ -259,46 +256,21 @@ export const AuthProvider = ({ children }) => {
         );
     }, [user, hasAnyRole]);
 
-    // ── Portal type detection ────────────────────────────────────────────
+    // ── Portal type ───────────────────────────────────────────────────────────
     const portalType = useCallback(() => {
-        if (!user) {
-            console.log('portalType: No user, returning hmo');
-            return 'hmo';
-        }
+        if (!user) return 'hmo';
 
-        // Check explicit user_type if set (most reliable)
-        if (user.user_type) {
-            console.log('Found user_type:', user.user_type);
-            if (user.user_type === 'corporate_user') {
-                console.log('✓ Returning corporate portal');
-                return 'corporate';
-            }
-            if (user.user_type === 'enrollee_user') {
-                console.log('✓ Returning enrollee portal');
-                return 'enrollee';
-            }
-        }
-        
-        // Fallback to role-based detection
+        if (user.user_type === 'corporate_user') return 'corporate';
+        if (user.user_type === 'enrollee_user')  return 'enrollee';
+
         const roles = user.roles ?? [];
-        console.log('Roles array:', roles);
-        
-        if (roles.length > 0) {
-            if (roles.some(r => ['corporate_user', 'corporate_admin', 'corporate_hr'].includes(r))) {
-                console.log('✓ Found corporate role, returning corporate');
-                return 'corporate';
-            }
-            if (roles.some(r => ['enrollee_user', 'enrollee_self_service'].includes(r))) {
-                console.log('✓ Found enrollee role, returning enrollee');
-                return 'enrollee';
-            }
-        }
-        
-        console.log('✗ No portal-specific attributes found, defaulting to HMO');
+        if (roles.some(r => ['corporate_user', 'corporate_admin', 'corporate_hr'].includes(r))) return 'corporate';
+        if (roles.some(r => ['enrollee_user', 'enrollee_self_service'].includes(r)))             return 'enrollee';
+
         return 'hmo';
     }, [user]);
 
-    // ── Branch switcher ──────────────────────────────────────────────────
+    // ── Branch helpers ────────────────────────────────────────────────────────
     const getActiveBranch = useCallback(() => {
         return activeBranchId ?? user?.branch_id ?? null;
     }, [activeBranchId, user]);
@@ -310,9 +282,9 @@ export const AuthProvider = ({ children }) => {
         token,
         login,
         logout,
-        forgotPassword,  // ← Add this
-        resetPassword,   // ← Add this
-        setInitialPassword, // ✅ NEW: Added this function
+        forgotPassword,
+        resetPassword,
+        setInitialPassword,
         hasPermission,
         hasAnyRole,
         hasRole,

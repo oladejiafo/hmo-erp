@@ -13,6 +13,8 @@ use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Gate;      // ADD THIS IMPORT
 use Illuminate\Support\Facades\RateLimiter;
 use Illuminate\Support\ServiceProvider;
+use App\Services\ClaimImportService;
+use App\Services\NhiaReportService;
 
 class AppServiceProvider extends ServiceProvider
 {
@@ -23,6 +25,9 @@ class AppServiceProvider extends ServiceProvider
 
     public function boot(): void
     {
+        $this->app->singleton(ClaimImportService::class);
+        $this->app->singleton(NhiaReportService::class);
+
         // ── Register Model Observers ──────────────────────────────────────────
         Claim::observe(ClaimObserver::class);
         Enrollee::observe(EnrolleeObserver::class);

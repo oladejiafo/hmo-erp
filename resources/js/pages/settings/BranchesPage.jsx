@@ -1,7 +1,7 @@
-import React, { useState } from 'react';
+import React, { useState, useMemo } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useQuery } from '@tanstack/react-query';
-import { Plus, Edit, Trash2, MapPin, Phone, Mail, MoreVertical } from 'lucide-react';
+import { Plus, Edit, Trash2, MapPin, Phone, Mail } from 'lucide-react';
 import { fetchBranches } from '../../api/index';
 import { PageHeader, StatusBadge, Pagination, LoadingSpinner, ErrorAlert } from '../../components/ui/index';
 
@@ -12,17 +12,46 @@ export default function BranchesPage() {
         type: '',
         state: '',
         page: 1,
-        per_page: 20,
+        per_page: 10, // Show 10 per page
     });
 
-    const { data, isLoading, error } = useQuery({
-        queryKey: ['branches', filters],
-        queryFn: () => fetchBranches(filters),
+    const { data: response, isLoading, error } = useQuery({
+        queryKey: ['branches', filters.search, filters.type, filters.state], // Exclude page from query key
+        queryFn: () => fetchBranches({
+            search: filters.search,
+            type: filters.type,
+            state: filters.state,
+        }),
     });
+
+    // Extract all branches from response
+    const allBranches = response?.data?.data || [];
+    
+    // Apply client-side pagination
+    const paginatedBranches = useMemo(() => {
+        const start = (filters.page - 1) * filters.per_page;
+        const end = start + filters.per_page;
+        return allBranches.slice(start, end);
+    }, [allBranches, filters.page, filters.per_page]);
+
+    // Calculate pagination meta
+    const meta = {
+        current_page: filters.page,
+        last_page: Math.ceil(allBranches.length / filters.per_page) || 1,
+        per_page: filters.per_page,
+        total: allBranches.length,
+        from: (filters.page - 1) * filters.per_page + 1,
+        to: Math.min(filters.page * filters.per_page, allBranches.length),
+    };
 
     const handleFilterChange = (e) => {
         const { name, value } = e.target;
         setFilters(prev => ({ ...prev, [name]: value, page: 1 }));
+    };
+
+    const handlePageChange = (page) => {
+        setFilters(prev => ({ ...prev, page }));
+        window.scrollTo({ top: 0, behavior: 'smooth' });
     };
 
     if (isLoading) return <LoadingSpinner />;
@@ -69,7 +98,6 @@ export default function BranchesPage() {
                                 <option value="HQ">Headquarters</option>
                                 <option value="REGIONAL">Regional</option>
                                 <option value="STATE">State</option>
-                                <option value="ZONAL">Zonal</option>
                             </select>
                         </div>
                         <div className="col-md-3">
@@ -82,14 +110,39 @@ export default function BranchesPage() {
                                 placeholder="Filter by state"
                             />
                         </div>
+                        <div className="col-md-2">
+                            <select
+                                className="form-select"
+                                name="per_page"
+                                value={filters.per_page}
+                                onChange={handleFilterChange}
+                            >
+                                <option value="10">10 per page</option>
+                                <option value="20">20 per page</option>
+                                <option value="50">50 per page</option>
+                                <option value="100">100 per page</option>
+                            </select>
+                        </div>
                     </div>
                 </div>
             </div>
 
+            {/* Results info */}
+            <div className="d-flex justify-content-between align-items-center mb-3">
+                <span className="text-muted">
+                    Showing {meta.from} to {meta.to} of {meta.total} branches
+                </span>
+                {allBranches.length > 0 && (
+                    <span className="text-muted">
+                        Page {meta.current_page} of {meta.last_page}
+                    </span>
+                )}
+            </div>
+
             {/* Branches Grid */}
             <div className="row">
-                {data?.data?.length > 0 ? (
-                    data.data.map((branch) => (
+                {paginatedBranches.length > 0 ? (
+                    paginatedBranches.map((branch) => (
                         <div key={branch.id} className="col-md-6 mb-4">
                             <div className="card h-100">
                                 <div className="card-body">
@@ -98,13 +151,15 @@ export default function BranchesPage() {
                                             <h5 className="mb-1">{branch.name}</h5>
                                             <p className="text-muted mb-0">Code: {branch.code}</p>
                                         </div>
-                                        <StatusBadge status={branch.status || 'active'} />
+                                        <StatusBadge status={branch.status} />
                                     </div>
 
                                     <div className="mb-3">
                                         <div className="d-flex align-items-center mb-2">
                                             <MapPin size={16} className="text-muted me-2" />
-                                            <span>{branch.address}, {branch.city}, {branch.state}</span>
+                                            <span>
+                                                {[branch.address, branch.state].filter(Boolean).join(', ')}
+                                            </span>
                                         </div>
                                         <div className="d-flex align-items-center mb-2">
                                             <Phone size={16} className="text-muted me-2" />
@@ -119,7 +174,7 @@ export default function BranchesPage() {
                                     <div className="d-flex justify-content-between align-items-center">
                                         <div>
                                             <span className="badge bg-info me-2">{branch.type}</span>
-                                            {branch.is_hq && (
+                                            {branch.type === 'HQ' && (
                                                 <span className="badge bg-warning">Headquarters</span>
                                             )}
                                         </div>
@@ -130,19 +185,27 @@ export default function BranchesPage() {
                                             >
                                                 <Edit size={16} />
                                             </button>
-                                            <button
-                                                className="btn btn-sm btn-outline-danger"
-                                                onClick={() => {/* Handle delete */}}
-                                            >
-                                                <Trash2 size={16} />
-                                            </button>
+                                            {branch.type !== 'HQ' && (
+                                                <button
+                                                    className="btn btn-sm btn-outline-danger"
+                                                    onClick={() => {
+                                                        if (window.confirm('Are you sure you want to delete this branch?')) {
+                                                            console.log('Delete branch:', branch.id);
+                                                        }
+                                                    }}
+                                                >
+                                                    <Trash2 size={16} />
+                                                </button>
+                                            )}
                                         </div>
                                     </div>
                                 </div>
                                 <div className="card-footer bg-light">
                                     <small className="text-muted">
-                                        {branch.offices_count || 0} offices • 
-                                        {branch.users_count || 0} users
+                                        {branch.users_count || 0} users •{' '}
+                                        {branch.corporates_count || 0} corporates •{' '}
+                                        {branch.enrollees_count || 0} enrollees •{' '}
+                                        {branch.claims_count || 0} claims
                                     </small>
                                 </div>
                             </div>
@@ -153,7 +216,11 @@ export default function BranchesPage() {
                         <div className="text-center py-5">
                             <MapPin size={48} className="text-muted mb-3" />
                             <h5>No branches found</h5>
-                            <p className="text-muted">Get started by adding your first branch</p>
+                            <p className="text-muted">
+                                {filters.search || filters.type || filters.state
+                                    ? 'Try adjusting your filters'
+                                    : 'Get started by adding your first branch'}
+                            </p>
                             <button
                                 className="btn btn-primary"
                                 onClick={() => navigate('/settings/branches/new')}
@@ -166,11 +233,12 @@ export default function BranchesPage() {
                 )}
             </div>
 
-            {data?.meta && (
+            {/* Pagination */}
+            {allBranches.length > 0 && (
                 <Pagination
-                    currentPage={data.meta.current_page}
-                    lastPage={data.meta.last_page}
-                    onPageChange={(page) => setFilters(prev => ({ ...prev, page }))}
+                    currentPage={meta.current_page}
+                    lastPage={meta.last_page}
+                    onPageChange={handlePageChange}
                 />
             )}
         </div>

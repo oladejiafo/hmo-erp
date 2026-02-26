@@ -23,7 +23,12 @@ class HealthCareProvider extends Model
         'branch_id', 'hcp_code', 'name', 'type', 'address', 'city',
         'state', 'lga', 'latitude', 'longitude', 'email', 'phone', 'alt_phone',
         'nhis_accreditation_no', 'tier', 'status', 'performance_score',
-        'accredited_at', 'contract_expiry_date', 'notes',
+        'accredited_at', 'contract_expiry_date', 'notes', 'payment_model',
+        'ffs_tariff_enforced',
+        'ffs_contract_ref',
+        'ffs_contract_start',
+        'ffs_contract_end',
+
     ];
 
     protected $casts = [
@@ -34,6 +39,10 @@ class HealthCareProvider extends Model
         'performance_score'     => 'decimal:2',
         'latitude'              => 'decimal:7',
         'longitude'             => 'decimal:7',
+        'ffs_tariff_enforced'   => 'boolean',
+        'ffs_contract_start'    => 'date',
+        'ffs_contract_end'      => 'date',
+
     ];
 
     // ─── Helpers ──────────────────────────────────────────────────────────────
@@ -57,6 +66,26 @@ class HealthCareProvider extends Model
     public function updatePerformanceScore(float $score): void
     {
         $this->update(['performance_score' => round($score, 2)]);
+    }
+
+    public function isCapitation(): bool
+    {
+        return in_array($this->payment_model, ['capitation', 'hybrid']);
+    }
+
+    public function isFeeForService(): bool
+    {
+        return in_array($this->payment_model, ['fee_for_service', 'hybrid']);
+    }
+
+    public function getPaymentModelLabelAttribute(): string
+    {
+        return match($this->payment_model) {
+            'capitation'       => 'Capitation',
+            'fee_for_service'  => 'Fee for Service',
+            'hybrid'           => 'Hybrid',
+            default            => 'Capitation',
+        };
     }
 
     // ─── Scopes ───────────────────────────────────────────────────────────────

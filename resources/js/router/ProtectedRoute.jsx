@@ -1,28 +1,24 @@
+/**
+ * FILE: resources/js/router/ProtectedRoute.jsx
+ *
+ * CHANGES FROM ORIGINAL:
+ * ─────────────────────────────────────────────────────────────────────────────
+ * BUG FIX: While `loading = true` the old code returned `null` (completely
+ *   blank). On a slow connection this could produce a flash of white.
+ *   Now it renders a centered spinner instead. This is purely cosmetic but
+ *   also prevents any transient state from being visible.
+ *
+ * Portal segregation logic is unchanged.
+ * isPortalPath() fix (startsWith + '/') is unchanged.
+ * ─────────────────────────────────────────────────────────────────────────────
+ */
+
 import React from 'react';
 import { Navigate, useLocation } from 'react-router-dom';
 import { useAuth } from '../contexts/AuthContext';
 
 /**
- * FILE LOCATION: resources/js/router/ProtectedRoute.jsx
- *
- * Redirects unauthenticated users to /login.
- * Preserves the attempted URL so they can be returned after login.
- *
- * Also enforces portal segregation:
- *   /enrollee  and /enrollee/* → enrollee_user only
- *   /corporate and /corporate/* → corporate_user only
- *   everything else              → HMO staff only
- *
- * BUG FIX: previous version used startsWith('/enrollee') which also
- * matched /enrollees (the HMO staff page). Now uses exact prefix matching.
- */
-
-/**
- * Returns true only if the path IS the prefix or starts with prefix + '/'.
- * '/enrollees'.startsWith('/enrollee')     → true  ← old bug
- * isPortalPath('/enrollees', '/enrollee')  → false ← fixed
- * isPortalPath('/enrollee',  '/enrollee')  → true  ← correct
- * isPortalPath('/enrollee/benefits', '/enrollee') → true ← correct
+ * Exact-prefix match: avoids /enrollees matching /enrollee, etc.
  */
 function isPortalPath(path, prefix) {
     return path === prefix || path.startsWith(prefix + '/');
@@ -32,20 +28,33 @@ export default function ProtectedRoute({ children }) {
     const { user, loading } = useAuth();
     const location = useLocation();
 
-    if (loading) return null;
+    // ── Still resolving session from localStorage ─────────────────────────
+    // Show a full-screen spinner instead of null so users see feedback and
+    // there is no risk of child components mounting before auth is ready.
+    if (loading) {
+        return (
+            <div
+                className="d-flex vh-100 align-items-center justify-content-center"
+                style={{ background: '#f4f6fa' }}
+                aria-label="Loading…"
+            >
+                <div className="spinner-border text-primary" role="status">
+                    <span className="visually-hidden">Loading…</span>
+                </div>
+            </div>
+        );
+    }
 
-    // Not authenticated → send to login, preserve intended URL
+    // ── Not authenticated → send to login, preserve intended URL ──────────
     if (!user) {
         return <Navigate to="/login" state={{ from: location }} replace />;
     }
 
     const path = location.pathname;
-
-    // Detect which portal this path belongs to
     const isEnrolleePath  = isPortalPath(path, '/enrollee');
     const isCorporatePath = isPortalPath(path, '/corporate');
 
-    // HMO staff trying to reach an enrollee portal URL
+    // HMO staff → enrollee portal
     if (isEnrolleePath && user.user_type !== 'enrollee_user') {
         return (
             <Navigate
@@ -55,7 +64,7 @@ export default function ProtectedRoute({ children }) {
         );
     }
 
-    // HMO staff trying to reach a corporate portal URL
+    // HMO staff → corporate portal
     if (isCorporatePath && user.user_type !== 'corporate_user') {
         return (
             <Navigate
@@ -65,12 +74,12 @@ export default function ProtectedRoute({ children }) {
         );
     }
 
-    // Enrollee user trying to reach an HMO staff URL
+    // Enrollee user → HMO staff area
     if (!isEnrolleePath && !isCorporatePath && user.user_type === 'enrollee_user') {
         return <Navigate to="/enrollee" replace />;
     }
 
-    // Corporate user trying to reach an HMO staff URL
+    // Corporate user → HMO staff area
     if (!isEnrolleePath && !isCorporatePath && user.user_type === 'corporate_user') {
         return <Navigate to="/corporate" replace />;
     }

@@ -1,53 +1,70 @@
 /**
  * FILE LOCATION: resources/js/pages/preauth/PAFormPage.jsx
  *
- * New Pre-Authorisation Request Form.
- *
- * SOP rules enforced here:
- *  - Emergency requests auto-flag for retrospective review (no blocking)
- *  - Estimated amount drives approval tier display so submitter knows
- *    what approval chain to expect
- *  - Enrollee must be active; shows benefit balance warning if low
- *  - HCP must be active/accredited
- *  - Validates that selected service type normally requires PA
- *  - Duplicate check (warn if enrollee already has open PA for same service)
+ * Enhanced with autocomplete suggestions for:
+ *  - Service types (with ICD-10 code suggestions)
+ *  - Diagnosis codes (ICD-10 lookup)
+ *  - Common procedure names
  */
 
-import React, { useState } from 'react';
+import React, { useState, useMemo } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useMutation, useQuery } from '@tanstack/react-query';
 import { toast } from 'react-toastify';
 import {
     ArrowLeft, AlertTriangle, Info, CheckCircle,
     User, Building2, Stethoscope, FileText, Zap,
-    Clock, TrendingUp, DollarSign,
+    Clock, TrendingUp, DollarSign, Search, X,
 } from 'lucide-react';
 import { submitPARequest, fetchEnrollees, fetchHCPs } from '../../api/index';
 import { useAuth } from '../../contexts/AuthContext';
 import { formatCurrency } from '../../utils/format';
 
+
 // Services that require pre-authorisation per NHIA guidelines
 const PA_SERVICES = [
-    { value: 'inpatient_admission',  label: 'Inpatient Admission / Hospitalisation' },
-    { value: 'surgical_procedure',   label: 'Surgical Procedure' },
-    { value: 'mri_ct_scan',          label: 'MRI / CT Scan' },
-    { value: 'specialist_referral',  label: 'Specialist Consultation (Referred)' },
-    { value: 'physiotherapy',        label: 'Physiotherapy (Course)' },
-    { value: 'chemotherapy',         label: 'Chemotherapy / Oncology' },
-    { value: 'dialysis',             label: 'Renal Dialysis' },
-    { value: 'maternity_admission',  label: 'Maternity Admission / Delivery' },
-    { value: 'major_investigation',  label: 'Major Diagnostic Investigation' },
-    { value: 'prosthetics',          label: 'Prosthetics / Orthopaedic Implants' },
-    { value: 'chronic_drugs',        label: 'Chronic Medication (New Registration)' },
-    { value: 'dental_major',         label: 'Major Dental (Extraction, Root Canal)' },
-    { value: 'optical',              label: 'Optical / Spectacles' },
-    { value: 'other',                label: 'Other (specify in clinical notes)' },
+    { value: 'inpatient_admission',  label: 'Inpatient Admission / Hospitalisation', keywords: ['admit', 'hospital', 'ward', 'inpatient'] },
+    { value: 'surgical_procedure',   label: 'Surgical Procedure', keywords: ['surgery', 'operation', 'surgical', 'theatre'] },
+    { value: 'mri_ct_scan',          label: 'MRI / CT Scan', keywords: ['mri', 'ct scan', 'radiology', 'imaging'] },
+    { value: 'specialist_referral',  label: 'Specialist Consultation (Referred)', keywords: ['referral', 'specialist', 'consultant'] },
+    { value: 'physiotherapy',        label: 'Physiotherapy (Course)', keywords: ['physio', 'physical therapy', 'rehab'] },
+    { value: 'chemotherapy',         label: 'Chemotherapy / Oncology', keywords: ['chemo', 'oncology', 'cancer'] },
+    { value: 'dialysis',             label: 'Renal Dialysis', keywords: ['dialysis', 'kidney', 'renal'] },
+    { value: 'maternity_admission',  label: 'Maternity Admission / Delivery', keywords: ['maternity', 'delivery', 'antenatal', 'labour'] },
+    { value: 'major_investigation',  label: 'Major Diagnostic Investigation', keywords: ['endoscopy', 'colonoscopy', 'biopsy'] },
+    { value: 'prosthetics',          label: 'Prosthetics / Orthopaedic Implants', keywords: ['prosthetic', 'implant', 'orthopaedic'] },
+    { value: 'chronic_drugs',        label: 'Chronic Medication (New Registration)', keywords: ['chronic', 'medication', 'drugs'] },
+    { value: 'dental_major',         label: 'Major Dental (Extraction, Root Canal)', keywords: ['dental', 'extraction', 'root canal'] },
+    { value: 'optical',              label: 'Optical / Spectacles', keywords: ['optical', 'spectacles', 'glasses'] },
+    { value: 'other',                label: 'Other (specify in clinical notes)', keywords: ['other'] },
 ];
 
 const ICD10_COMMON = [
-    'A00-A09', 'B00-B19', 'C00-D49', 'E00-E89', 'F01-F99',
-    'G00-G99', 'H00-H59', 'H60-H95', 'I00-I99', 'J00-J99',
-    'K00-K95', 'L00-L99', 'M00-M99', 'N00-N99', 'O00-O9A',
+    { code: 'A00-A09', label: 'Intestinal infectious diseases' },
+    { code: 'C00-D49', label: 'Neoplasms (Cancer)' },
+    { code: 'E00-E89', label: 'Endocrine, nutritional and metabolic diseases' },
+    { code: 'F01-F99', label: 'Mental, Behavioral and Neurodevelopmental disorders' },
+    { code: 'G00-G99', label: 'Diseases of the nervous system' },
+    { code: 'I00-I99', label: 'Diseases of the circulatory system' },
+    { code: 'J00-J99', label: 'Diseases of the respiratory system' },
+    { code: 'K00-K95', label: 'Diseases of the digestive system' },
+    { code: 'M00-M99', label: 'Diseases of the musculoskeletal system' },
+    { code: 'N00-N99', label: 'Diseases of the genitourinary system' },
+    { code: 'O00-O9A', label: 'Pregnancy, childbirth and the puerperium' },
+];
+
+// Common procedure names with keywords
+const COMMON_PROCEDURES = [
+    { name: 'Appendectomy', keywords: ['appendix', 'appendicitis'] },
+    { name: 'Cholecystectomy', keywords: ['gallbladder', 'gall stones'] },
+    { name: 'Hernia Repair', keywords: ['hernia', 'inguinal'] },
+    { name: 'Cataract Surgery', keywords: ['cataract', 'eye surgery'] },
+    { name: 'Caesarean Section', keywords: ['c-section', 'delivery'] },
+    { name: 'Hysterectomy', keywords: ['uterus', 'womb'] },
+    { name: 'Knee Replacement', keywords: ['knee', 'arthroplasty'] },
+    { name: 'Hip Replacement', keywords: ['hip', 'arthroplasty'] },
+    { name: 'Angioplasty', keywords: ['heart', 'stent', 'cardiac'] },
+    { name: 'Coronary Bypass', keywords: ['CABG', 'heart surgery'] },
 ];
 
 // Which tier of approval this amount requires
@@ -91,6 +108,11 @@ export default function PAFormPage() {
 
     const [enrolleeSearch, setEnrolleeSearch] = useState('');
     const [hcpSearch,      setHcpSearch]      = useState('');
+    const [serviceSearch,  setServiceSearch]  = useState('');
+    const [icdSearch,      setIcdSearch]      = useState('');
+    const [showServiceSuggestions, setShowServiceSuggestions] = useState(false);
+    const [showIcdSuggestions, setShowIcdSuggestions] = useState(false);
+    const [showProcedureSuggestions, setShowProcedureSuggestions] = useState(false);
     const [selectedEnrollee, setSelectedEnrollee] = useState(null);
     const [selectedHCP,      setSelectedHCP]      = useState(null);
     const [showEnrolleeList, setShowEnrolleeList] = useState(false);
@@ -99,18 +121,54 @@ export default function PAFormPage() {
     const set = (k, v) => setForm(f => ({ ...f, [k]: v }));
 
     // Enrollee search
-    const { data: enrolleeData } = useQuery({
+    const { data: enrolleeData, isLoading: enrolleeLoading } = useQuery({
         queryKey: ['pa-enrollee-search', enrolleeSearch],
-        queryFn:  () => fetchEnrollees({ search: enrolleeSearch, per_page: 8 }),
-        enabled:  enrolleeSearch.length > 1,
+        queryFn: () => fetchEnrollees({ search: enrolleeSearch, per_page: 8 }),
+        enabled: enrolleeSearch.length > 1,
     });
 
+    // Extract enrollees with proper nested structure
+    const enrollees = enrolleeData?.data?.data ?? [];
+
     // HCP search
-    const { data: hcpData } = useQuery({
+    const { data: hcpData, isLoading: hcpLoading } = useQuery({
         queryKey: ['pa-hcp-search', hcpSearch],
         queryFn:  () => fetchHCPs({ search: hcpSearch, status: 'active', per_page: 8 }),
         enabled:  hcpSearch.length > 1,
     });
+
+    // Extract HCPs with proper nested structure
+    const hcps = hcpData?.data?.data ?? [];
+
+    // Filter service suggestions based on search
+    const serviceSuggestions = useMemo(() => {
+        if (!serviceSearch) return PA_SERVICES.slice(0, 5);
+        const searchLower = serviceSearch.toLowerCase();
+        return PA_SERVICES.filter(s => 
+            s.label.toLowerCase().includes(searchLower) ||
+            s.keywords.some(k => k.includes(searchLower))
+        ).slice(0, 5);
+    }, [serviceSearch]);
+
+    // Filter ICD-10 suggestions
+    const icdSuggestions = useMemo(() => {
+        if (!icdSearch) return ICD10_COMMON.slice(0, 5);
+        const searchLower = icdSearch.toLowerCase();
+        return ICD10_COMMON.filter(i => 
+            i.code.toLowerCase().includes(searchLower) ||
+            i.label.toLowerCase().includes(searchLower)
+        ).slice(0, 5);
+    }, [icdSearch]);
+
+    // Filter procedure suggestions
+    const procedureSuggestions = useMemo(() => {
+        const descLower = form.diagnosis_description?.toLowerCase() || '';
+        if (!descLower) return [];
+        return COMMON_PROCEDURES.filter(p => 
+            p.keywords.some(k => descLower.includes(k)) ||
+            p.name.toLowerCase().includes(descLower)
+        ).slice(0, 3);
+    }, [form.diagnosis_description]);
 
     const submitMutation = useMutation({
         mutationFn: () => submitPARequest({
@@ -182,7 +240,7 @@ export default function PAFormPage() {
                             </label>
                             {selectedEnrollee ? (
                                 <div className="d-flex align-items-center gap-3 p-3 rounded-3"
-                                     style={{ background: '#e6f4ea', border: '1px solid #a8d5b5' }}>
+                                    style={{ background: '#e6f4ea', border: '1px solid #a8d5b5' }}>
                                     <CheckCircle size={18} color="#137333" />
                                     <div className="flex-grow-1">
                                         <div className="fw-semibold" style={{ fontSize: 14 }}>
@@ -207,40 +265,60 @@ export default function PAFormPage() {
                                 <div className="position-relative">
                                     <input
                                         className="form-control"
-                                        placeholder="Search by name, member number, or email…"
+                                        placeholder="Type 3+ characters to search..."
                                         value={enrolleeSearch}
-                                        onChange={e => { setEnrolleeSearch(e.target.value); setShowEnrolleeList(true); }}
-                                        onFocus={() => setShowEnrolleeList(true)}
+                                        onChange={e => {
+                                            setEnrolleeSearch(e.target.value);
+                                            setShowEnrolleeList(e.target.value.length >= 3);
+                                        }}
+                                        onFocus={() => {
+                                            if (enrolleeSearch.length >= 3) {
+                                                setShowEnrolleeList(true);
+                                            }
+                                        }}
                                     />
-                                    {showEnrolleeList && enrolleeData?.data?.length > 0 && (
+                                    {showEnrolleeList && (
                                         <div className="position-absolute w-100 bg-white border rounded-3 shadow-sm"
-                                             style={{ top: '100%', zIndex: 100, maxHeight: 240, overflowY: 'auto' }}>
-                                            {enrolleeData.data.map(e => (
-                                                <div
-                                                    key={e.id}
-                                                    className="px-3 py-2 d-flex justify-content-between align-items-center"
-                                                    style={{ cursor: 'pointer', borderBottom: '1px solid #f0f4f8', fontSize: 13 }}
-                                                    onMouseEnter={ev => ev.currentTarget.style.background = '#f7fafc'}
-                                                    onMouseLeave={ev => ev.currentTarget.style.background = 'transparent'}
-                                                    onClick={() => {
-                                                        setSelectedEnrollee(e);
-                                                        set('enrollee_id', e.id);
-                                                        setEnrolleeSearch('');
-                                                        setShowEnrolleeList(false);
-                                                    }}
-                                                >
-                                                    <div>
-                                                        <div className="fw-semibold">{e.first_name} {e.last_name}</div>
-                                                        <div className="text-muted font-monospace" style={{ fontSize: 11 }}>
-                                                            {e.enrollee_id}
-                                                        </div>
+                                            style={{ top: '100%', zIndex: 1000, maxHeight: 240, overflowY: 'auto' }}>
+                                            {enrolleeLoading ? (
+                                                <div className="p-3 text-center">
+                                                    <div className="spinner-border spinner-border-sm" role="status">
+                                                        <span className="visually-hidden">Loading...</span>
                                                     </div>
-                                                    <span className={`badge ${e.status === 'active' ? 'bg-success' : 'bg-warning'}`}
-                                                          style={{ fontSize: 10 }}>
-                                                        {e.status}
-                                                    </span>
                                                 </div>
-                                            ))}
+                                            ) : enrollees.length > 0 ? (
+                                                enrollees.map(e => (
+                                                    <div
+                                                        key={e.id}
+                                                        className="px-3 py-2 d-flex justify-content-between align-items-center"
+                                                        style={{ cursor: 'pointer', borderBottom: '1px solid #f0f4f8' }}
+                                                        onMouseDown={(event) => {
+                                                            event.preventDefault();
+                                                            setSelectedEnrollee(e);
+                                                            set('enrollee_id', e.id);
+                                                            setEnrolleeSearch('');
+                                                            setShowEnrolleeList(false);
+                                                        }}
+                                                        onMouseEnter={e => e.currentTarget.style.background = '#f7fafc'}
+                                                        onMouseLeave={e => e.currentTarget.style.background = 'transparent'}
+                                                    >
+                                                        <div>
+                                                            <div className="fw-semibold">{e.first_name} {e.last_name}</div>
+                                                            <div className="text-muted font-monospace" style={{ fontSize: 11 }}>
+                                                                {e.enrollee_id}
+                                                            </div>
+                                                        </div>
+                                                        <span className={`badge ${e.status === 'active' ? 'bg-success' : 'bg-warning'}`}
+                                                            style={{ fontSize: 10 }}>
+                                                            {e.status}
+                                                        </span>
+                                                    </div>
+                                                ))
+                                            ) : (
+                                                <div className="p-3 text-center text-muted">
+                                                    No enrollees found matching "{enrolleeSearch}"
+                                                </div>
+                                            )}
                                         </div>
                                     )}
                                 </div>
@@ -248,7 +326,7 @@ export default function PAFormPage() {
                         </div>
 
                         {/* Dependant picker */}
-                        {selectedEnrollee && dependants.length > 0 && (
+                        {selectedEnrollee && selectedEnrollee.dependants?.length > 0 && (
                             <div className="mb-3">
                                 <label className="form-label fw-semibold" style={{ fontSize: 13 }}>
                                     Is this for a Dependant? (optional)
@@ -256,7 +334,7 @@ export default function PAFormPage() {
                                 <select className="form-select" value={form.dependent_id}
                                         onChange={e => set('dependent_id', e.target.value)}>
                                     <option value="">— Principal member —</option>
-                                    {dependants.map(d => (
+                                    {selectedEnrollee.dependants.map(d => (
                                         <option key={d.id} value={d.id}>
                                             {d.first_name} {d.last_name} ({d.relationship})
                                         </option>
@@ -270,7 +348,7 @@ export default function PAFormPage() {
                     <FormSection title="2. Healthcare Provider" icon={Building2}>
                         {selectedHCP ? (
                             <div className="d-flex align-items-center gap-3 p-3 rounded-3"
-                                 style={{ background: '#e8f0fe', border: '1px solid #c5d5e8' }}>
+                                style={{ background: '#e8f0fe', border: '1px solid #c5d5e8' }}>
                                 <CheckCircle size={18} color="#1967d2" />
                                 <div className="flex-grow-1">
                                     <div className="fw-semibold" style={{ fontSize: 14 }}>{selectedHCP.name}</div>
@@ -287,34 +365,54 @@ export default function PAFormPage() {
                             <div className="position-relative">
                                 <input
                                     className="form-control"
-                                    placeholder="Search for accredited healthcare provider…"
+                                    placeholder="Type 3+ characters to search for providers..."
                                     value={hcpSearch}
-                                    onChange={e => { setHcpSearch(e.target.value); setShowHCPList(true); }}
-                                    onFocus={() => setShowHCPList(true)}
+                                    onChange={e => {
+                                        setHcpSearch(e.target.value);
+                                        setShowHCPList(e.target.value.length >= 3);
+                                    }}
+                                    onFocus={() => {
+                                        if (hcpSearch.length >= 3) {
+                                            setShowHCPList(true);
+                                        }
+                                    }}
                                 />
-                                {showHCPList && hcpData?.data?.length > 0 && (
+                                {showHCPList && (
                                     <div className="position-absolute w-100 bg-white border rounded-3 shadow-sm"
-                                         style={{ top: '100%', zIndex: 100, maxHeight: 240, overflowY: 'auto' }}>
-                                        {hcpData.data.map(h => (
-                                            <div
-                                                key={h.id}
-                                                className="px-3 py-2"
-                                                style={{ cursor: 'pointer', borderBottom: '1px solid #f0f4f8', fontSize: 13 }}
-                                                onMouseEnter={ev => ev.currentTarget.style.background = '#f7fafc'}
-                                                onMouseLeave={ev => ev.currentTarget.style.background = 'transparent'}
-                                                onClick={() => {
-                                                    setSelectedHCP(h);
-                                                    set('hcp_id', h.id);
-                                                    setHcpSearch('');
-                                                    setShowHCPList(false);
-                                                }}
-                                            >
-                                                <div className="fw-semibold">{h.name}</div>
-                                                <div className="text-muted" style={{ fontSize: 11 }}>
-                                                    {h.type} · {h.tier} · {h.city}
+                                        style={{ top: '100%', zIndex: 1000, maxHeight: 240, overflowY: 'auto' }}>
+                                        {hcpLoading ? (
+                                            <div className="p-3 text-center">
+                                                <div className="spinner-border spinner-border-sm" role="status">
+                                                    <span className="visually-hidden">Loading...</span>
                                                 </div>
                                             </div>
-                                        ))}
+                                        ) : hcps.length > 0 ? (
+                                            hcps.map(h => (
+                                                <div
+                                                    key={h.id}
+                                                    className="px-3 py-2"
+                                                    style={{ cursor: 'pointer', borderBottom: '1px solid #f0f4f8' }}
+                                                    onMouseDown={(event) => {
+                                                        event.preventDefault();
+                                                        setSelectedHCP(h);
+                                                        set('hcp_id', h.id);
+                                                        setHcpSearch('');
+                                                        setShowHCPList(false);
+                                                    }}
+                                                    onMouseEnter={e => e.currentTarget.style.background = '#f7fafc'}
+                                                    onMouseLeave={e => e.currentTarget.style.background = 'transparent'}
+                                                >
+                                                    <div className="fw-semibold">{h.name}</div>
+                                                    <div className="text-muted" style={{ fontSize: 11 }}>
+                                                        {h.type} · {h.tier} · {h.city}
+                                                    </div>
+                                                </div>
+                                            ))
+                                        ) : (
+                                            <div className="p-3 text-center text-muted">
+                                                No providers found matching "{hcpSearch}"
+                                            </div>
+                                        )}
                                     </div>
                                 )}
                             </div>
@@ -336,40 +434,171 @@ export default function PAFormPage() {
                     {/* Section 3: Clinical */}
                     <FormSection title="3. Clinical Information" icon={Stethoscope}>
                         <div className="row g-3">
+                            {/* Service Type with Autocomplete */}
                             <div className="col-md-6">
                                 <label className="form-label fw-semibold" style={{ fontSize: 13 }}>
                                     Service Type <span className="text-danger">*</span>
                                 </label>
-                                <select className="form-select" value={form.service_type}
-                                        onChange={e => set('service_type', e.target.value)}>
-                                    <option value="">— Select service —</option>
-                                    {PA_SERVICES.map(s => (
-                                        <option key={s.value} value={s.value}>{s.label}</option>
-                                    ))}
-                                </select>
+                                <div className="position-relative">
+                                    <input
+                                        type="text"
+                                        className="form-control"
+                                        placeholder="Type to search services..."
+                                        value={serviceSearch}
+                                        onChange={(e) => {
+                                            setServiceSearch(e.target.value);
+                                            setShowServiceSuggestions(true);
+                                        }}
+                                        onFocus={() => setShowServiceSuggestions(true)}
+                                        onBlur={() => {
+                                            // Delay hiding to allow click on suggestion
+                                            setTimeout(() => setShowServiceSuggestions(false), 200);
+                                        }}
+                                    />
+                                    {showServiceSuggestions && serviceSuggestions.length > 0 && (
+                                        <div className="position-absolute w-100 bg-white border rounded-3 shadow-sm"
+                                            style={{ top: '100%', zIndex: 1000, maxHeight: '250px', overflowY: 'auto' }}>
+                                            {serviceSuggestions.map(s => (
+                                                <div
+                                                    key={s.value}
+                                                    className="px-3 py-2"
+                                                    style={{ cursor: 'pointer', borderBottom: '1px solid #f0f4f8' }}
+                                                    onMouseDown={(e) => {
+                                                        e.preventDefault(); // Prevent blur before click
+                                                        set('service_type', s.value);
+                                                        setServiceSearch(s.label);
+                                                        setShowServiceSuggestions(false);
+                                                    }}
+                                                >
+                                                    <div className="fw-semibold">{s.label}</div>
+                                                    <small className="text-muted">Keywords: {s.keywords?.join(', ')}</small>
+                                                </div>
+                                            ))}
+                                        </div>
+                                    )}
+                                </div>
+                                {/* Hidden select to show selected value */}
+                                {form.service_type && (
+                                    <small className="text-success d-block mt-1">
+                                        ✓ Selected: {PA_SERVICES.find(s => s.value === form.service_type)?.label}
+                                    </small>
+                                )}
                             </div>
+
+                            {/* ICD-10 Codes with Autocomplete */}
                             <div className="col-md-6">
                                 <label className="form-label fw-semibold" style={{ fontSize: 13 }}>
                                     ICD-10 Diagnosis Code(s)
                                 </label>
-                                <input
-                                    className="form-control"
-                                    placeholder="e.g. J45.0, I10 (comma-separated)"
-                                    value={form.diagnosis_codes}
-                                    onChange={e => set('diagnosis_codes', e.target.value)}
-                                />
-                                <div className="form-text">Comma-separated if multiple</div>
+                                <div className="position-relative">
+                                    <input
+                                        type="text"
+                                        className="form-control"
+                                        placeholder="Search ICD-10 codes..."
+                                        value={icdSearch}
+                                        onChange={(e) => {
+                                            setIcdSearch(e.target.value);
+                                            setShowIcdSuggestions(true);
+                                        }}
+                                        onFocus={() => setShowIcdSuggestions(true)}
+                                        onBlur={() => setTimeout(() => setShowIcdSuggestions(false), 200)}
+                                    />
+                                    {showIcdSuggestions && icdSuggestions.length > 0 && (
+                                        <div className="position-absolute w-100 bg-white border rounded-3 shadow-sm"
+                                            style={{ top: '100%', zIndex: 1000, maxHeight: '250px', overflowY: 'auto' }}>
+                                            {icdSuggestions.map(i => (
+                                                <div
+                                                    key={i.code}
+                                                    className="px-3 py-2 d-flex justify-content-between align-items-center"
+                                                    style={{ cursor: 'pointer', borderBottom: '1px solid #f0f4f8' }}
+                                                    onMouseDown={(e) => {
+                                                        e.preventDefault();
+                                                        const currentCodes = form.diagnosis_codes 
+                                                            ? form.diagnosis_codes.split(',').map(s => s.trim()).filter(Boolean)
+                                                            : [];
+                                                        
+                                                        if (!currentCodes.includes(i.code)) {
+                                                            currentCodes.push(i.code);
+                                                            set('diagnosis_codes', currentCodes.join(', '));
+                                                        }
+                                                        setIcdSearch('');
+                                                        setShowIcdSuggestions(false);
+                                                    }}
+                                                >
+                                                    <span>
+                                                        <span className="fw-bold me-2">{i.code}</span>
+                                                        <span>{i.label}</span>
+                                                    </span>
+                                                    <span className="badge bg-light text-dark">Add</span>
+                                                </div>
+                                            ))}
+                                        </div>
+                                    )}
+                                </div>
+                                {/* Display selected codes as badges */}
+                                {form.diagnosis_codes && (
+                                    <div className="d-flex flex-wrap gap-1 mt-2">
+                                        {form.diagnosis_codes.split(',').map((code, idx) => (
+                                            <span key={idx} className="badge bg-primary" style={{ fontSize: 11 }}>
+                                                {code.trim()}
+                                                <button
+                                                    type="button"
+                                                    className="btn-close btn-close-white ms-1"
+                                                    style={{ fontSize: '6px', verticalAlign: 'middle' }}
+                                                    onClick={() => {
+                                                        const codes = form.diagnosis_codes.split(',').map(s => s.trim());
+                                                        codes.splice(idx, 1);
+                                                        set('diagnosis_codes', codes.join(', '));
+                                                    }}
+                                                >
+                                                    ×
+                                                </button>
+                                            </span>
+                                        ))}
+                                    </div>
+                                )}
+                                <div className="form-text">Type to search, click to add codes</div>
                             </div>
                             <div className="col-12">
                                 <label className="form-label fw-semibold" style={{ fontSize: 13 }}>
                                     Diagnosis Description <span className="text-danger">*</span>
                                 </label>
-                                <input
-                                    className="form-control"
-                                    placeholder="Brief clinical description of the diagnosis"
-                                    value={form.diagnosis_description}
-                                    onChange={e => set('diagnosis_description', e.target.value)}
-                                />
+                                <div className="position-relative">
+                                    <input
+                                        className="form-control"
+                                        placeholder="Brief clinical description of the diagnosis"
+                                        value={form.diagnosis_description}
+                                        onChange={e => {
+                                            set('diagnosis_description', e.target.value);
+                                            setShowProcedureSuggestions(true);
+                                        }}
+                                        onFocus={() => setShowProcedureSuggestions(true)}
+                                        onBlur={() => setTimeout(() => setShowProcedureSuggestions(false), 200)}
+                                    />
+                                    {showProcedureSuggestions && procedureSuggestions.length > 0 && (
+                                        <div className="position-absolute w-100 bg-white border rounded-3 shadow-sm"
+                                             style={{ top: '100%', zIndex: 100, maxHeight: 200, overflowY: 'auto' }}>
+                                            <div className="px-3 py-2 text-muted fw-semibold" style={{ fontSize: 11 }}>
+                                                Suggested procedures:
+                                            </div>
+                                            {procedureSuggestions.map(p => (
+                                                <div
+                                                    key={p.name}
+                                                    className="px-3 py-2"
+                                                    style={{ cursor: 'pointer', borderBottom: '1px solid #f0f4f8', fontSize: 13 }}
+                                                    onMouseEnter={ev => ev.currentTarget.style.background = '#f7fafc'}
+                                                    onMouseLeave={ev => ev.currentTarget.style.background = 'transparent'}
+                                                    onClick={() => {
+                                                        set('diagnosis_description', p.name);
+                                                        setShowProcedureSuggestions(false);
+                                                    }}
+                                                >
+                                                    {p.name}
+                                                </div>
+                                            ))}
+                                        </div>
+                                    )}
+                                </div>
                             </div>
                             <div className="col-md-6">
                                 <label className="form-label fw-semibold" style={{ fontSize: 13 }}>

@@ -34,6 +34,8 @@ import {
 import { useAuth } from '../../contexts/AuthContext';
 import { formatCurrency, formatDate } from '../../utils/format';
 
+import PlanListPage from '../plans/PlanListPage';
+
 export default function CorporateDetailPage() {
     const { id }             = useParams();
     const navigate           = useNavigate();
@@ -49,11 +51,11 @@ export default function CorporateDetailPage() {
         queryFn:  () => fetchCorporate(id),
     });
 
-    const { data: plansData } = useQuery({
-        queryKey: ['corporate-plans', id],
-        queryFn:  () => fetchCorporatePlans(id),
-        enabled:  activeTab === 'plans',
-    });
+    // const { data: plansData } = useQuery({
+    //     queryKey: ['corporate-plans', id],
+    //     queryFn:  () => fetchCorporatePlans(id),
+    //     enabled:  activeTab === 'plans',
+    // });
 
     const { data: invoicesData } = useQuery({
         queryKey: ['corporate-invoices', id],
@@ -78,7 +80,7 @@ export default function CorporateDetailPage() {
 
     const corp     = data?.data?.data;
     const isSuspended = corp.status === 'suspended';
-    const plans    = plansData?.data?.data ?? plansData?.data ?? [];
+    // const plans    = plansData?.data?.data ?? plansData?.data ?? [];
     const invoices = invoicesData?.data?.data ?? invoicesData?.data ?? [];
 
     return (
@@ -211,30 +213,10 @@ export default function CorporateDetailPage() {
 
                     {/* Plans tab */}
                     {activeTab === 'plans' && (
-                        <div>
-                            {plans.length === 0 ? (
-                                
-<EmptyState icon={<CreditCard size={48} />} message="No plans configured" />
-                            ) : (
-                                <div className="row g-3">
-                                    {plans.map(plan => (
-                                        <div key={plan.id} className="col-md-6">
-                                            <div className="border rounded-3 p-3">
-                                                <div className="d-flex justify-content-between mb-2">
-                                                    <span className="fw-semibold">{plan.plan_name}</span>
-                                                    <span className="badge bg-success-subtle text-success">{plan.status}</span>
-                                                </div>
-                                                <InfoRow label="Plan Code"       value={plan.plan_code} mono />
-                                                <InfoRow label="Annual Premium"  value={formatCurrency(plan.annual_premium)} />
-                                                <InfoRow label="Max Benefit"     value={formatCurrency(plan.max_benefit_value)} />
-                                                <InfoRow label="Max Dependents"  value={plan.max_dependents} />
-                                                <InfoRow label="Effective"       value={`${formatDate(plan.effective_from)} → ${formatDate(plan.effective_to)}`} />
-                                            </div>
-                                        </div>
-                                    ))}
-                                </div>
-                            )}
-                        </div>
+                        <PlanListPage
+                            corporateId={corp.id}
+                            corporateName={corp.name}
+                        />
                     )}
 
                     {/* Invoices tab */}
@@ -285,7 +267,7 @@ export default function CorporateDetailPage() {
                             ) : (
                                 <div className="row g-3">
                                     {corp.contacts.map(c => (
-                                        <div key={c.id} className="col-md-4">
+                                        <div key={c.id} className="col-md-6">
                                             <div className="border rounded-3 p-3">
                                                 <div className="fw-semibold mb-1">{c.name}</div>
                                                 <div className="text-muted mb-2" style={{ fontSize: 12 }}>{c.title}</div>

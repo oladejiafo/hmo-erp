@@ -26,6 +26,10 @@ class Claim extends Model
         'is_pre_authorized', 'pre_auth_code',
         'reviewer_notes', 'rejection_reason',
         'auto_validated_at', 'approved_at', 'rejected_at', 'paid_at',
+
+        'source',            // 'manual' | 'bulk_import'
+        'import_batch_id',   // FK to claim_import_batches
+        'hcp_invoice_ref',
     ];
 
     protected $casts = [

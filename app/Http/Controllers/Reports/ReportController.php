@@ -6,13 +6,24 @@ use App\Http\Controllers\Controller;
 use App\Models\Claim;
 use App\Models\Enrollee;
 use App\Models\HealthCareProvider;
+use App\Models\GeneratedReport;
+use App\Models\ReportSchedule;
+use App\Services\NhiaReportService;
+use Carbon\Carbon;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Facades\Storage;
 
 class ReportController extends Controller
 {
+    public function __construct(private NhiaReportService $service) {}
+
+    // ─────────────────────────────────────────────────────────────────────────
+    // EXISTING REPORT METHODS
+    // ─────────────────────────────────────────────────────────────────────────
+
     public function claimsAging(Request $request): JsonResponse
     {
         /** @disregard P1013 */
@@ -244,6 +255,121 @@ class ReportController extends Controller
         return response()->json(['data' => $data]);
     }
 
+    // ─────────────────────────────────────────────────────────────────────────
+    // NEW GENERATED REPORTS FUNCTIONALITY
+    // ─────────────────────────────────────────────────────────────────────────
+
+    // List generated reports
+    public function index(Request $request): JsonResponse
+    {
+        $reports = GeneratedReport::with('generatedBy:id,name','hcp:id,name','corporate:id,name')
+            ->when($request->report_type, fn($q,$v) => $q->where('report_type',$v))
+            ->when($request->status,      fn($q,$v) => $q->where('status',$v))
+            ->when($request->period,      fn($q,$v) => $q->where('period',$v))
+            ->latest()
+            ->paginate(25);
+
+        return response()->json([
+            'data' => $reports->items(),
+            'meta' => ['current_page'=>$reports->currentPage(),'last_page'=>$reports->lastPage(),'total'=>$reports->total()],
+        ]);
+    }
+
+    // Trigger a report manually
+    public function generate(Request $request): JsonResponse
+    {
+        $request->validate([
+            'report_type'      => ['required', 'in:' . implode(',', array_keys(GeneratedReport::TYPE_LABELS))],
+            'period'           => ['required', 'string'],  // "2025-06" | "2025-Q2" | "2025"
+            'format'           => ['in:xlsx,pdf,both'],
+            'hcp_id'           => ['nullable', 'exists:health_care_providers,id'],
+            'corporate_id'     => ['nullable', 'exists:corporates,id'],
+            'payment_batch_id' => ['nullable', 'exists:payment_batches,id'],
+            'config'           => ['nullable', 'array'],   // custom overrides
+        ]);
+
+        [$start, $end] = $this->parsePeriod($request->period, $request->report_type);
+
+        $report = GeneratedReport::create([
+            'generated_by'    => Auth::id(),
+            'report_type'     => $request->report_type,
+            'period'          => $request->period,
+            'period_start'    => $start,
+            'period_end'      => $end,
+            'hcp_id'          => $request->hcp_id,
+            'corporate_id'    => $request->corporate_id,
+            'payment_batch_id'=> $request->payment_batch_id,
+            'format'          => $request->format ?? 'xlsx',
+            'config'          => $request->config,
+            'status'          => 'queued',
+        ]);
+
+        // Generate synchronously for now — queue for async in production
+        try {
+            $this->service->generate($report);
+        } catch (\Throwable $e) {
+            return response()->json(['message' => 'Report generation failed: ' . $e->getMessage()], 500);
+        }
+
+        return response()->json([
+            'message' => 'Report generated successfully.',
+            'data'    => $report->fresh()->append(['download_url_xlsx', 'download_url_pdf']),
+        ], 201);
+    }
+
+    // Download a report file
+    public function download(GeneratedReport $report, string $format = 'xlsx'): mixed
+    {
+        $path = $format === 'pdf' ? $report->file_path_pdf : $report->file_path_xlsx;
+
+        if (!$path || !Storage::disk('local')->exists($path)) {
+            return response()->json(['message' => 'File not found.'], 404);
+        }
+
+        $filename = basename($path);
+        /** @disregard P1013 */
+        return Storage::disk('local')->download($path, $filename);
+    }
+
+    // Get/update report schedules
+    public function schedules(): JsonResponse
+    {
+        $schedules = DB::table('report_schedules')->get();
+        return response()->json(['data' => $schedules]);
+    }
+
+    public function updateSchedule(Request $request, string $reportType): JsonResponse
+    {
+        $request->validate([
+            'enabled'      => ['boolean'],
+            'day_of_month' => ['integer','min:1','max:28'],
+            'format'       => ['in:xlsx,pdf,both'],
+            'config'       => ['nullable','array'],
+        ]);
+
+        DB::table('report_schedules')->updateOrInsert(
+            ['report_type' => $reportType],
+            array_merge($request->only(['enabled','day_of_month','format','config']), ['updated_at' => now()])
+        );
+
+        return response()->json(['message' => 'Schedule updated.']);
+    }
+
+    // Summary stats for dashboard
+    public function summary(): JsonResponse
+    {
+        return response()->json(['data' => [
+            'total_reports'   => GeneratedReport::count(),
+            'ready_reports'   => GeneratedReport::where('status','ready')->count(),
+            'failed_reports'  => GeneratedReport::where('status','failed')->count(),
+            'last_generated'  => GeneratedReport::where('status','ready')->latest('generated_at')->value('generated_at'),
+            'by_type'         => GeneratedReport::where('status','ready')
+                ->selectRaw('report_type, count(*) as count')
+                ->groupBy('report_type')->pluck('count','report_type'),
+        ]]);
+    }
+
+    // Original export method (keep for backwards compatibility)
     public function export(Request $request): JsonResponse
     {
         // TODO: Implement async Excel export using queue job
@@ -251,5 +377,24 @@ class ReportController extends Controller
         return response()->json([
             'message' => 'Export queued. You will be notified when ready.',
         ], 202);
+    }
+
+    private function parsePeriod(string $period, string $reportType): array
+    {
+        // Monthly: "2025-06"
+        if (preg_match('/^\d{4}-\d{2}$/', $period)) {
+            $date = Carbon::createFromFormat('Y-m', $period);
+            return [$date->startOfMonth()->format('Y-m-d'), $date->endOfMonth()->format('Y-m-d')];
+        }
+        // Quarterly: "2025-Q2"
+        if (preg_match('/^(\d{4})-Q([1-4])$/', $period, $m)) {
+            $qStart = Carbon::create($m[1], ($m[2]-1)*3+1, 1);
+            return [$qStart->format('Y-m-d'), $qStart->endOfQuarter()->format('Y-m-d')];
+        }
+        // Annual: "2025"
+        if (preg_match('/^\d{4}$/', $period)) {
+            return ["{$period}-01-01", "{$period}-12-31"];
+        }
+        throw new \InvalidArgumentException("Invalid period format: {$period}");
     }
 }

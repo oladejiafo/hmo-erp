@@ -27,6 +27,11 @@ const reactivateHCP = (id) => client.patch(`/hcps/${id}/reactivate`);
 
 const STATUS_COLOR = { pending: 'warning', active: 'success', suspended: 'secondary', blacklisted: 'danger', terminated: 'dark' };
 const TIER_COLOR = { primary: 'info', secondary: 'primary', tertiary: 'success' };
+const PAYMENT_MODEL_STYLE = {
+    capitation:       { bg: '#e8f0fe', color: '#1967d2', label: 'Capitation' },
+    fee_for_service:  { bg: '#f0fdf4', color: '#166534', label: 'Fee for Service' },
+    hybrid:           { bg: '#fef9c3', color: '#854d0e', label: 'Hybrid' },
+};
 const CATEGORIES = ['consultation', 'procedure', 'laboratory', 'radiology', 'drug', 'surgery', 'dental', 'optical', 'physiotherapy', 'maternity', 'emergency'];
 
 export default function HCPDetailPage() {
@@ -112,6 +117,7 @@ export default function HCPDetailPage() {
 
     const score = parseFloat(hcp.performance_score ?? 0);
     const scoreColor = score >= 80 ? '#137333' : score >= 60 ? '#b05e00' : '#c5221f';
+    const paymentStyle = PAYMENT_MODEL_STYLE[hcp.payment_model] ?? { bg: '#f3f4f6', color: '#6b7280', label: hcp.payment_model };
 
     // Safely handle performance data
     const perfRows = (() => {
@@ -164,6 +170,10 @@ export default function HCPDetailPage() {
                         <StatusBadge status={hcp.status} color={STATUS_COLOR[hcp.status]} label={hcp.status} />
                         <span className={`badge bg-${TIER_COLOR[hcp.tier] ?? 'secondary'}-subtle text-${TIER_COLOR[hcp.tier] ?? 'secondary'}`}>{hcp.tier}</span>
                         <span className="badge bg-light text-dark border text-capitalize">{hcp.type}</span>
+                        {/* Payment Model Badge */}
+                        <span className="badge" style={{ background: paymentStyle.bg, color: paymentStyle.color, fontSize: 11 }}>
+                            {paymentStyle.label}
+                        </span>
                     </div>
                     <p className="text-muted mb-0 font-monospace" style={{ fontSize: 12 }}>
                         {hcp.hcp_code} · {hcp.city}, {hcp.state} · Branch: {hcp.branch?.name}
@@ -223,8 +233,9 @@ export default function HCPDetailPage() {
                             ['NHIS No.', hcp.nhis_accreditation_no ?? '—'],
                             ['Accredited', hcp.accredited_at ? formatDate(hcp.accredited_at) : '—'],
                             ['Contract Expiry', hcp.contract_expiry_date ? formatDate(hcp.contract_expiry_date) : '—'],
-                            ['Payment Model', hcp.active_contract?.payment_model?.replace(/_/g, ' ') ?? '—'],
-                        ].map(([l, v]) => (
+                            ['Payment Model', hcp.payment_model?.replace(/_/g, ' ') ?? '—'],
+                            ['FFS Tariff', hcp.ffs_tariff_enforced ? '✓ Strict' : 'Flexible'],
+                        ].filter(Boolean).map(([l, v]) => (
                             <div key={l} className="col-auto text-center border-start ps-4">
                                 <div className="text-muted" style={{ fontSize: 10, textTransform: 'uppercase', letterSpacing: 0.5 }}>{l}</div>
                                 <div className="fw-semibold" style={{ fontSize: 13 }}>{v || '—'}</div>
@@ -233,6 +244,29 @@ export default function HCPDetailPage() {
                     </div>
                 </div>
             </div>
+
+            {/* FFS Contract Info Banner - Only show for FFS/Hybrid providers */}
+            {(hcp.payment_model === 'fee_for_service' || hcp.payment_model === 'hybrid') && (
+                <div className="alert alert-info d-flex align-items-start gap-2 mb-4 py-2" style={{ fontSize: 13, background: '#f0fdf4', border: '1px solid #bbf7d0' }}>
+                    <FileText size={16} className="flex-shrink-0 mt-1 text-success" />
+                    <div>
+                        <strong>FFS Contract:</strong> {hcp.ffs_contract_ref || 'No reference'} · 
+                        {hcp.ffs_contract_start && ` Valid from ${formatDate(hcp.ffs_contract_start)}`}
+                        {hcp.ffs_contract_end && ` to ${formatDate(hcp.ffs_contract_end)}`}
+                        {!hcp.ffs_contract_end && ' (Open-ended)'}
+                        {hcp.ffs_contract_end && (() => {
+                            const daysLeft = Math.ceil((new Date(hcp.ffs_contract_end) - new Date()) / 86400000);
+                            if (daysLeft < 30 && daysLeft >= 0) {
+                                return <span className="ms-2 text-warning fw-semibold">⚠️ Expires in {daysLeft} days</span>;
+                            }
+                            if (daysLeft < 0) {
+                                return <span className="ms-2 text-danger fw-semibold">⚠️ Expired</span>;
+                            }
+                            return null;
+                        })()}
+                    </div>
+                </div>
+            )}
 
             {/* Tabs */}
             <ul className="nav nav-tabs mb-4" style={{ fontSize: 13 }}>
@@ -255,7 +289,16 @@ export default function HCPDetailPage() {
                             </div>
                             <div className="card-body">
                                 <dl className="row mb-0" style={{ fontSize: 13 }}>
-                                    {[['Type', hcp.type], ['Tier', hcp.tier], ['LGA', hcp.lga], ['State', hcp.state], ['Address', hcp.address]].map(([l, v]) => v ? (
+                                    {[
+                                        ['Type', hcp.type], 
+                                        ['Tier', hcp.tier], 
+                                        ['LGA', hcp.lga], 
+                                        ['State', hcp.state], 
+                                        ['Address', hcp.address],
+                                        ['Payment Model', hcp.payment_model?.replace(/_/g, ' ')],
+                                        ['FFS Contract Ref', hcp.ffs_contract_ref],
+                                        ['FFS Tariff Enforced', hcp.ffs_tariff_enforced ? 'Yes' : 'No'],
+                                    ].map(([l, v]) => v ? (
                                         <React.Fragment key={l}>
                                             <dt className="col-5 text-muted">{l}</dt>
                                             <dd className="col-7 mb-2">{v}</dd>

@@ -6,7 +6,7 @@ import {
     Tooltip, ResponsiveContainer, Cell,
 } from 'recharts';
 import {
-    AlertTriangle, ChevronUp, ChevronDown, Search, Filter,
+    AlertTriangle, ChevronUp, ChevronDown, Search, Filter,ArrowLeft
 } from 'lucide-react';
 import { fetchFraudHeatmap } from '../../api/index';
 import { PageHeader, LoadingSpinner, ErrorAlert } from '../../components/ui/index';
@@ -149,7 +149,16 @@ export default function FraudHeatmapPage() {
                 title="Fraud Heatmap"
                 subtitle="HCP-level fraud flag analysis — identify patterns and high-risk providers"
             />
-
+            {/* Back to Reports Button */}
+            <div className="d-flex align-items-center gap-2 mb-3">
+                <button
+                    className="btn btn-outline-secondary btn-sm d-flex align-items-center gap-1"
+                    onClick={() => navigate('/reports')}
+                >
+                    <ArrowLeft size={14} />
+                    Back to Reports
+                </button>
+            </div>
             {/* Filters */}
             <div className="card border-0 shadow-sm mb-4" style={{ borderRadius: 12 }}>
                 <div className="card-body py-3">

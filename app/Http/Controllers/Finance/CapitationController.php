@@ -147,13 +147,25 @@ class CapitationController extends Controller
             ], 422);
         }
 
-        // Get all HCPs in this branch that have an active capitation rate
+        // Get all HCPs in this branch that have an active capitation rate AND are not FFS-only
         $periodDate = Carbon::createFromDate($year, $month, 1)->endOfMonth();
-        $rates      = HcpCapitationRate::forBranch($branchId)
+        $rates = HcpCapitationRate::forBranch($branchId)
             ->activeOn($periodDate)
-            ->with('hcp:id,name,tier,status')
+            ->with(['hcp:id,name,tier,status,payment_model'])
             ->get()
-            ->keyBy('hcp_id');
+            ->keyBy('hcp_id')
+            ->filter(function ($rate) {
+                // If payment_model is null (existing records), treat as capitation
+                $paymentModel = $rate->hcp->payment_model ?? 'capitation';
+                return $paymentModel !== 'fee_for_service';
+            });
+
+        // $periodDate = Carbon::createFromDate($year, $month, 1)->endOfMonth();
+        // $rates      = HcpCapitationRate::forBranch($branchId)
+        //     ->activeOn($periodDate)
+        //     ->with('hcp:id,name,tier,status')
+        //     ->get()
+        //     ->keyBy('hcp_id');
 
         if ($rates->isEmpty()) {
             return response()->json([

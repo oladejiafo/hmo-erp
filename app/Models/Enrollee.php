@@ -11,6 +11,7 @@ use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Database\Eloquent\Relations\HasOne;
 use Illuminate\Database\Eloquent\SoftDeletes;
+use App\Models\Plan;
 
 class Enrollee extends Model
 {
@@ -102,9 +103,14 @@ class Enrollee extends Model
         return $this->belongsTo(Corporate::class);
     }
 
-    public function plan(): BelongsTo
+    // public function plan(): BelongsTo
+    // {
+    //     return $this->belongsTo(CorporatePlan::class, 'plan_id');
+    // }
+
+    public function plan(): \Illuminate\Database\Eloquent\Relations\BelongsTo
     {
-        return $this->belongsTo(CorporatePlan::class, 'plan_id');
+        return $this->belongsTo(Plan::class);
     }
 
     public function primaryHcp(): BelongsTo

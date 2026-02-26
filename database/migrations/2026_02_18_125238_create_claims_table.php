@@ -89,6 +89,10 @@ return new class extends Migration
             $table->text('reviewer_notes')->nullable();
             $table->text('rejection_reason')->nullable();
 
+            $table->string('source')->default('manual');
+            $table->foreignId('import_batch_id')->nullable()->constrained('claim_import_batches')->nullOnDelete();
+            $table->string('hcp_invoice_ref')->nullable()->index();
+
             $table->timestamp('auto_validated_at')->nullable();
             $table->timestamp('approved_at')->nullable();
             $table->timestamp('rejected_at')->nullable();

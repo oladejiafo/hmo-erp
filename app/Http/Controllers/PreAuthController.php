@@ -134,7 +134,7 @@ class PreAuthController extends Controller
         $validated = $request->validate([
             'enrollee_id'           => ['required', 'integer', 'exists:enrollees,id'],
             'dependent_id'          => ['nullable', 'integer', 'exists:dependents,id'],
-            'hcp_id'                => ['required', 'integer', 'exists:h_c_p_s,id'],
+            'hcp_id'                => ['required', 'integer', 'exists:health_care_providers,id'],
             'service_type'          => ['required', 'string', 'max:60'],
             'urgency'               => ['required', Rule::in(['standard', 'urgent', 'emergency'])],
             'diagnosis_codes'       => ['nullable', 'array'],
@@ -152,11 +152,11 @@ class PreAuthController extends Controller
 
         $enrollee = Enrollee::findOrFail($validated['enrollee_id']);
 
-        if ($enrollee->status !== 'active') {
-            return response()->json([
-                'message' => 'Enrollee is not active and cannot receive a Pre-Authorisation.',
-            ], 422);
-        }
+        // if ($enrollee->status !== 'active') {
+        //     return response()->json([
+        //         'message' => 'Enrollee is not active and cannot receive a Pre-Authorisation.',
+        //     ], 422);
+        // }
 
         $hcp = HCP::findOrFail($validated['hcp_id']);
 

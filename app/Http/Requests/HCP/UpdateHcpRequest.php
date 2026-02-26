@@ -29,6 +29,12 @@ class UpdateHcpRequest extends FormRequest
             'nhis_accreditation_no' => ['nullable', 'string', 'max:50'],
             'contract_expiry_date'  => ['nullable', 'date'],
             'notes'                 => ['nullable', 'string'],
+
+            'payment_model'         => ['sometimes', 'in:capitation,fee_for_service,hybrid'],
+            'ffs_tariff_enforced'   => ['sometimes', 'boolean'],
+            'ffs_contract_ref'      => ['nullable', 'string', 'max:100'],
+            'ffs_contract_start'    => ['nullable', 'date'],
+            'ffs_contract_end'  => ['nullable', 'date', 'after_or_equal:ffs_contract_start'],
         ];
     }
 }

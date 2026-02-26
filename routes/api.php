@@ -7,6 +7,7 @@ use App\Http\Controllers\Claims\ClaimDocumentController;
 use App\Http\Controllers\Corporate\CorporateController;
 use App\Http\Controllers\Corporate\CorporateInvoiceController;
 use App\Http\Controllers\Corporate\CorporatePlanController;
+
 use App\Http\Controllers\Enrollee\DependentController;
 use App\Http\Controllers\Enrollee\EnrolleeController;
 use App\Http\Controllers\Finance\LedgerController;
@@ -33,6 +34,10 @@ use App\Http\Controllers\Portal\EnrolleePortalController;
 use App\Http\Controllers\AI\AIController;
 use App\Http\Controllers\ImportController;
 use App\Http\Controllers\ExportController;
+use App\Http\Controllers\Finance\HCPPaymentSummaryController;
+
+use App\Http\Controllers\Claims\ClaimImportController;
+
 
 /*
 |--------------------------------------------------------------------------
@@ -117,36 +122,64 @@ use App\Http\Controllers\ExportController;
 
         // ── Corporates ────────────────────────────────────────────────────────
         Route::middleware('permission:corporates.view')
-             ->prefix('corporates')
-             ->group(function () {
-                 Route::get('/', [CorporateController::class, 'index']);
-                 Route::get('{corporate}', [CorporateController::class, 'show']);
-                 Route::post('/', [CorporateController::class, 'store'])
-                      ->middleware('permission:corporates.create');
-                 Route::put('{corporate}', [CorporateController::class, 'update'])
-                      ->middleware('permission:corporates.edit');
-                 Route::delete('{corporate}', [CorporateController::class, 'destroy'])
-                      ->middleware('permission:corporates.delete');
-                 Route::patch('{corporate}/suspend', [CorporateController::class, 'suspend'])
-                      ->middleware('permission:corporates.suspend');
-                 Route::post('{corporate}/bulk-upload-enrollees', [CorporateController::class, 'bulkUpload'])
-                      ->middleware('permission:enrollees.create');
+            ->prefix('corporates')
+            ->group(function () {
+                Route::get('/', [CorporateController::class, 'index']);
+                Route::get('{corporate}', [CorporateController::class, 'show']);
+                Route::post('/', [CorporateController::class, 'store'])
+                    ->middleware('permission:corporates.create');
+                Route::put('{corporate}', [CorporateController::class, 'update'])
+                    ->middleware('permission:corporates.edit');
+                Route::delete('{corporate}', [CorporateController::class, 'destroy'])
+                    ->middleware('permission:corporates.delete');
+                Route::patch('{corporate}/suspend', [CorporateController::class, 'suspend'])
+                    ->middleware('permission:corporates.suspend');
+                Route::post('{corporate}/bulk-upload-enrollees', [CorporateController::class, 'bulkUpload'])
+                    ->middleware('permission:enrollees.create');
 
-                 // Corporate Plans
-                 Route::get('{corporate}/plans', [CorporatePlanController::class, 'index']);
-                 Route::post('{corporate}/plans', [CorporatePlanController::class, 'store'])
-                      ->middleware('permission:corporates.edit');
-                 Route::put('{corporate}/plans/{plan}', [CorporatePlanController::class, 'update'])
-                      ->middleware('permission:corporates.edit');
+                // ── Corporate Plans (Enhanced) ─────────────────────────────────
+                Route::prefix('{corporate}/plans')->group(function () {
+                    // List plans for this corporate
+                    Route::get('/', [CorporatePlanController::class, 'index'])
+                        ->middleware('permission:corporates.view');
 
-                 // Corporate Invoices
-                 Route::get('{corporate}/invoices', [CorporateInvoiceController::class, 'index'])
-                      ->middleware('permission:corporates.invoices');
-                 Route::post('{corporate}/invoices', [CorporateInvoiceController::class, 'store'])
-                      ->middleware('permission:corporates.invoices');
-                 Route::patch('{corporate}/invoices/{invoice}/mark-paid', [CorporateInvoiceController::class, 'markPaid'])
-                      ->middleware('permission:corporates.invoices');
+                    // Create a new plan
+                    Route::post('/', [CorporatePlanController::class, 'store'])
+                        ->middleware('permission:plans.create');
+
+                    // Show a single plan (with benefit items)
+                    Route::get('{plan}', [CorporatePlanController::class, 'show'])
+                        ->middleware('permission:corporates.view');
+
+                    // Update plan header fields
+                    Route::put('{plan}', [CorporatePlanController::class, 'update'])
+                        ->middleware('permission:plans.edit');
+
+                    // Discontinue a plan (logical delete)
+                    Route::patch('{plan}/discontinue', [CorporatePlanController::class, 'discontinue'])
+                        ->middleware('permission:plans.edit');
+
+                    // Duplicate a plan (copy with new name)
+                    Route::post('{plan}/duplicate', [CorporatePlanController::class, 'duplicate'])
+                        ->middleware('permission:plans.create');
+
+                    // Replace all benefit items for this plan
+                    Route::put('{plan}/benefit-items', [CorporatePlanController::class, 'syncBenefitItems'])
+                        ->middleware('permission:plans.edit');
+                });
+
+                // Corporate Invoices
+                Route::get('{corporate}/invoices', [CorporateInvoiceController::class, 'index'])
+                    ->middleware('permission:corporates.invoices');
+                Route::post('{corporate}/invoices', [CorporateInvoiceController::class, 'store'])
+                    ->middleware('permission:corporates.invoices');
+                Route::patch('{corporate}/invoices/{invoice}/mark-paid', [CorporateInvoiceController::class, 'markPaid'])
+                    ->middleware('permission:corporates.invoices');
         });
+
+            // ── Cross-Corporate Plans (HQ only) ────────────────────────────────────
+        Route::get('plans', [CorporatePlanController::class, 'allPlans'])
+        ->middleware('permission:plans.view');
 
         // ── Enrollees ─────────────────────────────────────────────────────────
         Route::middleware('permission:enrollees.view')
@@ -259,6 +292,18 @@ use App\Http\Controllers\ExportController;
                       ->middleware('permission:claims.fraud_review');
         });
 
+        // Claims Import
+        Route::prefix('claims/import')->middleware('permission:claims.import')->group(function () {
+          Route::get('/',                                     [ClaimImportController::class, 'index']);
+          Route::post('/upload',                              [ClaimImportController::class, 'upload']);
+          Route::post('/{batch}/map',                         [ClaimImportController::class, 'confirmMapping']);
+          Route::get('/{batch}/rows',                         [ClaimImportController::class, 'rows']);
+          Route::patch('/{batch}/rows/{row}',                 [ClaimImportController::class, 'updateRow']);
+          Route::post('/{batch}/bulk-approve-valid',          [ClaimImportController::class, 'bulkApproveValid']);
+          Route::post('/{batch}/push',                        [ClaimImportController::class, 'push']);
+          Route::get('/{batch}',                              [ClaimImportController::class, 'show']);
+       });
+
         // ── Finance ───────────────────────────────────────────────────────────
         Route::middleware('permission:finance.view')
              ->prefix('finance')
@@ -304,40 +349,60 @@ use App\Http\Controllers\ExportController;
                     Route::post('/{run}/approve',[CapitationController::class, 'approve']);        // Approve & create batch
                     Route::patch('/{run}/records/{record}',[CapitationController::class, 'adjustRecord']);   // Adjust individual HCP
                 });
+
+                // HCP Payment Summary (FFS + Capitation combined view)
+                Route::get('/hcp-payment-summary',
+                    [HCPPaymentSummaryController::class, 'index'])
+                    ->middleware('permission:finance.view');
+
+                Route::get('/hcp-payment-summary/ffs-vs-capitation',
+                    [HCPPaymentSummaryController::class, 'fvsCapitationTrend'])
+                    ->middleware('permission:finance.view');
+
         });
 
         // ── Reports & Analytics ───────────────────────────────────────────────
         Route::middleware('permission:reports.branch')
-             ->prefix('reports')
-             ->group(function () {
-                 Route::get('dashboard', [DashboardController::class, 'index']);
-                 Route::get('claims-aging', [ReportController::class, 'claimsAging']);
-                 Route::get('claims-by-hcp', [ReportController::class, 'claimsByHcp']);
-                 Route::get('claims-by-type', [ReportController::class, 'claimsByType']);
-                 Route::get('cost-by-corporate', [ReportController::class, 'costByCorporate']);
-                 Route::get('high-cost-enrollees', [ReportController::class, 'highCostEnrollees']);
-                 Route::get('hcp-performance', [ReportController::class, 'hcpPerformance']);
-
-                 // HQ Only
-                 Route::get('branch-comparison', [ReportController::class, 'branchComparison'])
-                      ->middleware('permission:reports.all_branches');
-                 Route::get('fraud-heatmap', [ReportController::class, 'fraudHeatmap'])
-                      ->middleware('permission:reports.fraud_heatmap');
-
-                 // Audit Logs
-                 Route::get('audit-logs', [AuditLogController::class, 'index'])
-                      ->middleware('permission:reports.audit_logs');
-
-                 // Exports
-                 Route::post('export', [ReportController::class, 'export'])
-                      ->middleware('permission:reports.export');
-
-                // ── SLA Monitoring ─────────────────────────────────────────────────
-                Route::get('sla-dashboard',  [SLAController::class, 'dashboard']);
-                Route::get('overdue-claims', [SLAController::class, 'overdueClaims']);
-                Route::post('sla/breach-scan', [SLAController::class, 'scanBreaches']);
-
-
+          ->prefix('reports')
+          ->group(function () {
+               
+               // ── Operational Reports (real-time) ─────────────────────────
+               Route::get('dashboard', [DashboardController::class, 'index']);
+               Route::get('claims-aging', [ReportController::class, 'claimsAging']);
+               Route::get('claims-by-hcp', [ReportController::class, 'claimsByHcp']);
+               Route::get('claims-by-type', [ReportController::class, 'claimsByType']);
+               Route::get('cost-by-corporate', [ReportController::class, 'costByCorporate']);
+               Route::get('high-cost-enrollees', [ReportController::class, 'highCostEnrollees']);
+               Route::get('hcp-performance', [ReportController::class, 'hcpPerformance']);
+     
+               // HQ Only Reports
+               Route::get('branch-comparison', [ReportController::class, 'branchComparison'])
+                    ->middleware('permission:reports.all_branches');
+               Route::get('fraud-heatmap', [ReportController::class, 'fraudHeatmap'])
+                    ->middleware('permission:reports.fraud_heatmap');
+     
+               // ── SLA Monitoring ─────────────────────────────────────────
+               Route::get('sla-dashboard',  [SLAController::class, 'dashboard']);
+               Route::get('overdue-claims', [SLAController::class, 'overdueClaims']);
+               Route::post('sla/breach-scan', [SLAController::class, 'scanBreaches']);
+     
+               // ── Audit Logs ─────────────────────────────────────────────
+               Route::get('audit-logs', [AuditLogController::class, 'index'])
+                    ->middleware('permission:reports.audit_logs');
+     
+               // ── Generated Reports Management ───────────────────────────
+               Route::prefix('generated')->group(function () {
+                    Route::get('/', [ReportController::class, 'index']);
+                    Route::get('summary', [ReportController::class, 'summary']);
+                    Route::post('generate', [ReportController::class, 'generate']);
+                    Route::get('schedules', [ReportController::class, 'schedules']);
+                    Route::put('schedules/{type}', [ReportController::class, 'updateSchedule']);
+                    Route::get('{report}/download/{format?}', [ReportController::class, 'download']);
+               });
+     
+               // ── Exports (kept separate) ────────────────────────────────
+               Route::post('export', [ReportController::class, 'export'])
+                    ->middleware('permission:reports.export');
         });
 
         // ── Compliance Calendar ───────────────────────────────────────────────
@@ -375,10 +440,12 @@ use App\Http\Controllers\ExportController;
         Route::middleware('permission:import.enrollees')
             ->prefix('import')
             ->group(function () {
+                Route::get('template/{type}', [ImportController::class, 'downloadTemplate']);
+                
                 Route::post('enrollees', [ImportController::class, 'enrollees']);
                 Route::post('tariffs', [ImportController::class, 'tariffs']);
                 Route::post('hcps', [ImportController::class, 'hcps']);
-                Route::get('template/{type}', [ImportController::class, 'downloadTemplate']);
+
         });
 
         Route::middleware('permission:reports.export')
@@ -404,6 +471,7 @@ use App\Http\Controllers\ExportController;
         Route::post('/mark-all-read',[NotificationController::class, 'markAllRead']);
     });
 
+    
     // Pre-Authorisation
     Route::prefix('pre-auth')->middleware(['auth:sanctum', 'branch.scope'])->group(function () {
         Route::get('/',                  [PreAuthController::class, 'index']);

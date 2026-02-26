@@ -29,49 +29,55 @@ export default function EnrolleeFormPage() {
     const [errors, setErrors] = useState({});
 
     // Fetch corporates for dropdown
-    const { data: corporates, isLoading: corporatesLoading } = useQuery({
+    const { data: corporatesData, isLoading: corporatesLoading } = useQuery({
         queryKey: ['corporates'],
         queryFn: () => fetchCorporates({ per_page: 100 }),
     });
 
+    // Extract corporates with proper nested structure
+    const corporates = corporatesData?.data?.data ?? corporatesData?.data ?? corporatesData ?? [];
+
     // Fetch plans based on selected corporate
-    const { data: plans, isLoading: plansLoading } = useQuery({
+    const { data: plansData, isLoading: plansLoading } = useQuery({
         queryKey: ['plans', formData.corporate_id],
         queryFn: () => fetchPlans(formData.corporate_id),
         enabled: !!formData.corporate_id,
     });
 
-    // Fetch enrollee if editing
-// Fetch enrollee if editing
-const { data: enrolleeData, isLoading, error } = useQuery({
-    queryKey: ['enrollee', id],
-    queryFn: () => fetchEnrollee(id),
-    enabled: isEditing,
-});
+    // Extract plans with proper nested structure
+    const plansRaw = plansData?.data?.data ?? plansData?.data ?? plansData ?? [];
+    const plans = Array.isArray(plansRaw) ? plansRaw : [];
 
-// Use useEffect to update form when data arrives
-useEffect(() => {
-    if (enrolleeData) {
-        // Extract the actual enrollee data (handle nested structure)
-        const enrollee = enrolleeData?.data?.data || enrolleeData?.data || enrolleeData;
-        
-        setFormData({
-            first_name: enrollee.first_name || '',
-            last_name: enrollee.last_name || '',
-            middle_name: enrollee.middle_name || '',
-            email: enrollee.email || '',
-            phone: enrollee.phone || '',
-            date_of_birth: enrollee.date_of_birth || '',
-            gender: enrollee.gender || '',
-            corporate_id: enrollee.corporate_id || '',
-            plan_id: enrollee.plan_id || '',
-            enrollee_number: enrollee.enrollee_number || '',
-            enrollment_date: enrollee.enrollment_date || '',
-            expiry_date: enrollee.expiry_date || '',
-            status: enrollee.status || 'active',
-        });
-    }
-}, [enrolleeData]);
+    // Fetch enrollee if editing
+    const { data: enrolleeData, isLoading, error } = useQuery({
+        queryKey: ['enrollee', id],
+        queryFn: () => fetchEnrollee(id),
+        enabled: isEditing,
+    });
+
+    // Use useEffect to update form when data arrives
+    useEffect(() => {
+        if (enrolleeData) {
+            // Extract the actual enrollee data (handle nested structure)
+            const enrollee = enrolleeData?.data?.data || enrolleeData?.data || enrolleeData;
+            
+            setFormData({
+                first_name: enrollee.first_name || '',
+                last_name: enrollee.last_name || '',
+                middle_name: enrollee.middle_name || '',
+                email: enrollee.email || '',
+                phone: enrollee.phone || '',
+                date_of_birth: enrollee.date_of_birth || '',
+                gender: enrollee.gender || '',
+                corporate_id: enrollee.corporate_id || '',
+                plan_id: enrollee.plan_id || '',
+                enrollee_number: enrollee.enrollee_number || '',
+                enrollment_date: enrollee.enrollment_date || '',
+                expiry_date: enrollee.expiry_date || '',
+                status: enrollee.status || 'active',
+            });
+        }
+    }, [enrolleeData]);
 
     const createMutation = useMutation({
         mutationFn: createEnrollee,
@@ -243,9 +249,9 @@ useEffect(() => {
                                         className="form-select"
                                     >
                                         <option value="">Select Corporate</option>
-                                        {corporates?.map ? corporates.map(c => (
+                                        {Array.isArray(corporates) && corporates.map(c => (
                                             <option key={c.id} value={c.id}>{c.name}</option>
-                                        )) : null}
+                                        ))}
                                     </select>
                                 </FormField>
                             </div>
@@ -259,9 +265,9 @@ useEffect(() => {
                                         disabled={!formData.corporate_id || plansLoading}
                                     >
                                         <option value="">Select Plan</option>
-                                        {plans?.data?.map ? plans.data.map(p => (
-                                            <option key={p.id} value={p.id}>{p.name}</option>
-                                        )) : null}
+                                        {Array.isArray(plans) && plans.map(p => (
+                                            <option key={p.id} value={p.id}>{p.plan_name}</option>
+                                        ))}
                                     </select>
                                 </FormField>
                             </div>

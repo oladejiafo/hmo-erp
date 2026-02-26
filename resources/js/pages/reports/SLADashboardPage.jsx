@@ -17,7 +17,7 @@ import {
 } from 'recharts';
 import {
     Clock, AlertTriangle, CheckCircle, TrendingDown,
-    ChevronRight, RefreshCw, ShieldAlert,
+    ChevronRight, RefreshCw, ShieldAlert, ArrowLeft,
 } from 'lucide-react';
 import {
     fetchSLADashboard, fetchOverdueClaims,
@@ -91,7 +91,16 @@ export default function SLADashboardPage() {
                     </button>
                 }
             />
-
+            {/* Back to Reports Button */}
+            <div className="d-flex align-items-center gap-2 mb-3">
+                <button
+                    className="btn btn-outline-secondary btn-sm d-flex align-items-center gap-1"
+                    onClick={() => navigate('/reports')}
+                >
+                    <ArrowLeft size={14} />
+                    Back to Reports
+                </button>
+            </div>
             {/* KPI Cards */}
             {dashLoading ? <LoadingSpinner /> : (
                 <div className="row g-3 mb-4">

@@ -23,35 +23,43 @@ export default function ClaimFormPage() {
     const [errors, setErrors] = useState({});
 
     // Fetch enrollees for dropdown
-    const { data: enrolleesData } = useQuery({
+    const { data: enrolleesData, isLoading: enrolleesLoading } = useQuery({
         queryKey: ['enrollees'],
         queryFn: () => fetchEnrollees({ per_page: 100 }),
     });
 
     // Fetch HCPs for dropdown
-    const { data: hcpsData } = useQuery({
+    const { data: hcpsData, isLoading: hcpsLoading } = useQuery({
         queryKey: ['hcps'],
         queryFn: () => fetchHCPs({ per_page: 100 }),
     });
 
     // Fetch claim if editing
-    const { isLoading } = useQuery({
+    const { data: claimData, isLoading, error } = useQuery({
         queryKey: ['claim', id],
         queryFn: () => fetchClaim(id),
         enabled: isEditing,
-        onSuccess: (data) => {
-            const claim = data.data || data;
+    });
+
+    // Update form when claim data arrives
+    useEffect(() => {
+        if (claimData && isEditing) {
+            const claim = claimData?.data?.data || claimData?.data || claimData;
             setFormData({
                 enrollee_id: claim.enrollee_id || '',
                 hcp_id: claim.hcp_id || '',
                 service_date: claim.service_date || '',
                 claim_type: claim.claim_type || 'outpatient',
                 diagnosis_codes: claim.diagnosis_codes || [],
-                items: claim.items || [{ service_code: '', service_name: '', quantity: 1, unit_price: 0, amount: 0 }],
+                items: claim.items?.length ? claim.items : [{ service_code: '', service_name: '', quantity: 1, unit_price: 0, amount: 0 }],
                 notes: claim.notes || '',
             });
-        },
-    });
+        }
+    }, [claimData, isEditing]);
+
+    // FIXED: Extract arrays with proper nested structure
+    const enrollees = enrolleesData?.data?.data ?? enrolleesData?.data ?? enrolleesData ?? [];
+    const hcps = hcpsData?.data?.data ?? hcpsData?.data ?? hcpsData ?? [];
 
     const createMutation = useMutation({
         mutationFn: createClaim,
@@ -100,10 +108,8 @@ export default function ClaimFormPage() {
         }
     };
 
-    const enrollees = enrolleesData?.data || [];
-    const hcps = hcpsData?.data || [];
-
     if (isLoading) return <LoadingSpinner />;
+    if (error) return <ErrorAlert message={error.message} />;
 
     return (
         <div>
@@ -125,140 +131,165 @@ export default function ClaimFormPage() {
                     <form onSubmit={handleSubmit}>
                         <div className="row">
                             <div className="col-md-6">
-                                <FormField
-                                    label="Enrollee"
-                                    name="enrollee_id"
-                                    type="select"
-                                    value={formData.enrollee_id}
-                                    onChange={handleChange}
-                                    error={errors.enrollee_id}
-                                    options={enrollees.map(e => ({
-                                        value: e.id,
-                                        label: `${e.first_name} ${e.last_name} (${e.enrollee_id})`
-                                    }))}
-                                    required
-                                />
+                            <FormField label="Enrollee" error={errors.enrollee_id} required>
+        <select
+            name="enrollee_id"
+            value={formData.enrollee_id}
+            onChange={handleChange}
+            className="form-control"
+        >
+            <option value="">Select Enrollee</option>
+            {Array.isArray(enrollees) && enrollees.map(e => (
+                <option key={e.id} value={e.id}>
+                    {e.first_name} {e.last_name} ({e.enrollee_id})
+                </option>
+            ))}
+        </select>
+    </FormField>
                             </div>
                             <div className="col-md-6">
-                                <FormField
-                                    label="Healthcare Provider"
-                                    name="hcp_id"
-                                    type="select"
-                                    value={formData.hcp_id}
-                                    onChange={handleChange}
-                                    error={errors.hcp_id}
-                                    options={hcps.map(h => ({
-                                        value: h.id,
-                                        label: h.name
-                                    }))}
-                                    required
-                                />
+                            <FormField label="Healthcare Provider" error={errors.hcp_id} required>
+        <select
+            name="hcp_id"
+            value={formData.hcp_id}
+            onChange={handleChange}
+            className="form-control"
+        >
+            <option value="">Select HCP</option>
+            {Array.isArray(hcps) && hcps.map(h => (
+                <option key={h.id} value={h.id}>
+                    {h.name} ({h.hcp_code})
+                </option>
+            ))}
+        </select>
+    </FormField>
                             </div>
                         </div>
 
                         <div className="row">
                             <div className="col-md-6">
-                                <FormField
-                                    label="Service Date"
-                                    name="service_date"
-                                    type="date"
-                                    value={formData.service_date}
-                                    onChange={handleChange}
-                                    error={errors.service_date}
-                                    required
-                                />
+                            <div className="mb-3">
+        <label className="form-label fw-semibold">
+            Service Date {errors.service_date && <span className="text-danger">*</span>}
+        </label>
+        <input
+            type="date"
+            name="service_date"
+            value={formData.service_date}
+            onChange={handleChange}
+            className={`form-control ${errors.service_date ? 'is-invalid' : ''}`}
+        />
+        {errors.service_date && (
+            <div className="invalid-feedback">{errors.service_date}</div>
+        )}
+    </div>
                             </div>
                             <div className="col-md-6">
-                                <FormField
-                                    label="Claim Type"
-                                    name="claim_type"
-                                    type="select"
-                                    value={formData.claim_type}
-                                    onChange={handleChange}
-                                    error={errors.claim_type}
-                                    options={[
-                                        { value: 'outpatient', label: 'Outpatient' },
-                                        { value: 'inpatient', label: 'Inpatient' },
-                                        { value: 'dental', label: 'Dental' },
-                                        { value: 'optical', label: 'Optical' },
-                                        { value: 'maternity', label: 'Maternity' },
-                                        { value: 'emergency', label: 'Emergency' },
-                                        { value: 'surgery', label: 'Surgery' },
-                                        { value: 'laboratory', label: 'Laboratory' },
-                                        { value: 'radiology', label: 'Radiology' },
-                                        { value: 'drug_refill', label: 'Drug Refill' },
-                                    ]}
-                                    required
-                                />
+                            <FormField label="Claim Type" error={errors.claim_type} required>
+        <select
+            name="claim_type"
+            value={formData.claim_type}
+            onChange={handleChange}
+            className="form-control"
+        >
+            <option value="outpatient">Outpatient</option>
+            <option value="inpatient">Inpatient</option>
+            <option value="dental">Dental</option>
+            <option value="optical">Optical</option>
+            <option value="maternity">Maternity</option>
+            <option value="emergency">Emergency</option>
+            <option value="surgery">Surgery</option>
+            <option value="laboratory">Laboratory</option>
+            <option value="radiology">Radiology</option>
+            <option value="drug_refill">Drug Refill</option>
+        </select>
+    </FormField>
                             </div>
                         </div>
 
                         <div className="card mb-3">
-                            <div className="card-header d-flex justify-content-between align-items-center">
-                                <h6 className="mb-0">Claim Items</h6>
-                                <button type="button" className="btn btn-sm btn-primary" onClick={addItem}>
-                                    <Plus size={16} className="me-1" /> Add Item
-                                </button>
-                            </div>
-                            <div className="card-body">
-                                {formData.items.map((item, index) => (
-                                    <div key={index} className="row mb-3 align-items-end">
-                                        <div className="col-md-3">
-                                            <FormField
-                                                label="Service Code"
-                                                name={`items[${index}].service_code`}
-                                                value={item.service_code}
-                                                onChange={(e) => handleItemChange(index, 'service_code', e.target.value)}
-                                            />
-                                        </div>
-                                        <div className="col-md-3">
-                                            <FormField
-                                                label="Service Name"
-                                                name={`items[${index}].service_name`}
-                                                value={item.service_name}
-                                                onChange={(e) => handleItemChange(index, 'service_name', e.target.value)}
-                                            />
-                                        </div>
-                                        <div className="col-md-2">
-                                            <FormField
-                                                label="Qty"
-                                                type="number"
-                                                name={`items[${index}].quantity`}
-                                                value={item.quantity}
-                                                onChange={(e) => handleItemChange(index, 'quantity', parseInt(e.target.value) || 0)}
-                                            />
-                                        </div>
-                                        <div className="col-md-2">
-                                            <FormField
-                                                label="Unit Price"
-                                                type="number"
-                                                name={`items[${index}].unit_price`}
-                                                value={item.unit_price}
-                                                onChange={(e) => handleItemChange(index, 'unit_price', parseFloat(e.target.value) || 0)}
-                                            />
-                                        </div>
-                                        <div className="col-md-1">
-                                            <FormField
-                                                label="Amount"
-                                                value={item.amount}
-                                                disabled
-                                            />
-                                        </div>
-                                        <div className="col-md-1">
-                                            {formData.items.length > 1 && (
-                                                <button
-                                                    type="button"
-                                                    className="btn btn-sm btn-outline-danger mb-3"
-                                                    onClick={() => removeItem(index)}
-                                                >
-                                                    <Trash2 size={16} />
-                                                </button>
-                                            )}
-                                        </div>
-                                    </div>
-                                ))}
-                            </div>
-                        </div>
+    <div className="card-header d-flex justify-content-between align-items-center">
+        <h6 className="mb-0">Claim Items</h6>
+        <button type="button" className="btn btn-sm btn-primary" onClick={addItem}>
+            <Plus size={16} className="me-1" /> Add Item
+        </button>
+    </div>
+    <div className="card-body">
+        {formData.items.map((item, index) => (
+            <div key={index} className="row mb-3 align-items-end">
+                <div className="col-md-3">
+                    <div className="mb-2">
+                        <label className="form-label fw-semibold">Service Code</label>
+                        <input
+                            type="text"
+                            className="form-control form-control-sm"
+                            value={item.service_code}
+                            onChange={(e) => handleItemChange(index, 'service_code', e.target.value)}
+                        />
+                    </div>
+                </div>
+                <div className="col-md-3">
+                    <div className="mb-2">
+                        <label className="form-label fw-semibold">Service Name</label>
+                        <input
+                            type="text"
+                            className="form-control form-control-sm"
+                            value={item.service_name}
+                            onChange={(e) => handleItemChange(index, 'service_name', e.target.value)}
+                        />
+                    </div>
+                </div>
+                <div className="col-md-2">
+                    <div className="mb-2">
+                        <label className="form-label fw-semibold">Qty</label>
+                        <input
+                            type="number"
+                            className="form-control form-control-sm"
+                            value={item.quantity}
+                            onChange={(e) => handleItemChange(index, 'quantity', parseInt(e.target.value) || 0)}
+                            min="1"
+                        />
+                    </div>
+                </div>
+                <div className="col-md-2">
+                    <div className="mb-2">
+                        <label className="form-label fw-semibold">Unit Price</label>
+                        <input
+                            type="number"
+                            className="form-control form-control-sm"
+                            value={item.unit_price}
+                            onChange={(e) => handleItemChange(index, 'unit_price', parseFloat(e.target.value) || 0)}
+                            min="0"
+                            step="0.01"
+                        />
+                    </div>
+                </div>
+                <div className="col-md-1">
+                    <div className="mb-2">
+                        <label className="form-label fw-semibold">Amount</label>
+                        <input
+                            type="text"
+                            className="form-control form-control-sm bg-light"
+                            value={item.amount.toFixed(2)}
+                            disabled
+                        />
+                    </div>
+                </div>
+                <div className="col-md-1">
+                    {formData.items.length > 1 && (
+                        <button
+                            type="button"
+                            className="btn btn-sm btn-outline-danger mb-2"
+                            onClick={() => removeItem(index)}
+                        >
+                            <Trash2 size={16} />
+                        </button>
+                    )}
+                </div>
+            </div>
+        ))}
+    </div>
+</div>
 
                         <FormField
                             label="Notes"

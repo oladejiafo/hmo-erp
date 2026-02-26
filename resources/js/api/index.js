@@ -42,6 +42,16 @@ export const createPlan = (corporateId, data) =>
     apiClient.post(`/corporates/${corporateId}/plans`, data);
 export const updatePlan = (corporateId, planId, data) => 
     apiClient.put(`/corporates/${corporateId}/plans/${planId}`, data);
+export const discontinuePlan = (corporateId, planId) => 
+    apiClient.patch(`/corporates/${corporateId}/plans/${planId}/discontinue`);
+export const duplicatePlan = (corporateId, planId, data) => 
+    apiClient.post(`/corporates/${corporateId}/plans/${planId}/duplicate`, data);
+export const syncBenefitItems = (corporateId, planId, items) => 
+    apiClient.put(`/corporates/${corporateId}/plans/${planId}/benefit-items`, { items });
+
+// ============= CROSS-CORPORATE PLANS (HQ) =============
+export const fetchAllPlans = (params) => 
+    apiClient.get('/plans', { params });
 
 // ============= CORPORATE INVOICES =============
 export const fetchInvoices = (corporateId, params) => 
@@ -190,7 +200,10 @@ export const approvePaymentBatch = (id, data) =>
 export const exportBankFile = (id) => apiClient.get(`/finance/batches/${id}/export`, {
     responseType: 'blob'
 });
-
+export const fetchHCPPaymentSummary = async () => {
+    const response = await apiClient.get('/finance/hcp-payment-summary');
+    return response.data;
+};
 export const fetchLedger = (params) => apiClient.get('/finance/ledger', { params });
 export const fetchLedgerSummary = (params) => apiClient.get('/finance/ledger/summary', { params });
 
@@ -200,6 +213,21 @@ export const downloadRemittance = (paymentId) =>
     apiClient.get(`/finance/remittance/${paymentId}/download`, {
         responseType: 'blob'
     });
+
+export const fetchFFSProviders = async (params = {}) => {
+    const response = await apiClient.get('/finance/ffs/providers', { params });
+    return response.data;
+};
+
+export const fetchFFSSpendTrend = async () => {
+    const response = await apiClient.get('/finance/ffs/spend-trend');
+    return response.data;
+};
+
+export const createFFSBatch = async (data) => {
+    const response = await apiClient.post('/finance/ffs/batch', data);
+    return response.data;
+};
 
 // ============= REPORTS =============
 export const fetchDashboard = () => apiClient.get('/reports/dashboard');
@@ -218,7 +246,7 @@ export const fetchAuditLogs = (params) => apiClient.get('/reports/audit-logs', {
 // ============= 🆕 PRE-AUTHORISATION (PA) =============
 export const fetchPARequests = (params) => apiClient.get('/pre-auth', { params }).then(r => r.data);
 export const fetchPARequest = (id) => apiClient.get(`/pre-auth/${id}`).then(r => r.data);
-export const submitPARequest = (data) => apiClient.post('/pre-auth', data);
+export const submitPARequest = (data) => apiClient.post('/pre-auth/', data);
 export const approvePA = (id, data) => apiClient.post(`/pre-auth/${id}/approve`, data);
 export const declinePA = (id, data) => apiClient.post(`/pre-auth/${id}/decline`, data);
 export const fetchPAStats = () => apiClient.get('/pre-auth/stats').then(r => r.data);
@@ -329,7 +357,11 @@ export default {
     // Corporates
     fetchCorporates, fetchCorporate, createCorporate, updateCorporate, deleteCorporate,
     suspendCorporate, bulkUploadEnrollees,
-    
+
+    // Corporate Plans
+    fetchPlans, fetchPlan, createPlan, updatePlan, discontinuePlan, 
+    duplicatePlan, syncBenefitItems, fetchAllPlans,
+
     // Plans
     fetchPlans, fetchPlan, createPlan, updatePlan,
     

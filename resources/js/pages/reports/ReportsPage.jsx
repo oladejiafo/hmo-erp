@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { useQuery, useMutation } from '@tanstack/react-query';
+import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { toast } from 'react-toastify';
 import {
     BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer,
@@ -8,7 +8,8 @@ import {
 } from 'recharts';
 import {
     Download, Sparkles, TrendingDown, TrendingUp, AlertTriangle, Users, BarChart2,
-    Calendar, Filter, DollarSign, Building2, FileText
+    Calendar, Filter, DollarSign, Building2, FileText, RefreshCw, Settings,
+    CheckCircle2, Clock, Plus, ChevronDown,
 } from 'lucide-react';
 
 import {
@@ -18,10 +19,28 @@ import {
 } from '../../api/index';
 import { PageHeader, LoadingSpinner, ErrorAlert, StatCard } from '../../components/ui/index';
 import { useAuth } from '../../contexts/AuthContext';
-import { formatCurrency, compactCurrency } from '../../utils/format';
+import { formatCurrency, compactCurrency, formatDateTime } from '../../utils/format';
 import client from '../../api/client';
 
 const PALETTE = ['#1967d2','#137333','#b05e00','#c5221f','#5e35b1','#0277bd','#558b2f','#6d4c41'];
+
+// Report types for NHIA and automated reports
+const REPORT_TYPES = [
+    { key:'monthly_claims_returns',      label:'Monthly Claims Returns',      freq:'Monthly',   nhia:true,  icon:'📋' },
+    { key:'capitation_payment_schedule', label:'Capitation Payment Schedule',  freq:'Monthly',   nhia:true,  icon:'💰' },
+    { key:'quarterly_utilisation',       label:'Quarterly Utilisation Report', freq:'Quarterly', nhia:true,  icon:'📊' },
+    { key:'ffs_claims_register',         label:'FFS Claims Register',          freq:'Monthly',   nhia:true,  icon:'🏥' },
+    { key:'annual_report',               label:'Annual Report',                freq:'Annual',    nhia:true,  icon:'📅' },
+    { key:'ffs_remittance_advice',       label:'FFS Remittance Advice (HCP)',  freq:'Per Batch', nhia:false, icon:'📨' },
+    { key:'corporate_cost_report',       label:'Corporate Cost Report',        freq:'Monthly',   nhia:false, icon:'🏢' },
+];
+
+const STATUS_STYLE = {
+    queued:     { color:'#64748b', bg:'#f1f5f9', label:'Queued'     },
+    generating: { color:'#1e40af', bg:'#dbeafe', label:'Generating' },
+    ready:      { color:'#166534', bg:'#dcfce7', label:'Ready'      },
+    failed:     { color:'#991b1b', bg:'#fee2e2', label:'Failed'     },
+};
 
 export default function ReportsPage() {
     const { isHQ, hasPermission } = useAuth();
@@ -30,6 +49,7 @@ export default function ReportsPage() {
     const [dateFrom, setDateFrom] = useState('');
     const [dateTo,   setDateTo]   = useState('');
     const [showAISummary, setShowAISummary] = useState(false);
+    const queryClient = useQueryClient();
 
     const exportMutation = useMutation({
         mutationFn: (type) => client.post('/reports/export', {
@@ -83,13 +103,16 @@ export default function ReportsPage() {
 
     const dashboardData = dashboard?.data || dashboard || {};
 
-    // Tab configuration
+    // Tab configuration - includes both operational reports and NHIA reports
     const tabs = [
         { key: 'aging',   label: 'Claims Aging',      icon: <TrendingDown size={13}/> },
         { key: 'by_hcp',  label: 'By HCP',            icon: <BarChart2 size={13}/> },
         { key: 'by_corp', label: 'By Corporate',       icon: <Users size={13}/> },
         { key: 'high',    label: 'High-Cost Members',  icon: <AlertTriangle size={13}/> },
         ...(isHQ() ? [{ key: 'branch', label: 'Branch Comparison', icon: <TrendingUp size={13}/> }] : []),
+        { key: 'generate', label: 'Generate Reports',   icon: <Plus size={13}/> },
+        { key: 'history',  label: 'Report History',     icon: <FileText size={13}/> },
+        { key: 'schedules',label: 'Auto-Schedule',      icon: <Settings size={13}/> },
         { key: 'sla',     label: 'SLA Dashboard',      icon: null, link: '/reports/sla' },
         ...(hasPermission('reports.fraud_heatmap') ? [{ key: 'heatmap', label: 'Fraud Heatmap', icon: null, link: '/reports/fraud-heatmap' }] : []),
     ];
@@ -115,29 +138,35 @@ export default function ReportsPage() {
         <div>
             <PageHeader
                 title="Reports & Analytics"
-                subtitle="Operational intelligence across claims, providers, corporates and branches"
+                subtitle="Operational intelligence and NHIA regulatory returns"
                 actions={
                     <div className="d-flex gap-2 align-items-center">
-                        <input type="date" className="form-control form-control-sm" style={{ width: 140 }}
-                            value={dateFrom} onChange={e => setDateFrom(e.target.value)}
-                            placeholder="From" title="Date from" />
-                        <span className="text-muted">—</span>
-                        <input type="date" className="form-control form-control-sm" style={{ width: 140 }}
-                            value={dateTo} onChange={e => setDateTo(e.target.value)}
-                            placeholder="To" title="Date to" />
+                        {(tab === 'aging' || tab === 'by_hcp' || tab === 'by_corp') && (
+                            <>
+                                <input type="date" className="form-control form-control-sm" style={{ width: 140 }}
+                                    value={dateFrom} onChange={e => setDateFrom(e.target.value)}
+                                    placeholder="From" title="Date from" />
+                                <span className="text-muted">—</span>
+                                <input type="date" className="form-control form-control-sm" style={{ width: 140 }}
+                                    value={dateTo} onChange={e => setDateTo(e.target.value)}
+                                    placeholder="To" title="Date to" />
+                            </>
+                        )}
                         
                         {/* Export Button */}
-                        <button
-                            className="btn btn-outline-primary btn-sm d-flex align-items-center gap-1"
-                            onClick={() => exportMutation.mutate(tab)}
-                            disabled={exportMutation.isPending}
-                        >
-                            <Download size={14} />
-                            {exportMutation.isPending ? 'Exporting…' : 'Export CSV'}
-                        </button>
+                        {(tab === 'aging' || tab === 'by_hcp' || tab === 'by_corp' || tab === 'high' || tab === 'branch') && (
+                            <button
+                                className="btn btn-outline-primary btn-sm d-flex align-items-center gap-1"
+                                onClick={() => exportMutation.mutate(tab)}
+                                disabled={exportMutation.isPending}
+                            >
+                                <Download size={14} />
+                                {exportMutation.isPending ? 'Exporting…' : 'Export CSV'}
+                            </button>
+                        )}
 
                         {/* AI Summary Button */}
-                        {hasPermission('ai.tools') && (
+                        {hasPermission('ai.tools') && (tab === 'aging' || tab === 'by_hcp' || tab === 'by_corp' || tab === 'high') && (
                             <button
                                 className="btn btn-outline-info btn-sm d-flex align-items-center gap-1"
                                 onClick={() => setShowAISummary(true)}
@@ -213,7 +242,7 @@ export default function ReportsPage() {
                 </div>
 
                 <div className="card-body">
-                    {/* Tab content - Claims Aging */}
+                    {/* Operational Report Tabs */}
                     {tab === 'aging' && (
                         agingL ? <ChartLoading /> :
                         agingE ? <ErrorAlert error={agingE} /> :
@@ -259,7 +288,6 @@ export default function ReportsPage() {
                         </div>
                     )}
 
-                    {/* Tab content - By HCP */}
                     {tab === 'by_hcp' && (
                         hcpL ? <ChartLoading /> :
                         hcpE ? <ErrorAlert error={hcpE} /> :
@@ -322,7 +350,6 @@ export default function ReportsPage() {
                         </div>
                     )}
 
-                    {/* Tab content - By Corporate */}
                     {tab === 'by_corp' && (
                         corpL ? <ChartLoading /> :
                         corpE ? <ErrorAlert error={corpE} /> :
@@ -382,7 +409,6 @@ export default function ReportsPage() {
                         </div>
                     )}
 
-                    {/* Tab content - High-Cost Members */}
                     {tab === 'high' && (
                         highL ? <ChartLoading /> :
                         highE ? <ErrorAlert error={highE} /> :
@@ -416,7 +442,6 @@ export default function ReportsPage() {
                         </div>
                     )}
 
-                    {/* Tab content - Branch Comparison */}
                     {tab === 'branch' && isHQ() && (
                         branchL ? <ChartLoading /> :
                         branchE ? <ErrorAlert error={branchE} /> :
@@ -469,6 +494,11 @@ export default function ReportsPage() {
                             />
                         </div>
                     )}
+
+                    {/* NHIA and Automated Reports Tabs */}
+                    {tab === 'generate' && <GenerateTab queryClient={queryClient} />}
+                    {tab === 'history' && <HistoryTab />}
+                    {tab === 'schedules' && <SchedulesTab />}
                 </div>
             </div>
 
@@ -479,6 +509,381 @@ export default function ReportsPage() {
                     reportData={getCurrentReportData()}
                     onClose={() => setShowAISummary(false)}
                 />
+            )}
+        </div>
+    );
+}
+
+// ── Generate Tab ──────────────────────────────────────────────────────────────
+function GenerateTab({ queryClient }) {
+    const [selected, setSelected] = useState(null);
+    const [form, setForm]         = useState({ period:'', format:'xlsx', hcp_id:'', corporate_id:'', payment_batch_id:'', config:{} });
+
+    const { data: hcpsData }      = useQuery({ queryKey:['hcps-mini'],      queryFn: () => client.get('/hcps',       { params:{per_page:200} }), staleTime:300_000 });
+    const { data: corporatesData} = useQuery({ queryKey:['corporates-mini'], queryFn: () => client.get('/corporates', { params:{per_page:200} }), staleTime:300_000 });
+    const { data: batchesData }   = useQuery({ queryKey:['batches-mini'],    queryFn: () => client.get('/finance/batches', { params:{status:'approved',per_page:50} }), staleTime:60_000, enabled: selected?.key === 'ffs_remittance_advice' });
+
+    const hcps       = hcpsData?.data?.data       ?? hcpsData?.data       ?? [];
+    const corporates = corporatesData?.data?.data  ?? corporatesData?.data  ?? [];
+    const batches    = batchesData?.data?.data     ?? batchesData?.data    ?? [];
+
+    const generateMutation = useMutation({
+        mutationFn: (payload) => client.post('/reports/generate', payload),
+        onSuccess: (res) => {
+            toast.success('Report generated successfully.');
+            queryClient.invalidateQueries({ queryKey: ['reports'] });
+            setSelected(null);
+        },
+        onError: (err) => toast.error(err.response?.data?.message ?? 'Generation failed.'),
+    });
+
+    const handleGenerate = () => {
+        if (!selected || !form.period) return;
+        generateMutation.mutate({
+            report_type: selected.key,
+            period:      form.period,
+            format:      form.format,
+            hcp_id:      form.hcp_id       || undefined,
+            corporate_id:form.corporate_id  || undefined,
+            payment_batch_id: form.payment_batch_id || undefined,
+        });
+    };
+
+    // Period field type based on report frequency
+    const getPeriodType = () => {
+        if (!selected) return 'month';
+        if (selected.freq === 'Annual') return 'year';
+        if (selected.freq === 'Quarterly') return 'quarter-select';
+        return 'month';
+    };
+
+    return (
+        <div className="row">
+            {/* Report type cards */}
+            <div className="col-md-7">
+                <div className="mb-3">
+                    <p className="text-muted mb-3" style={{fontSize:13}}>
+                        <span className="badge bg-primary-subtle text-primary me-1">NHIA</span> reports are submitted to the regulator.
+                        Others are for HCPs and corporates.
+                    </p>
+                    <div className="row g-3">
+                        {REPORT_TYPES.map(rt => (
+                            <div key={rt.key} className="col-md-6">
+                                <div
+                                    className={`card border-2 h-100 ${selected?.key===rt.key?'border-primary bg-primary-subtle':'border-0 shadow-sm'}`}
+                                    style={{cursor:'pointer',transition:'all .15s'}}
+                                    onClick={() => { setSelected(rt); setForm(f=>({...f,period:'',hcp_id:'',corporate_id:'',payment_batch_id:''})); }}
+                                >
+                                    <div className="card-body py-3">
+                                        <div className="d-flex align-items-start gap-2">
+                                            <span style={{fontSize:22}}>{rt.icon}</span>
+                                            <div>
+                                                <div className="fw-semibold" style={{fontSize:13}}>{rt.label}</div>
+                                                <div className="d-flex gap-1 mt-1">
+                                                    <span className="badge bg-secondary-subtle text-secondary" style={{fontSize:10}}>{rt.freq}</span>
+                                                    {rt.nhia && <span className="badge bg-primary-subtle text-primary" style={{fontSize:10}}>NHIA</span>}
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        ))}
+                    </div>
+                </div>
+            </div>
+
+            {/* Config panel */}
+            <div className="col-md-5">
+                {selected ? (
+                    <div className="card border-0 shadow-sm">
+                        <div className="card-header bg-white fw-semibold" style={{fontSize:13}}>
+                            {selected.icon} {selected.label}
+                        </div>
+                        <div className="card-body">
+                            {/* Period */}
+                            <div className="mb-3">
+                                <label className="form-label fw-semibold" style={{fontSize:13}}>Report Period *</label>
+                                {getPeriodType() === 'year' ? (
+                                    <input type="number" className="form-control" min={2020} max={new Date().getFullYear()}
+                                           value={form.period} onChange={e => setForm(f=>({...f,period:e.target.value}))}
+                                           placeholder="e.g. 2024" />
+                                ) : getPeriodType() === 'quarter-select' ? (
+                                    <select className="form-select" value={form.period} onChange={e => setForm(f=>({...f,period:e.target.value}))}>
+                                        <option value="">Select quarter…</option>
+                                        {[1,2,3,4].map(q => {
+                                            const yr = new Date().getFullYear();
+                                            return <option key={q} value={`${yr}-Q${q}`}>{yr} Q{q}</option>;
+                                        })}
+                                        {[1,2,3,4].map(q => {
+                                            const yr = new Date().getFullYear()-1;
+                                            return <option key={`p${q}`} value={`${yr}-Q${q}`}>{yr} Q{q}</option>;
+                                        })}
+                                    </select>
+                                ) : (
+                                    <input type="month" className="form-control"
+                                           value={form.period} onChange={e => setForm(f=>({...f,period:e.target.value}))}
+                                           max={new Date().toISOString().slice(0,7)} />
+                                )}
+                            </div>
+
+                            {/* Format */}
+                            <div className="mb-3">
+                                <label className="form-label fw-semibold" style={{fontSize:13}}>Output Format</label>
+                                <div className="d-flex gap-2">
+                                    {['xlsx','pdf','both'].map(f => (
+                                        <button key={f} className={`btn btn-sm ${form.format===f?'btn-primary':'btn-outline-secondary'}`}
+                                                onClick={() => setForm(prev=>({...prev,format:f}))}>
+                                            {f.toUpperCase()}
+                                        </button>
+                                    ))}
+                                </div>
+                            </div>
+
+                            {/* HCP selector (for FFS remittance) */}
+                            {selected.key === 'ffs_remittance_advice' && (
+                                <>
+                                    <div className="mb-3">
+                                        <label className="form-label fw-semibold" style={{fontSize:13}}>HCP *</label>
+                                        <select className="form-select" value={form.hcp_id} onChange={e => setForm(f=>({...f,hcp_id:e.target.value}))}>
+                                            <option value="">Select HCP…</option>
+                                            {hcps.map(h => <option key={h.id} value={h.id}>{h.name}</option>)}
+                                        </select>
+                                    </div>
+                                    <div className="mb-3">
+                                        <label className="form-label fw-semibold" style={{fontSize:13}}>Payment Batch *</label>
+                                        <select className="form-select" value={form.payment_batch_id} onChange={e => setForm(f=>({...f,payment_batch_id:e.target.value}))}>
+                                            <option value="">Select batch…</option>
+                                            {batches.map(b => <option key={b.id} value={b.id}>{b.batch_number} — ₦{Number(b.total_amount).toLocaleString()}</option>)}
+                                        </select>
+                                    </div>
+                                </>
+                            )}
+
+                            {/* Corporate selector (for corporate cost report) */}
+                            {selected.key === 'corporate_cost_report' && (
+                                <div className="mb-3">
+                                    <label className="form-label fw-semibold" style={{fontSize:13}}>Corporate *</label>
+                                    <select className="form-select" value={form.corporate_id} onChange={e => setForm(f=>({...f,corporate_id:e.target.value}))}>
+                                        <option value="">Select corporate…</option>
+                                        {corporates.map(c => <option key={c.id} value={c.id}>{c.name}</option>)}
+                                    </select>
+                                </div>
+                            )}
+
+                            <button className="btn btn-primary w-100"
+                                    disabled={!form.period || generateMutation.isPending ||
+                                        (selected.key==='ffs_remittance_advice' && (!form.hcp_id||!form.payment_batch_id)) ||
+                                        (selected.key==='corporate_cost_report' && !form.corporate_id)}
+                                    onClick={handleGenerate}>
+                                {generateMutation.isPending
+                                    ? <><span className="spinner-border spinner-border-sm me-2"/>Generating…</>
+                                    : <><RefreshCw size={14} className="me-1"/>Generate Report</>}
+                            </button>
+                        </div>
+                    </div>
+                ) : (
+                    <div className="card border-0 shadow-sm h-100 d-flex align-items-center justify-content-center">
+                        <div className="text-center text-muted p-5">
+                            <FileText size={40} className="mb-3 opacity-25" />
+                            <p className="mb-0">Select a report type to configure and generate</p>
+                        </div>
+                    </div>
+                )}
+            </div>
+        </div>
+    );
+}
+
+// ── History Tab ───────────────────────────────────────────────────────────────
+function HistoryTab() {
+    const [typeFilter, setTypeFilter] = useState('');
+    const [statusFilter, setStatus]   = useState('');
+
+    const { data, isLoading, error, refetch } = useQuery({
+        queryKey: ['reports', { typeFilter, statusFilter }],
+        queryFn: () => client.get('/reports', { params: { report_type: typeFilter||undefined, status: statusFilter||undefined } }),
+        refetchInterval: 10_000,  // poll while any are generating
+    });
+
+    const reports = data?.data?.data ?? data?.data ?? [];
+
+    if (error) return <ErrorAlert error={error} onRetry={refetch}/>;
+
+    return (
+        <div>
+            <div className="d-flex flex-wrap gap-2 mb-4 align-items-center">
+                <select className="form-select form-select-sm" style={{maxWidth:220}} value={typeFilter}
+                        onChange={e => setTypeFilter(e.target.value)}>
+                    <option value="">All Report Types</option>
+                    {REPORT_TYPES.map(rt => <option key={rt.key} value={rt.key}>{rt.label}</option>)}
+                </select>
+                <select className="form-select form-select-sm" style={{maxWidth:140}} value={statusFilter}
+                        onChange={e => setStatus(e.target.value)}>
+                    <option value="">All Statuses</option>
+                    <option value="ready">Ready</option>
+                    <option value="generating">Generating</option>
+                    <option value="failed">Failed</option>
+                </select>
+                <button className="btn btn-sm btn-outline-secondary" onClick={refetch}><RefreshCw size={13}/></button>
+            </div>
+
+            {isLoading ? <div className="py-5 text-center"><LoadingSpinner /></div> : (
+                <div className="card border-0 shadow-sm">
+                    <div className="card-body p-0">
+                        <table className="table table-hover align-middle mb-0" style={{fontSize:13}}>
+                            <thead className="table-light">
+                                <tr>
+                                    <th className="ps-3">Report</th>
+                                    <th>Period</th>
+                                    <th>For</th>
+                                    <th>Generated</th>
+                                    <th className="text-end">Amount</th>
+                                    <th>Records</th>
+                                    <th>Status</th>
+                                    <th>Download</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {reports.length === 0 ? (
+                                    <tr><td colSpan={8} className="text-center text-muted py-5">No reports generated yet.</td></tr>
+                                ) : reports.map(r => {
+                                    const ss = STATUS_STYLE[r.status] ?? STATUS_STYLE.queued;
+                                    const rt = REPORT_TYPES.find(t => t.key === r.report_type);
+                                    return (
+                                        <tr key={r.id}>
+                                            <td className="ps-3">
+                                                <div className="fw-semibold">{rt?.icon} {r.type_label ?? rt?.label}</div>
+                                                <div className="text-muted" style={{fontSize:11}}>
+                                                    {r.generated_by ? `By ${r.generated_by?.name}` : 'Auto-scheduled'}
+                                                </div>
+                                            </td>
+                                            <td className="font-monospace" style={{fontSize:12}}>{r.period}</td>
+                                            <td style={{fontSize:12}}>
+                                                {r.hcp?.name ?? r.corporate?.name ?? (rt?.nhia ? 'NHIA' : '—')}
+                                            </td>
+                                            <td style={{fontSize:12}}>{r.generated_at ? formatDateTime(r.generated_at) : '—'}</td>
+                                            <td className="text-end font-monospace">
+                                                {r.total_amount ? formatCurrency(r.total_amount) : '—'}
+                                            </td>
+                                            <td className="text-center">{r.record_count ?? '—'}</td>
+                                            <td>
+                                                <span className="badge" style={{background:ss.bg,color:ss.color,fontSize:10}}>
+                                                    {r.status==='generating' && <span className="spinner-border spinner-border-sm me-1" style={{width:8,height:8}}/>}
+                                                    {ss.label}
+                                                </span>
+                                                {r.error_message && (
+                                                    <div className="text-danger" style={{fontSize:10,maxWidth:120}}>{r.error_message}</div>
+                                                )}
+                                            </td>
+                                            <td>
+                                                <div className="d-flex gap-1">
+                                                    {r.file_path_xlsx && (
+                                                        <a href={`/api/v1/reports/${r.id}/download/xlsx`} className="btn btn-xs btn-outline-success py-0 px-1" style={{fontSize:10}} download>
+                                                            <Download size={11} className="me-1"/>XLSX
+                                                        </a>
+                                                    )}
+                                                    {r.file_path_pdf && (
+                                                        <a href={`/api/v1/reports/${r.id}/download/pdf`} className="btn btn-xs btn-outline-danger py-0 px-1" style={{fontSize:10}} download>
+                                                            <Download size={11} className="me-1"/>PDF
+                                                        </a>
+                                                    )}
+                                                </div>
+                                            </td>
+                                        </tr>
+                                    );
+                                })}
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            )}
+        </div>
+    );
+}
+
+// ── Schedules Tab ─────────────────────────────────────────────────────────────
+function SchedulesTab() {
+    const qc = useQueryClient();
+    const { data, isLoading } = useQuery({
+        queryKey: ['report-schedules'],
+        queryFn: () => client.get('/reports/schedules'),
+    });
+
+    const schedules  = data?.data?.data ?? data?.data ?? [];
+
+    const updateMutation = useMutation({
+        mutationFn: ({ reportType, payload }) => client.put(`/reports/schedules/${reportType}`, payload),
+        onSuccess: () => { toast.success('Schedule updated.'); qc.invalidateQueries({ queryKey:['report-schedules'] }); },
+    });
+
+    const nhiaReports = REPORT_TYPES.filter(rt => rt.nhia);
+
+    return (
+        <div>
+            <div className="alert alert-info d-flex gap-2 mb-4" style={{fontSize:13}}>
+                <Calendar size={15} className="flex-shrink-0 mt-1"/>
+                <span>
+                    Automated reports run via a daily cron job at 06:00. Each report fires on its configured day of the month.
+                    Monthly reports use the <strong>previous</strong> month's data. Quarterly/Annual reports use the previous period.
+                    Register the scheduler in <code>app/Console/Kernel.php</code>.
+                </span>
+            </div>
+
+            {isLoading ? <LoadingSpinner /> : (
+                <div className="card border-0 shadow-sm">
+                    <div className="card-body p-0">
+                        <table className="table align-middle mb-0" style={{fontSize:13}}>
+                            <thead className="table-light">
+                                <tr>
+                                    <th className="ps-3">Report</th>
+                                    <th>Frequency</th>
+                                    <th>Trigger Day</th>
+                                    <th>Format</th>
+                                    <th>Last Run</th>
+                                    <th>Next Run</th>
+                                    <th>Enabled</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {nhiaReports.map(rt => {
+                                    const sched = schedules.find(s => s.report_type === rt.key) ?? { enabled:false, day_of_month:28, format:'xlsx' };
+                                    return (
+                                        <tr key={rt.key}>
+                                            <td className="ps-3 fw-semibold">{rt.icon} {rt.label}</td>
+                                            <td><span className="badge bg-secondary-subtle text-secondary">{rt.freq}</span></td>
+                                            <td>
+                                                <select className="form-select form-select-sm" style={{width:80}}
+                                                        value={sched.day_of_month ?? 28}
+                                                        onChange={e => updateMutation.mutate({ reportType:rt.key, payload:{day_of_month:+e.target.value} })}>
+                                                    {Array.from({length:28},(_,i)=><option key={i+1} value={i+1}>{i+1}</option>)}
+                                                </select>
+                                            </td>
+                                            <td>
+                                                <select className="form-select form-select-sm" style={{width:80}}
+                                                        value={sched.format ?? 'xlsx'}
+                                                        onChange={e => updateMutation.mutate({ reportType:rt.key, payload:{format:e.target.value} })}>
+                                                    <option value="xlsx">XLSX</option>
+                                                    <option value="pdf">PDF</option>
+                                                    <option value="both">Both</option>
+                                                </select>
+                                            </td>
+                                            <td className="text-muted" style={{fontSize:11}}>{sched.last_run_at ? new Date(sched.last_run_at).toLocaleDateString() : 'Never'}</td>
+                                            <td className="text-muted" style={{fontSize:11}}>{sched.next_run_at ? new Date(sched.next_run_at).toLocaleDateString() : '—'}</td>
+                                            <td>
+                                                <div className="form-check form-switch mb-0">
+                                                    <input className="form-check-input" type="checkbox"
+                                                           checked={!!sched.enabled}
+                                                           onChange={e => updateMutation.mutate({ reportType:rt.key, payload:{enabled:e.target.checked} })} />
+                                                </div>
+                                            </td>
+                                        </tr>
+                                    );
+                                })}
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
             )}
         </div>
     );

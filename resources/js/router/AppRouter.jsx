@@ -41,6 +41,11 @@ import CorporateListPage   from '../pages/corporates/CorporateListPage';
 import CorporateDetailPage from '../pages/corporates/CorporateDetailPage';
 import CorporateFormPage   from '../pages/corporates/CorporateFormPage';
 
+import AllPlansPage   from '../pages/plans/AllPlansPage';
+import PlanListPage   from '../pages/plans/PlanListPage';
+import PlanDetailPage from '../pages/plans/PlanDetailPage';
+import PlanFormPage   from '../pages/plans/PlanFormPage';
+
 import EnrolleeListPage    from '../pages/enrollees/EnrolleeListPage';
 import EnrolleeDetailPage  from '../pages/enrollees/EnrolleeDetailPage';
 import EnrolleeFormPage    from '../pages/enrollees/EnrolleeFormPage';
@@ -66,6 +71,7 @@ import CapitationDetailPage from '../pages/finance/CapitationDetailPage';
 
 import FinancePage         from '../pages/finance/FinancePage';
 import PaymentBatchDetail  from '../pages/finance/PaymentBatchDetail';
+import FFSProvidersPage from '../pages/finance/FFSProvidersPage';
 
 import ReportsPage         from '../pages/reports/ReportsPage';
 import AuditLogPage        from '../pages/reports/AuditLogPage';
@@ -73,6 +79,7 @@ import AuditLogPage        from '../pages/reports/AuditLogPage';
 import UsersPage           from '../pages/settings/UsersPage';
 import RolesPage           from '../pages/settings/RolesPage';
 import BranchesPage        from '../pages/settings/BranchesPage';
+import BranchFormPage from '../pages/settings/BranchFormPage';
 import ProfilePage         from '../pages/settings/ProfilePage';
 
 import UserFormPage from '../pages/settings/UserFormPage';
@@ -105,6 +112,8 @@ import AlertsPage          from '../pages/alerts/AlertsPage';
 import CompliancePage      from '../pages/compliance/CompliancePage';
 import ImportExportPage    from '../pages/import/ImportExportPage';
 import AIToolsPage         from '../pages/ai/AIToolsPage';
+
+import ClaimImportPage from '../pages/claims/ClaimImportPage';
 
 // ── Route guards ───────────────────────────────────────────────────────────
 import ProtectedRoute  from './ProtectedRoute';
@@ -191,8 +200,8 @@ export default function AppRouter() {
             </Route>
             <Route path="/set-password" element={<SetInitialPasswordPage />} />
             <Route path="/privacy-policy" element={<PrivacyPolicyPage />} />
-                <Route path="/support"        element={<SupportPage />} />
-                <Route path="/terms" element={<TermsPage />} />
+            <Route path="/support"        element={<SupportPage />} />
+            <Route path="/terms" element={<TermsPage />} />
 
             {/* ══════════════════════════════════════════════════════════════
                 HMO STAFF — AppLayout (full sidebar + topbar shell)
@@ -207,6 +216,12 @@ export default function AppRouter() {
                 <Route path="/privacy-policy" element={<PrivacyPolicyPage />} />
                 <Route path="/support"        element={<SupportPage />} />
                 <Route path="/terms" element={<TermsPage />} />
+
+                {/* <Route path="plans" element={
+                    <PermissionRoute permission="plans.view">
+                        <AllPlansPage standalone={true} />
+                    </PermissionRoute>
+                } /> */}
 
                 {/* ── Corporates (HMO staff view — /corporates NOT /corporate) ── */}
                 <Route path="corporates">
@@ -230,7 +245,24 @@ export default function AppRouter() {
                             <CorporateFormPage />
                         </PermissionRoute>
                     } />
+
+                    <Route path=":corporateId/plans/new" element={
+                        <PermissionRoute permission="plans.create">
+                            <PlanFormPage />
+                        </PermissionRoute>
+                    } />
+                    <Route path=":corporateId/plans/:planId" element={
+                        <PermissionRoute permission="corporates.view">
+                            <PlanDetailPage />
+                        </PermissionRoute>
+                    } />
+                    <Route path=":corporateId/plans/:planId/edit" element={
+                        <PermissionRoute permission="plans.edit">
+                            <PlanFormPage />
+                        </PermissionRoute>
+                    } />
                 </Route>
+
 
                 {/* ── Enrollees (HMO staff view — /enrollees NOT /enrollee) ── */}
                 <Route path="enrollees">
@@ -312,8 +344,10 @@ export default function AppRouter() {
                             <ClaimDetailPage />
                         </PermissionRoute>
                     } />
+                    
                 </Route>
-
+                <Route path="claims/import"     element={<PermissionRoute permission="claims.import"><ClaimImportPage /></PermissionRoute>} />
+                
                 {/* ── Pre-Authorisation ── */}
                 <Route path="pre-auth">
                     <Route index element={
@@ -361,6 +395,11 @@ export default function AppRouter() {
                     <Route path="capitation/:id" element={
                         <PermissionRoute permission="finance.capitation">
                             <CapitationDetailPage />
+                        </PermissionRoute>
+                    } />
+                    <Route path="ffs" element={
+                        <PermissionRoute permission="finance.ffs">
+                            <FFSProvidersPage />
                         </PermissionRoute>
                     } />
                 </Route>
@@ -451,6 +490,16 @@ export default function AppRouter() {
                             <BranchesPage />
                         </PermissionRoute>
                     } />
+                    <Route path="branches/new" element={
+                        <PermissionRoute permission="branches.create">
+                            <BranchFormPage />
+                        </PermissionRoute>
+                    } />
+                    <Route path="branches/:id" element={
+                        <PermissionRoute permission="branches.view">
+                            <BranchFormPage />
+                        </PermissionRoute>
+                    } />
                     <Route path="profile" element={<ProfilePage />} />
                 </Route>
 
@@ -490,7 +539,13 @@ export default function AppRouter() {
                 <Route path="/enrollee/find-hcp"    element={<FindHCPPage />} />
                 <Route path="/enrollee/complaints"  element={<MyComplaintsPage />} />
             </Route>
-
+            <Route path="*" element={
+    <div>
+        <h1>404 - Page Not Found</h1>
+        <p>Current path: {window.location.pathname}</p>
+    </div>
+} />
         </Routes>
+        
     );
 }
