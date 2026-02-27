@@ -112,8 +112,10 @@ import AlertsPage          from '../pages/alerts/AlertsPage';
 import CompliancePage      from '../pages/compliance/CompliancePage';
 import ImportExportPage    from '../pages/import/ImportExportPage';
 import AIToolsPage         from '../pages/ai/AIToolsPage';
+import HelpCentrePage from '../pages/help/HelpCentrePage';
 
 import ClaimImportPage from '../pages/claims/ClaimImportPage';
+import ClaimImportHistoryPage from '../pages/claims/ClaimImportHistoryPage';
 
 // ── Route guards ───────────────────────────────────────────────────────────
 import ProtectedRoute  from './ProtectedRoute';
@@ -216,6 +218,9 @@ export default function AppRouter() {
                 <Route path="/privacy-policy" element={<PrivacyPolicyPage />} />
                 <Route path="/support"        element={<SupportPage />} />
                 <Route path="/terms" element={<TermsPage />} />
+                
+                <Route path="help" element={<HelpCentrePage />} />
+                <Route path="help/:slug" element={<HelpCentrePage />} />
 
                 {/* <Route path="plans" element={
                     <PermissionRoute permission="plans.view">
@@ -347,7 +352,12 @@ export default function AppRouter() {
                     
                 </Route>
                 <Route path="claims/import"     element={<PermissionRoute permission="claims.import"><ClaimImportPage /></PermissionRoute>} />
-                
+                <Route path="claims/imports" element={
+                    <PermissionRoute permission="claims.import">
+                        <ClaimImportHistoryPage />
+                    </PermissionRoute>
+                } />
+
                 {/* ── Pre-Authorisation ── */}
                 <Route path="pre-auth">
                     <Route index element={

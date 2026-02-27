@@ -37,7 +37,7 @@ use App\Http\Controllers\ExportController;
 use App\Http\Controllers\Finance\HCPPaymentSummaryController;
 
 use App\Http\Controllers\Claims\ClaimImportController;
-
+use App\Http\Controllers\HelpArticleController;
 
 /*
 |--------------------------------------------------------------------------
@@ -303,6 +303,9 @@ use App\Http\Controllers\Claims\ClaimImportController;
           Route::post('/{batch}/push',                        [ClaimImportController::class, 'push']);
           Route::get('/{batch}',                              [ClaimImportController::class, 'show']);
        });
+       Route::prefix('claims/imports')->middleware('permission:claims.import')->group(function () {
+               Route::get('/', [ClaimImportController::class, 'index']);
+          });
 
         // ── Finance ───────────────────────────────────────────────────────────
         Route::middleware('permission:finance.view')
@@ -491,6 +494,22 @@ use App\Http\Controllers\Claims\ClaimImportController;
     //     Route::get('/pa-tat',        [PAReportController::class, 'tatSummary']);
     //     Route::get('/pa-tat/export', [PAReportController::class, 'exportTAT']);
     // });
+
+    // Help Centre routes
+     Route::prefix('help')->middleware('auth:sanctum')->group(function () {
+          Route::get('/', [HelpArticleController::class, 'index']);
+          Route::get('/for-page', [HelpArticleController::class, 'forPage']);
+          Route::get('/{slug}', [HelpArticleController::class, 'show']);
+          Route::post('/{article}/feedback', [HelpArticleController::class, 'feedback']);
+          
+          // Admin routes
+          Route::middleware('permission:help.admin')->group(function () {
+          Route::get('/admin/list', [HelpArticleController::class, 'adminIndex']);
+          Route::post('/', [HelpArticleController::class, 'store']);
+          Route::put('/{article}', [HelpArticleController::class, 'update']);
+          Route::delete('/{article}', [HelpArticleController::class, 'destroy']);
+          });
+     });
 
     // ============= PORTAL ROUTES =============
     Route::middleware(['auth:sanctum'])->prefix('portal')->group(function () {

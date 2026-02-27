@@ -172,6 +172,9 @@ export const fetchFraudFlags = (id) => apiClient.get(`/claims/${id}/fraud-flags`
 export const suspendHCP = (id, data) => apiClient.patch(`/hcps/${id}/suspend`, data);
 export const reactivateHCP = (id) => apiClient.patch(`/hcps/${id}/reactivate`);
 
+export const fetchImportBatches = (params) => 
+    apiClient.get('/claims/imports', { params });
+
 // ============= CLAIM DOCUMENTS =============
 export const fetchClaimDocuments = (claimId) => 
     apiClient.get(`/claims/${claimId}/documents`);
@@ -345,12 +348,16 @@ export const fetchPermissions = () => apiClient.get('/permissions');
 export const syncRolePermissions = (id, data) => 
     apiClient.put(`/roles/${id}/permissions`, data);
 
+export const fetchHelpArticles = (params) => 
+    apiClient.get('/help', { params }).then(r => r.data);
 
 export default {
     // Auth
     login, logout, logoutAll, fetchUser, changePassword,
     setup2FA, confirm2FA, disable2FA,
     
+    //Help
+    fetchHelpArticles,
     // Branches
     fetchBranches, fetchBranch, createBranch, updateBranch, deleteBranch, toggleBranchStatus,
     
