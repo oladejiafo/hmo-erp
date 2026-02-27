@@ -22,22 +22,22 @@ import ReactMarkdown from 'react-markdown';
 // Map React route paths → page_context strings sent to the API
 const routeToContext = (pathname) => {
     const map = [
-        [/^\/dashboard$/,          'dashboard'],
-        [/^\/enrollees\/new$/,     'enrollees.create'],
-        [/^\/enrollees\/\d+$/,     'enrollees.show'],
-        [/^\/enrollees/,           'enrollees.index'],
-        [/^\/claims\/import/,      'claims.import'],
-        [/^\/claims\/\d+/,         'claims.show'],
-        [/^\/claims/,              'claims.index'],
-        [/^\/pre-auth\/\d+/,       'pre-auth.show'],
-        [/^\/pre-auth/,            'pre-auth.index'],
-        [/^\/reports/,             'reports'],
-        [/^\/finance\/batches/,    'finance.batches'],
-        [/^\/corporates\/\d+/,     'corporates.show'],
-        [/^\/member\/benefits/,    'member.benefits'],
-        [/^\/member\/claims/,      'member.claims'],
-        [/^\/member\/hcps/,        'member.hcps'],
-        [/^\/member/,              'member.dashboard'],
+        [/^\/dashboard$/, 'dashboard'],
+        [/^\/enrollees\/new$/, 'enrollees.create'],
+        [/^\/enrollees\/\d+$/, 'enrollees.show'],
+        [/^\/enrollees/, 'enrollees.index'],
+        [/^\/claims\/import/, 'claims.import'],
+        [/^\/claims\/\d+/, 'claims.show'],
+        [/^\/claims/, 'claims.index'],
+        [/^\/pre-auth\/\d+/, 'pre-auth.show'],
+        [/^\/pre-auth/, 'pre-auth.index'],
+        [/^\/reports/, 'reports'],
+        [/^\/finance\/batches/, 'finance.batches'],
+        [/^\/corporates\/\d+/, 'corporates.show'],
+        [/^\/member\/benefits/, 'member.benefits'],
+        [/^\/member\/claims/, 'member.claims'],
+        [/^\/member\/hcps/, 'member.hcps'],
+        [/^\/member/, 'member.dashboard'],
     ];
     for (const [regex, ctx] of map) {
         if (regex.test(pathname)) return ctx;
@@ -46,14 +46,14 @@ const routeToContext = (pathname) => {
 };
 
 export default function HelpDrawer() {
-    const [open, setOpen]             = useState(false);
-    const [query, setQuery]           = useState('');
+    const [open, setOpen] = useState(false);
+    const [query, setQuery] = useState('');
     const [activeArticle, setArticle] = useState(null);
     const [feedbackSent, setFeedback] = useState(false);
-    const location                    = useLocation();
-    const navigate                    = useNavigate();
-    const searchRef                   = useRef();
-    const pageContext                  = routeToContext(location.pathname);
+    const location = useLocation();
+    const navigate = useNavigate();
+    const searchRef = useRef();
+    const pageContext = routeToContext(location.pathname);
 
     // Reset article view when drawer closes or page changes
     useEffect(() => { setArticle(null); setQuery(''); setFeedback(false); }, [location.pathname]);
@@ -84,18 +84,9 @@ export default function HelpDrawer() {
         onSuccess: () => setFeedback(false),
     });
 
-    // const contextArticles = contextData?.data?.data ?? [];
-    // const searchArticles  = searchData?.data?.data?.data ?? searchData?.data?.data ?? [];
-    // const article         = articleData?.data?.data;
-
-    // Contextual articles (returns array directly)
-const contextArticles = contextData?.data?.data ?? [];
-
-// Search results (paginated - data.data.data is the array)
-const searchArticles = searchData?.data?.data?.data ?? [];
-
-// Full article
-const article = articleData?.data?.data;
+    const contextArticles = contextData?.data?.data ?? [];
+    const searchArticles = searchData?.data?.data?.data ?? searchData?.data?.data ?? [];
+    const article = articleData?.data?.data;
 
     const sendFeedback = async (helpful) => {
         if (activeArticle) {
@@ -105,7 +96,7 @@ const article = articleData?.data?.data;
     };
 
     const showArticles = query.length > 2 ? searchArticles : contextArticles;
-    const showContext  = query.length <= 2;
+    const showContext = query.length <= 2;
 
     return (
         <>
@@ -113,7 +104,7 @@ const article = articleData?.data?.data;
             <button
                 onClick={() => setOpen(true)}
                 className="btn btn-primary rounded-circle shadow-lg d-flex align-items-center justify-content-center"
-                style={{ position:'fixed', bottom:28, right:28, width:52, height:52, zIndex:1040, fontSize:22 }}
+                style={{ position: 'fixed', bottom: 28, right: 28, width: 52, height: 52, zIndex: 1040, fontSize: 22 }}
                 title="Help Centre"
                 aria-label="Open Help"
             >
@@ -123,7 +114,7 @@ const article = articleData?.data?.data;
             {/* Backdrop */}
             {open && (
                 <div
-                    style={{ position:'fixed', inset:0, background:'rgba(0,0,0,.35)', zIndex:1050 }}
+                    style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,.35)', zIndex: 1050 }}
                     onClick={() => setOpen(false)}
                 />
             )}
@@ -138,7 +129,7 @@ const article = articleData?.data?.data;
             }}>
                 {/* Header */}
                 <div className="d-flex align-items-center justify-content-between px-4 py-3 border-bottom"
-                     style={{ background:'#0f4c81', color:'#fff' }}>
+                    style={{ background: '#0f4c81', color: '#fff' }}>
                     <div className="d-flex align-items-center gap-2">
                         {activeArticle && (
                             <button className="btn btn-sm btn-link text-white p-0 me-1" onClick={() => setArticle(null)}>
@@ -166,7 +157,7 @@ const article = articleData?.data?.data;
                             ) : (
                                 <>
                                     <div className="mb-2">
-                                        <span className="badge" style={{ background:'#e8f0fe', color:'#1d4ed8', fontSize:11 }}>
+                                        <span className="badge" style={{ background: '#e8f0fe', color: '#1d4ed8', fontSize: 11 }}>
                                             {article.category_icon} {article.category_label}
                                         </span>
                                     </div>
@@ -177,10 +168,10 @@ const article = articleData?.data?.data;
                                     {/* Feedback */}
                                     <div className="mt-4 pt-3 border-top">
                                         {feedbackSent ? (
-                                            <p className="text-success text-center" style={{ fontSize:13 }}>✓ Thanks for your feedback!</p>
+                                            <p className="text-success text-center" style={{ fontSize: 13 }}>✓ Thanks for your feedback!</p>
                                         ) : (
                                             <div className="d-flex align-items-center gap-3 justify-content-center">
-                                                <span className="text-muted" style={{ fontSize:12 }}>Was this helpful?</span>
+                                                <span className="text-muted" style={{ fontSize: 12 }}>Was this helpful?</span>
                                                 <button className="btn btn-sm btn-outline-success" onClick={() => sendFeedback(true)}>
                                                     <ThumbsUp size={13} className="me-1" />Yes
                                                 </button>
@@ -194,13 +185,13 @@ const article = articleData?.data?.data;
                                     {/* Related articles */}
                                     {articleData?.data?.related?.length > 0 && (
                                         <div className="mt-4">
-                                            <p className="fw-semibold mb-2" style={{ fontSize: 12, color: '#64748b', textTransform:'uppercase', letterSpacing:'.05em' }}>
+                                            <p className="fw-semibold mb-2" style={{ fontSize: 12, color: '#64748b', textTransform: 'uppercase', letterSpacing: '.05em' }}>
                                                 Related Articles
                                             </p>
                                             {articleData.data.related.map(r => (
                                                 <button key={r.id}
                                                     className="d-block text-start w-100 btn btn-link p-0 mb-1 text-decoration-none"
-                                                    style={{ fontSize:13, color:'#1d4ed8' }}
+                                                    style={{ fontSize: 13, color: '#1d4ed8' }}
                                                     onClick={() => setArticle(r.slug)}>
                                                     {r.title}
                                                 </button>
@@ -234,7 +225,7 @@ const article = articleData?.data?.data;
 
                             {/* Section label */}
                             <div className="px-4 pb-1">
-                                <p className="mb-1" style={{ fontSize:11, color:'#94a3b8', textTransform:'uppercase', letterSpacing:'.05em', fontWeight:600 }}>
+                                <p className="mb-1" style={{ fontSize: 11, color: '#94a3b8', textTransform: 'uppercase', letterSpacing: '.05em', fontWeight: 600 }}>
                                     {searching ? 'Searching…' : query.length > 2 ? `Results for "${query}"` : pageContext ? 'Help for this page' : 'Popular articles'}
                                 </p>
                             </div>
@@ -242,7 +233,7 @@ const article = articleData?.data?.data;
                             {/* Article list */}
                             <div>
                                 {showArticles.length === 0 && !searching ? (
-                                    <div className="px-4 py-3 text-muted" style={{ fontSize:13 }}>
+                                    <div className="px-4 py-3 text-muted" style={{ fontSize: 13 }}>
                                         {query.length > 2
                                             ? 'No articles found. Try different keywords.'
                                             : 'No specific help for this page yet.'}
@@ -251,24 +242,24 @@ const article = articleData?.data?.data;
                                     <button
                                         key={a.id}
                                         className="w-100 text-start px-4 py-3 border-bottom d-flex align-items-start gap-3 bg-transparent border-0"
-                                        style={{ transition:'background .1s', cursor:'pointer' }}
+                                        style={{ transition: 'background .1s', cursor: 'pointer' }}
                                         onMouseEnter={e => e.currentTarget.style.background = '#f8fafc'}
                                         onMouseLeave={e => e.currentTarget.style.background = 'transparent'}
                                         onClick={() => setArticle(a.slug)}
                                     >
-                                        <span style={{ fontSize:20, lineHeight:1, marginTop:2 }}>{a.category_icon}</span>
-                                        <div style={{ flex:1 }}>
-                                            <div className="fw-semibold" style={{ fontSize:13, color:'#1e293b' }}>{a.title}</div>
-                                            <div className="text-muted" style={{ fontSize:11, marginTop:2 }}>
+                                        <span style={{ fontSize: 20, lineHeight: 1, marginTop: 2 }}>{a.category_icon}</span>
+                                        <div style={{ flex: 1 }}>
+                                            <div className="fw-semibold" style={{ fontSize: 13, color: '#1e293b' }}>{a.title}</div>
+                                            <div className="text-muted" style={{ fontSize: 11, marginTop: 2 }}>
                                                 {a.category_label}
                                             </div>
                                             {a.excerpt && (
-                                                <div className="text-muted" style={{ fontSize:11, marginTop:3, overflow:'hidden', textOverflow:'ellipsis', display:'-webkit-box', WebkitLineClamp:2, WebkitBoxOrient:'vertical' }}>
+                                                <div className="text-muted" style={{ fontSize: 11, marginTop: 3, overflow: 'hidden', textOverflow: 'ellipsis', display: '-webkit-box', WebkitLineClamp: 2, WebkitBoxOrient: 'vertical' }}>
                                                     {a.excerpt}
                                                 </div>
                                             )}
                                         </div>
-                                        <ChevronRight size={14} style={{ color:'#94a3b8', marginTop:4, flexShrink:0 }} />
+                                        <ChevronRight size={14} style={{ color: '#94a3b8', marginTop: 4, flexShrink: 0 }} />
                                     </button>
                                 ))}
                             </div>
@@ -277,7 +268,7 @@ const article = articleData?.data?.data;
                 </div>
 
                 {/* Footer — link to full help centre */}
-                <div className="px-4 py-3 border-top text-center" style={{ background:'#f8fafc' }}>
+                <div className="px-4 py-3 border-top text-center" style={{ background: '#f8fafc' }}>
                     <button
                         className="btn btn-sm btn-outline-primary"
                         onClick={() => { setOpen(false); navigate('/help'); }}

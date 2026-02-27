@@ -8,53 +8,67 @@
  *  - Payment-model badge on HCPs nav item removed (kept clean); badge logic
  *    stays at HCP detail level
  */
-import React from 'react';
-import { NavLink, useLocation } from 'react-router-dom';
+import React from "react";
+import { NavLink, useLocation } from "react-router-dom";
 import {
-    LayoutDashboard, Building2, Users, Building, FileText,
-    CreditCard, BarChart3, Settings, Shield, ShieldCheck, Upload,
-    ChevronRight, GitBranch, ScrollText, CalendarDays, Bell, Sparkles,
-    Activity, Layers,
-} from 'lucide-react';
-import { useAuth } from '../contexts/AuthContext';
-import { useQuery } from '@tanstack/react-query';
-import { fetchPAStats, fetchNotificationCount } from '../api/index';
+    LayoutDashboard,
+    Building2,
+    Users,
+    Building,
+    FileText,
+    CreditCard,
+    BarChart3,
+    Settings,
+    Shield,
+    ShieldCheck,
+    Upload,
+    ChevronRight,
+    GitBranch,
+    ScrollText,
+    CalendarDays,
+    Bell,
+    Sparkles,
+    Activity,
+    Layers,
+} from "lucide-react";
+import { useAuth } from "../contexts/AuthContext";
+import { useQuery } from "@tanstack/react-query";
+import { fetchPAStats, fetchNotificationCount } from "../api/index";
 
 // ─── Nav items ───────────────────────────────────────────────────────────────
 
 const navItems = [
     // Core Operations
     {
-        label: 'Dashboard',
+        label: "Dashboard",
         icon: LayoutDashboard,
-        path: '/',
+        path: "/",
         exact: true,
         permission: null,
-        group: 'core',
+        group: "core",
     },
     {
-        label: 'Pre-Authorisation',
+        label: "Pre-Authorisation",
         icon: ShieldCheck,
-        path: '/pre-auth',
-        permission: 'pa.view',
-        shortLabel: 'Pre-Auth',
-        group: 'core',
+        path: "/pre-auth",
+        permission: "pa.view",
+        shortLabel: "Pre-Auth",
+        group: "core",
     },
     {
-        label: 'Claims',
+        label: "Claims",
         icon: FileText,
-        path: '/claims',
-        permission: 'claims.view',
-        group: 'core',
+        path: "/claims",
+        permission: "claims.view",
+        group: "core",
     },
-    { 
-        label:'Bulk Import', 
-        path:'/claims/import', 
-        icon:Upload, 
-        permission:'claims.import' ,
-        group: 'core',
+    {
+        label: "Bulk Import",
+        path: "/claims/import",
+        icon: Upload,
+        permission: "claims.import",
+        group: "core",
     },
-
 
     // Master Data
     // {
@@ -65,110 +79,134 @@ const navItems = [
     //     group: 'master',
     // },
     {
-        label: 'Corporates',
+        label: "Corporates",
         icon: Building2,
-        path: '/corporates',
-        permission: 'corporates.view',
-        group: 'master',
+        path: "/corporates",
+        permission: "corporates.view",
+        group: "master",
     },
     {
-        label: 'Enrollees',
+        label: "Enrollees",
         icon: Users,
-        path: '/enrollees',
-        permission: 'enrollees.view',
-        group: 'master',
+        path: "/enrollees",
+        permission: "enrollees.view",
+        group: "master",
     },
     {
-        label: 'Health Care Providers',
+        label: "Health Care Providers",
         icon: Building,
-        path: '/hcps',
-        permission: 'hcps.view',
-        shortLabel: 'HCPs',
-        group: 'master',
+        path: "/hcps",
+        permission: "hcps.view",
+        shortLabel: "HCPs",
+        group: "master",
     },
 
     // Financial — expanded: Finance, Capitation, FFS each get their own row
     {
-        label: 'Finance & Payments',
+        label: "Finance & Payments",
         icon: CreditCard,
-        path: '/finance',
-        permission: 'finance.view',
-        group: 'financial',
+        path: "/finance",
+        permission: "finance.view",
+        group: "financial",
         // exact match so /finance/capitation doesn't highlight this item
         exact: true,
     },
     {
-        label: 'Capitation',
+        label: "Capitation",
         icon: Activity,
-        path: '/finance/capitation',
-        permission: 'finance.capitation',
-        group: 'financial',
+        path: "/finance/capitation",
+        permission: "finance.capitation",
+        group: "financial",
     },
     {
-        label: 'FFS Providers',
+        label: "FFS Providers",
         icon: Layers,
-        path: '/finance/ffs',
-        permission: 'finance.ffs',
-        group: 'financial',
+        path: "/finance/ffs",
+        permission: "finance.ffs",
+        group: "financial",
     },
     {
-        label: 'Reports',
+        label: "Reports",
         icon: BarChart3,
-        path: '/reports',
-        permission: 'reports.branch',
-        group: 'financial',
+        path: "/reports",
+        permission: "reports.branch",
+        group: "financial",
     },
 
     // System & Tools
     {
-        label: 'AI Tools',
+        label: "AI Tools",
         icon: Sparkles,
-        path: '/ai-tools',
-        permission: 'ai.tools',
-        shortLabel: 'AI Tools',
-        group: 'system',
+        path: "/ai-tools",
+        permission: "ai.tools",
+        shortLabel: "AI Tools",
+        group: "system",
     },
     {
-        label: 'Alerts Center',
+        label: "Alerts Center",
         icon: Bell,
-        path: '/alerts',
+        path: "/alerts",
         permission: null,
-        badgeKey: 'alerts',
-        group: 'system',
+        badgeKey: "alerts",
+        group: "system",
     },
     {
-        label: 'Import / Export',
+        label: "Import / Export",
         icon: Upload,
-        path: '/import',
-        permission: 'import.enrollees',
-        shortLabel: 'Import / Export',
-        group: 'system',
+        path: "/import",
+        permission: "import.enrollees",
+        shortLabel: "Import / Export",
+        group: "system",
     },
     {
-        label: 'Compliance',
+        label: "Compliance",
         icon: CalendarDays,
-        path: '/compliance',
-        permission: 'compliance.view',
-        group: 'system',
+        path: "/compliance",
+        permission: "compliance.view",
+        group: "system",
     },
 ];
 
 const settingsItems = [
-    { label: 'Users',     icon: Users,      path: '/settings/users',       permission: 'users.view',    group: 'admin' },
-    { label: 'Roles',     icon: Shield,     path: '/settings/roles',       permission: 'roles.view',    group: 'admin' },
-    { label: 'Branches',  icon: GitBranch,  path: '/settings/branches',    permission: 'branches.view', group: 'admin' },
-    { label: 'Audit Log', icon: ScrollText, path: '/reports/audit-logs',   permission: 'reports.audit_logs', group: 'admin' },
+    {
+        label: "Users",
+        icon: Users,
+        path: "/settings/users",
+        permission: "users.view",
+        group: "admin",
+    },
+    {
+        label: "Roles",
+        icon: Shield,
+        path: "/settings/roles",
+        permission: "roles.view",
+        group: "admin",
+    },
+    {
+        label: "Branches",
+        icon: GitBranch,
+        path: "/settings/branches",
+        permission: "branches.view",
+        group: "admin",
+    },
+    {
+        label: "Audit Log",
+        icon: ScrollText,
+        path: "/reports/audit-logs",
+        permission: "reports.audit_logs",
+        group: "admin",
+    },
 ];
 
 const groupTitles = {
-    core:      'Core Operations',
-    master:    'Master Data',
-    financial: 'Financial',
-    system:    'System & Tools',
-    admin:     'Administration',
+    core: "Core Operations",
+    master: "Master Data",
+    financial: "Financial",
+    system: "System & Tools",
+    admin: "Administration",
 };
 
-const groupOrder = ['core', 'master', 'financial', 'system', 'admin'];
+const groupOrder = ["core", "master", "financial", "system", "admin"];
 
 // ─── Sidebar ─────────────────────────────────────────────────────────────────
 
@@ -181,30 +219,33 @@ export default function Sidebar({ collapsed }) {
         return location.pathname.startsWith(path);
     };
 
-    const visibleNavItems  = navItems.filter(i => !i.permission || hasPermission(i.permission));
-    const visibleSettings  = settingsItems.filter(i => !i.permission || hasPermission(i.permission));
-    const allVisibleItems  = [...visibleNavItems, ...visibleSettings];
+    const visibleNavItems = navItems.filter(
+        (i) => !i.permission || hasPermission(i.permission)
+    );
+    const visibleSettings = settingsItems.filter(
+        (i) => !i.permission || hasPermission(i.permission)
+    );
+    const allVisibleItems = [...visibleNavItems, ...visibleSettings];
 
     const groupedItems = allVisibleItems.reduce((acc, item) => {
-        const g = item.group || 'other';
+        const g = item.group || "other";
         if (!acc[g]) acc[g] = [];
         acc[g].push(item);
         return acc;
     }, {});
 
     const sidebarStyle = {
-        width:    collapsed ? 64 : 260,
+        width: collapsed ? 64 : 260,
         minWidth: collapsed ? 64 : 260,
-        background: '#1e3a5f',
-        transition: 'width 0.2s ease, min-width 0.2s ease',
-        overflowX: 'hidden',
-        overflowY: 'auto',
+        background: "#1e3a5f",
+        transition: "width 0.2s ease, min-width 0.2s ease",
+        overflowX: "hidden",
+        overflowY: "auto",
         zIndex: 100,
     };
 
     return (
         <nav className="d-flex flex-column text-white" style={sidebarStyle}>
-
             {/* Logo */}
             <div
                 className="d-flex align-items-center px-3 border-bottom border-white border-opacity-10"
@@ -212,18 +253,34 @@ export default function Sidebar({ collapsed }) {
             >
                 <div
                     className="rounded-2 d-flex align-items-center justify-content-center flex-shrink-0"
-                    style={{ width: 36, height: 36, background: '#2d6a9f' }}
+                    style={{ width: 36, height: 36, background: "#2d6a9f" }}
                 >
                     <svg width="20" height="20" viewBox="0 0 32 32" fill="none">
-                        <path d="M16 2L28 8V16C28 22.6 22.8 28.6 16 30C9.2 28.6 4 22.6 4 16V8L16 2Z"
-                              fill="white" fillOpacity="0.9"/>
-                        <path d="M13 16H19M16 13V19" stroke="#1e3a5f" strokeWidth="2.5" strokeLinecap="round"/>
+                        <path
+                            d="M16 2L28 8V16C28 22.6 22.8 28.6 16 30C9.2 28.6 4 22.6 4 16V8L16 2Z"
+                            fill="white"
+                            fillOpacity="0.9"
+                        />
+                        <path
+                            d="M13 16H19M16 13V19"
+                            stroke="#1e3a5f"
+                            strokeWidth="2.5"
+                            strokeLinecap="round"
+                        />
                     </svg>
                 </div>
                 {!collapsed && (
                     <div className="ms-3 overflow-hidden">
-                        <div className="fw-bold text-truncate" style={{ fontSize: 14 }}>HMO ERP</div>
-                        <div className="text-white-50 text-truncate" style={{ fontSize: 11 }}>
+                        <div
+                            className="fw-bold text-truncate"
+                            style={{ fontSize: 14 }}
+                        >
+                            HMO ERP
+                        </div>
+                        <div
+                            className="text-white-50 text-truncate"
+                            style={{ fontSize: 11 }}
+                        >
                             {user?.branch?.name}
                         </div>
                     </div>
@@ -232,7 +289,7 @@ export default function Sidebar({ collapsed }) {
 
             {/* Navigation groups */}
             <div className="flex-grow-1 py-3">
-                {groupOrder.map(groupKey => {
+                {groupOrder.map((groupKey) => {
                     const items = groupedItems[groupKey];
                     if (!items || items.length === 0) return null;
 
@@ -242,13 +299,16 @@ export default function Sidebar({ collapsed }) {
                                 <div className="px-3 pt-3 pb-1">
                                     <span
                                         className="text-uppercase text-white-50"
-                                        style={{ fontSize: 10, letterSpacing: 1 }}
+                                        style={{
+                                            fontSize: 10,
+                                            letterSpacing: 1,
+                                        }}
                                     >
                                         {groupTitles[groupKey] || groupKey}
                                     </span>
                                 </div>
                             )}
-                            {items.map(item => (
+                            {items.map((item) => (
                                 <SidebarItem
                                     key={item.path}
                                     item={item}
@@ -267,22 +327,35 @@ export default function Sidebar({ collapsed }) {
                     to="/settings/profile"
                     className="d-flex align-items-center text-decoration-none text-white-50 rounded-2 px-2 py-2"
                     style={({ isActive }) => ({
-                        background: isActive ? 'rgba(255,255,255,0.1)' : 'transparent',
+                        background: isActive
+                            ? "rgba(255,255,255,0.1)"
+                            : "transparent",
                     })}
                 >
                     <div
                         className="rounded-circle d-flex align-items-center justify-content-center flex-shrink-0 text-white fw-bold"
-                        style={{ width: 32, height: 32, background: '#2d6a9f', fontSize: 13 }}
+                        style={{
+                            width: 32,
+                            height: 32,
+                            background: "#2d6a9f",
+                            fontSize: 13,
+                        }}
                     >
                         {user?.name?.charAt(0)?.toUpperCase()}
                     </div>
                     {!collapsed && (
                         <div className="ms-2 overflow-hidden">
-                            <div className="text-white text-truncate" style={{ fontSize: 13 }}>
+                            <div
+                                className="text-white text-truncate"
+                                style={{ fontSize: 13 }}
+                            >
                                 {user?.name}
                             </div>
-                            <div className="text-truncate" style={{ fontSize: 11 }}>
-                                {user?.roles?.[0] ?? 'User'}
+                            <div
+                                className="text-truncate"
+                                style={{ fontSize: 11 }}
+                            >
+                                {user?.roles?.[0] ?? "User"}
                             </div>
                         </div>
                     )}
@@ -297,23 +370,35 @@ export default function Sidebar({ collapsed }) {
 function SidebarItem({ item, active, collapsed }) {
     const Icon = item.icon;
 
-    const { data: paStats } = item.path === '/pre-auth'
-        ? useQuery({ queryKey: ['pa-stats'], queryFn: fetchPAStats, refetchInterval: 60000, staleTime: 30000 })
-        : { data: null };
+    const { data: paStats } =
+        item.path === "/pre-auth"
+            ? useQuery({
+                  queryKey: ["pa-stats"],
+                  queryFn: fetchPAStats,
+                  refetchInterval: 60000,
+                  staleTime: 30000,
+              })
+            : { data: null };
 
-    const { data: notifData } = item.badgeKey === 'alerts'
-        ? useQuery({ queryKey: ['notification-count'], queryFn: fetchNotificationCount, refetchInterval: 30000, staleTime: 15000 })
-        : { data: null };
+    const { data: notifData } =
+        item.badgeKey === "alerts"
+            ? useQuery({
+                  queryKey: ["notification-count"],
+                  queryFn: fetchNotificationCount,
+                  refetchInterval: 30000,
+                  staleTime: 15000,
+              })
+            : { data: null };
 
-    const pendingCount  = paStats?.data?.pending_count ?? 0;
-    const overdueCount  = paStats?.data?.overdue_count ?? 0;
-    const showPABadge   = item.path === '/pre-auth' && pendingCount > 0;
-    const unreadCount   = notifData?.data?.count ?? 0;
+    const pendingCount = paStats?.data?.pending_count ?? 0;
+    const overdueCount = paStats?.data?.overdue_count ?? 0;
+    const showPABadge = item.path === "/pre-auth" && pendingCount > 0;
+    const unreadCount = notifData?.data?.count ?? 0;
     const criticalCount = notifData?.data?.critical ?? 0;
-    const showAlertBadge = item.badgeKey === 'alerts' && unreadCount > 0;
+    const showAlertBadge = item.badgeKey === "alerts" && unreadCount > 0;
 
     // FFS Providers item gets a distinct accent colour
-    const isFFS = item.path === '/finance/ffs';
+    const isFFS = item.path === "/finance/ffs";
 
     return (
         <NavLink
@@ -321,91 +406,153 @@ function SidebarItem({ item, active, collapsed }) {
             end={item.exact}
             title={collapsed ? item.label : undefined}
             style={{
-                display:        'flex',
-                alignItems:     'center',
-                padding:        '10px 12px',
-                margin:         '2px 8px',
-                borderRadius:   8,
-                textDecoration: 'none',
-                color:      active ? '#ffffff' : isFFS ? 'rgba(255,255,255,0.75)' : 'rgba(255,255,255,0.6)',
+                display: "flex",
+                alignItems: "center",
+                padding: "10px 12px",
+                margin: "2px 8px",
+                borderRadius: 8,
+                textDecoration: "none",
+                color: active
+                    ? "#ffffff"
+                    : isFFS
+                    ? "rgba(255,255,255,0.75)"
+                    : "rgba(255,255,255,0.6)",
                 background: active
-                    ? isFFS ? 'rgba(99,102,241,0.25)' : 'rgba(255,255,255,0.12)'
-                    : 'transparent',
+                    ? isFFS
+                        ? "rgba(99,102,241,0.25)"
+                        : "rgba(255,255,255,0.12)"
+                    : "transparent",
                 fontWeight: active ? 600 : 400,
-                fontSize:   14,
-                whiteSpace: 'nowrap',
-                overflow:   'hidden',
-                transition: 'all 0.15s',
-                position:   'relative',
-                borderLeft: isFFS && !active ? '2px solid rgba(99,102,241,0.4)' : undefined,
+                fontSize: 14,
+                whiteSpace: "nowrap",
+                overflow: "hidden",
+                transition: "all 0.15s",
+                position: "relative",
+                borderLeft:
+                    isFFS && !active
+                        ? "2px solid rgba(99,102,241,0.4)"
+                        : undefined,
             }}
-            onMouseEnter={e => {
+            onMouseEnter={(e) => {
                 if (!active) {
                     e.currentTarget.style.background = isFFS
-                        ? 'rgba(99,102,241,0.15)'
-                        : 'rgba(255,255,255,0.06)';
-                    e.currentTarget.style.color = '#ffffff';
+                        ? "rgba(99,102,241,0.15)"
+                        : "rgba(255,255,255,0.06)";
+                    e.currentTarget.style.color = "#ffffff";
                 }
             }}
-            onMouseLeave={e => {
+            onMouseLeave={(e) => {
                 if (!active) {
-                    e.currentTarget.style.background = 'transparent';
-                    e.currentTarget.style.color = isFFS ? 'rgba(255,255,255,0.75)' : 'rgba(255,255,255,0.6)';
+                    e.currentTarget.style.background = "transparent";
+                    e.currentTarget.style.color = isFFS
+                        ? "rgba(255,255,255,0.75)"
+                        : "rgba(255,255,255,0.6)";
                 }
             }}
         >
             {/* Icon + optional badge */}
-            <div style={{ position: 'relative', flexShrink: 0, color: isFFS && !active ? '#a5b4fc' : 'inherit' }}>
+            <div
+                style={{
+                    position: "relative",
+                    flexShrink: 0,
+                    color: isFFS && !active ? "#a5b4fc" : "inherit",
+                }}
+            >
                 <Icon size={18} />
                 {showPABadge && (
-                    <span style={{
-                        position: 'absolute', top: -6, right: -6,
-                        minWidth: 16, height: 16, borderRadius: 8,
-                        background: overdueCount > 0 ? '#ef4444' : '#f59e0b',
-                        color: '#fff', fontSize: 9, fontWeight: 700,
-                        display: 'flex', alignItems: 'center', justifyContent: 'center',
-                        padding: '0 3px', border: '1.5px solid #1e3a5f',
-                    }}>
-                        {pendingCount > 99 ? '99+' : pendingCount}
+                    <span
+                        style={{
+                            position: "absolute",
+                            top: -6,
+                            right: -6,
+                            minWidth: 16,
+                            height: 16,
+                            borderRadius: 8,
+                            background:
+                                overdueCount > 0 ? "#ef4444" : "#f59e0b",
+                            color: "#fff",
+                            fontSize: 9,
+                            fontWeight: 700,
+                            display: "flex",
+                            alignItems: "center",
+                            justifyContent: "center",
+                            padding: "0 3px",
+                            border: "1.5px solid #1e3a5f",
+                        }}
+                    >
+                        {pendingCount > 99 ? "99+" : pendingCount}
                     </span>
                 )}
                 {showAlertBadge && (
-                    <span style={{
-                        position: 'absolute', top: -6, right: -6,
-                        minWidth: 16, height: 16, borderRadius: 8,
-                        background: criticalCount > 0 ? '#ef4444' : '#f59e0b',
-                        color: '#fff', fontSize: 9, fontWeight: 700,
-                        display: 'flex', alignItems: 'center', justifyContent: 'center',
-                        padding: '0 3px', border: '1.5px solid #1e3a5f',
-                    }}>
-                        {unreadCount > 99 ? '99+' : unreadCount}
+                    <span
+                        style={{
+                            position: "absolute",
+                            top: -6,
+                            right: -6,
+                            minWidth: 16,
+                            height: 16,
+                            borderRadius: 8,
+                            background:
+                                criticalCount > 0 ? "#ef4444" : "#f59e0b",
+                            color: "#fff",
+                            fontSize: 9,
+                            fontWeight: 700,
+                            display: "flex",
+                            alignItems: "center",
+                            justifyContent: "center",
+                            padding: "0 3px",
+                            border: "1.5px solid #1e3a5f",
+                        }}
+                    >
+                        {unreadCount > 99 ? "99+" : unreadCount}
                     </span>
                 )}
             </div>
 
             {/* Label */}
             {!collapsed && (
-                <span className="ms-3 flex-grow-1" style={{ color: isFFS && !active ? '#a5b4fc' : 'inherit' }}>
+                <span
+                    className="ms-3 flex-grow-1"
+                    style={{ color: isFFS && !active ? "#a5b4fc" : "inherit" }}
+                >
                     {item.shortLabel ?? item.label}
                 </span>
             )}
 
             {/* Inline count badges */}
             {!collapsed && showPABadge && !active && (
-                <span style={{
-                    fontSize: 10, fontWeight: 700, padding: '1px 6px', borderRadius: 8, marginLeft: 4,
-                    background: overdueCount > 0 ? 'rgba(239,68,68,0.2)' : 'rgba(245,158,11,0.2)',
-                    color:      overdueCount > 0 ? '#fca5a5' : '#fde68a',
-                }}>
+                <span
+                    style={{
+                        fontSize: 10,
+                        fontWeight: 700,
+                        padding: "1px 6px",
+                        borderRadius: 8,
+                        marginLeft: 4,
+                        background:
+                            overdueCount > 0
+                                ? "rgba(239,68,68,0.2)"
+                                : "rgba(245,158,11,0.2)",
+                        color: overdueCount > 0 ? "#fca5a5" : "#fde68a",
+                    }}
+                >
                     {pendingCount}
                 </span>
             )}
             {!collapsed && showAlertBadge && !active && (
-                <span style={{
-                    fontSize: 10, fontWeight: 700, padding: '1px 6px', borderRadius: 8, marginLeft: 4,
-                    background: criticalCount > 0 ? 'rgba(239,68,68,0.2)' : 'rgba(245,158,11,0.2)',
-                    color:      criticalCount > 0 ? '#fca5a5' : '#fde68a',
-                }}>
+                <span
+                    style={{
+                        fontSize: 10,
+                        fontWeight: 700,
+                        padding: "1px 6px",
+                        borderRadius: 8,
+                        marginLeft: 4,
+                        background:
+                            criticalCount > 0
+                                ? "rgba(239,68,68,0.2)"
+                                : "rgba(245,158,11,0.2)",
+                        color: criticalCount > 0 ? "#fca5a5" : "#fde68a",
+                    }}
+                >
                     {unreadCount}
                 </span>
             )}
