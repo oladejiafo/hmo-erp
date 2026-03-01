@@ -8,6 +8,7 @@ use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Database\Eloquent\Builder;
 use Carbon\Carbon;
+use App\Models\SystemSetting;
 
 /**
  * FILE LOCATION: app/Models/PreAuthorisation.php
@@ -105,16 +106,45 @@ class PreAuthorisation extends Model
         'reviewed_at'        => 'datetime',
     ];
 
-    // ── TAT Thresholds (minutes) ───────────────────────────────────────────
-    const TAT_THRESHOLDS = [
-        'standard'  => ['warn' => 15,  'limit' => 30],
-        'urgent'    => ['warn' => 30,  'limit' => 60],
-        'emergency' => ['warn' => 720, 'limit' => 1440], // 12h warn, 24h limit
-    ];
+    // // ── TAT Thresholds (minutes) ───────────────────────────────────────────
+    // const TAT_THRESHOLDS = [
+    //     'standard'  => ['warn' => 15,  'limit' => 30],
+    //     'urgent'    => ['warn' => 30,  'limit' => 60],
+    //     'emergency' => ['warn' => 720, 'limit' => 1440], // 12h warn, 24h limit
+    // ];
 
-    // ── Approval Amount Thresholds ────────────────────────────────────────
-    const TIER_MD_THRESHOLD  = 500_000;
-    const TIER_CEO_THRESHOLD = 2_000_000;
+    // // ── Approval Amount Thresholds ────────────────────────────────────────
+    // const TIER_MD_THRESHOLD  = 500_000;
+    // const TIER_CEO_THRESHOLD = 2_000_000;
+
+    public static function getTatThresholds(): array
+    {
+        return [
+            'standard' => [
+                'warn'  => SystemSetting::get('pre_auth.standard_warn_minutes',  15),
+                'limit' => SystemSetting::get('pre_auth.standard_limit_minutes', 30),
+            ],
+            'urgent' => [
+                'warn'  => SystemSetting::get('pre_auth.urgent_warn_minutes',  30),
+                'limit' => SystemSetting::get('pre_auth.urgent_limit_minutes', 60),
+            ],
+            'emergency' => [
+                'warn'  => SystemSetting::get('pre_auth.emergency_warn_minutes',  720),
+                'limit' => SystemSetting::get('pre_auth.emergency_limit_minutes', 1440),
+            ],
+        ];
+    }
+
+    public static function getTierMdThreshold(): int
+    {
+        return SystemSetting::get('financial.pa_md_threshold', 500000);
+    }
+
+    public static function getTierCeoThreshold(): int
+    {
+        return SystemSetting::get('financial.pa_ceo_threshold', 2000000);
+    }
+
 
     // ── Active statuses (TAT clock running) ───────────────────────────────
     const ACTIVE_STATUSES = [
@@ -207,7 +237,11 @@ class PreAuthorisation extends Model
         })->orWhere(function ($q) {
             // Emergency retrospective: older than 24 hours
             $q->where('urgency', 'emergency')
-              ->where('created_at', '<', now()->subHours(24));
+            //   ->where('created_at', '<', now()->subHours(24));
+              ->where('created_at', '<', now()->subHours(
+                SystemSetting::get('operational.pa_retrospective_emergency_hours', 24)
+              ));
+            
         })->whereIn('status', self::ACTIVE_STATUSES);
     }
 
@@ -258,7 +292,10 @@ class PreAuthorisation extends Model
         if (! in_array($this->status, self::ACTIVE_STATUSES)) {
             return 'resolved';
         }
-        $thresholds = self::TAT_THRESHOLDS[$this->urgency] ?? self::TAT_THRESHOLDS['standard'];
+        // $thresholds = self::TAT_THRESHOLDS[$this->urgency] ?? self::TAT_THRESHOLDS['standard'];
+        $all = static::getTatThresholds();
+        $thresholds = $all[$this->urgency] ?? $all['standard'];
+
         $age        = $this->age_minutes;
 
         if ($age >= $thresholds['limit']) return 'danger';
@@ -307,9 +344,10 @@ class PreAuthorisation extends Model
      */
     public static function tierFromAmount(?float $amount): string
     {
-        if (! $amount || $amount <= 0)              return 'standard';
-        if ($amount > self::TIER_CEO_THRESHOLD)      return 'ceo';
-        if ($amount > self::TIER_MD_THRESHOLD)       return 'md';
+        if (! $amount || $amount <= 0)                  return 'standard';
+        // if ($amount > self::TIER_CEO_THRESHOLD)         return 'ceo';
+        if ($amount >= static::getTierCeoThreshold())   return 'ceo';
+        if ($amount >= static::getTierMdThreshold())       return 'md';
         return 'standard';
     }
 

@@ -22,6 +22,7 @@ use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
+use App\Models\SystemSetting; 
 
 class CorporatePlanController extends Controller
 {
@@ -59,6 +60,12 @@ class CorporatePlanController extends Controller
                 );
             }
 
+            // Add default max_dependents from system settings if not provided
+            // This is the only change needed for System Settings integration
+            if (!isset($validated['max_dependents'])) {
+                $validated['max_dependents'] = SystemSetting::get('financial.max_dependents', 4);
+            }
+
             $plan = $corporate->plans()->create([
                 ...$validated,
                 'created_by' => Auth::id(),
@@ -82,6 +89,7 @@ class CorporatePlanController extends Controller
             'data'    => new PlanResource($plan->load('benefitItems')),
         ], 201);
     }
+
 
     // ── Show a single plan ────────────────────────────────────────────────────
     public function show(Corporate $corporate, Plan $plan): JsonResponse

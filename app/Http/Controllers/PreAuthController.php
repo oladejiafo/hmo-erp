@@ -10,6 +10,7 @@ use Illuminate\Http\JsonResponse;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Validation\Rule;
+use App\Models\SystemSetting;
 
 use Illuminate\Support\Facades\Log;
 use Carbon\Carbon;
@@ -462,7 +463,10 @@ class PreAuthController extends Controller
                 $pa->pa_code         = PreAuthorisation::generatePACode();
                 $pa->approved_amount = $validated['approved_amount'] ?? $pa->estimated_amount;
                 $pa->approval_note   = $validated['note'] ?? null;
-                $pa->validity_days   = $validated['validity_days'] ?? 30;
+                // $pa->validity_days   = $validated['validity_days'] ?? 30;
+                $pa->validity_days   = $validated['validity_days']
+                 ?? SystemSetting::get('financial.pa_default_validity_days', 30);
+
                 $pa->expires_at      = now()->addDays($pa->validity_days);
                 $pa->reviewed_by_id  = $user->id;
                 $pa->reviewed_at     = now();

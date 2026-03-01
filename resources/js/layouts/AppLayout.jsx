@@ -22,6 +22,7 @@ import Sidebar from '../components/Sidebar';
 import Topbar  from '../components/Topbar';
 import Footer from '../components/Footer';
 import HelpDrawer from '../components/help/HelpDrawer';
+import LicenseBanner from '../components/LicenseBanner';
 
 export default function AppLayout() {
     const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
@@ -37,6 +38,7 @@ export default function AppLayout() {
                 <Topbar
                     onToggleSidebar={() => setSidebarCollapsed(prev => !prev)}
                 />
+                {/* <LicenseBanner />  */}
                 <main
                     className="flex-grow-1 overflow-auto p-4"
                     id="main-content"

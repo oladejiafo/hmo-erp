@@ -12,6 +12,7 @@ use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Auth;
+use App\Models\SystemSetting;
 
 class DashboardController extends Controller
 {
@@ -62,7 +63,9 @@ class DashboardController extends Controller
             'approved'      => (clone $q)->where('status', 'approved')->count(),
             'flagged'       => (clone $q)->where('status', 'flagged')->count(),
             'paid'          => (clone $q)->where('status', 'paid')->count(),
-            'high_risk'     => (clone $q)->where('risk_score', '>=', config('fraud.auto_quarantine_threshold', 70))->count(),
+            // 'high_risk'     => (clone $q)->where('risk_score', '>=', config('fraud.auto_quarantine_threshold', 70))->count(),
+            'high_risk'     => (clone $q)->where('risk_score', '>=', SystemSetting::get('fraud.auto_quarantine_threshold', 70))->count(),
+
             'totalValue'    => (clone $q)->sum('total_amount_claimed'),
             'approvedValue' => (clone $q)->where('status', 'approved')->sum('total_amount_approved'),
             'paidValue'     => (clone $q)->where('status', 'paid')->sum('total_amount_paid'),
@@ -126,7 +129,9 @@ class DashboardController extends Controller
 
         return (clone $q)
             ->with(['hcp:id,name', 'enrollee:id,enrollee_id,first_name,last_name'])
-            ->where('risk_score', '>=', config('fraud.auto_quarantine_threshold', 70))
+            // ->where('risk_score', '>=', config('fraud.auto_quarantine_threshold', 70))
+            ->where('risk_score', '>=', SystemSetting::get('fraud.auto_quarantine_threshold', 70))
+
             ->whereIn('status', ['flagged', 'under_review', 'supervisor_review'])
             ->orderByDesc('risk_score')
             ->limit(10)

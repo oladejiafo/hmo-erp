@@ -40,6 +40,8 @@ import LoginPage from "../pages/auth/LoginPage";
 import ForgotPasswordPage from "../pages/auth/ForgotPassword";
 import SetInitialPasswordPage from "../pages/auth/SetInitialPasswordPage";
 
+import SystemSettingsPage from '../pages/settings/SystemSettingsPage';
+
 // ── HMO Staff pages ────────────────────────────────────────────────────────
 import DashboardPage from "../pages/dashboard/DashboardPage";
 
@@ -129,6 +131,8 @@ import ClaimImportHistoryPage from "../pages/claims/ClaimImportHistoryPage";
 // ── Route guards ───────────────────────────────────────────────────────────
 import ProtectedRoute from "./ProtectedRoute";
 import PermissionRoute from "./PermissionRoute";
+
+import LicenseSettingsPanel from '../pages/settings/LicenseSettingsPanel';
 
 // ─────────────────────────────────────────────────────────────────────────────
 // Helper — matches /enrollee and /enrollee/* but NOT /enrollees
@@ -706,6 +710,18 @@ export default function AppRouter() {
                             </PermissionRoute>
                         }
                     />
+                    <Route path="system" element={
+                        <PermissionRoute permission="settings.system">
+                            <SystemSettingsPage />
+                        </PermissionRoute>
+                    } />
+
+                    <Route path="license" element={
+                        <PermissionRoute permission="settings.system">
+                            <LicenseSettingsPanel />
+                        </PermissionRoute>
+                    } />
+                    
                     <Route path="profile" element={<ProfilePage />} />
                 </Route>
 

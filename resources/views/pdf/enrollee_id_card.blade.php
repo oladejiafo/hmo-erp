@@ -85,6 +85,7 @@
             border-radius: 10px;
             font-weight: bold;
             display: inline-block;
+            
             background: {{ $enrollee->status === 'active' ? 'rgba(52,211,153,0.3)' : 'rgba(248,113,113,0.3)' }};
         }
         .member-info {

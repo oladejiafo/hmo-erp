@@ -12,3 +12,17 @@ Artisan::command('inspire', function () {
 /// * * * * * cd /var/www/html && php artisan schedule:run >> /dev/null 2>&1
 
 Schedule::job(new GenerateScheduledReportsJob)->dailyAt('06:00');
+
+/**
+    * * * * * cd /path-to-erp && php artisan schedule:run >> /dev/null 2>&1
+*/ 
+// ── License validation ────────────────────────────────────────────────────────
+// Schedule::command('license:check')->daily();
+Schedule::command('license:check')
+         ->daily()
+         ->withoutOverlapping()
+         ->runInBackground()
+         ->onFailure(function () {
+             // Silent failure — LicenseService handles grace period logic internally.
+             // The command itself logs warnings via Log::warning().
+         });

@@ -7,7 +7,6 @@ use App\Http\Controllers\Claims\ClaimDocumentController;
 use App\Http\Controllers\Corporate\CorporateController;
 use App\Http\Controllers\Corporate\CorporateInvoiceController;
 use App\Http\Controllers\Corporate\CorporatePlanController;
-
 use App\Http\Controllers\Enrollee\DependentController;
 use App\Http\Controllers\Enrollee\EnrolleeController;
 use App\Http\Controllers\Finance\LedgerController;
@@ -25,19 +24,18 @@ use App\Http\Controllers\Settings\UserController;
 use App\Http\Controllers\PreAuthController;
 use App\Http\Controllers\Finance\CapitationController;
 use Illuminate\Support\Facades\Route;
-
 use App\Http\Controllers\Compliance\ComplianceController;
 use App\Http\Controllers\NotificationController;
 use App\Http\Controllers\Reports\SLAController;
 use App\Http\Controllers\Portal\EnrolleePortalController;
-
 use App\Http\Controllers\AI\AIController;
 use App\Http\Controllers\ImportController;
 use App\Http\Controllers\ExportController;
 use App\Http\Controllers\Finance\HCPPaymentSummaryController;
-
 use App\Http\Controllers\Claims\ClaimImportController;
 use App\Http\Controllers\HelpArticleController;
+use App\Http\Controllers\Settings\SystemSettingController;
+use App\Http\Controllers\Settings\LicenseController;
 
 /*
 |--------------------------------------------------------------------------
@@ -47,502 +45,557 @@ use App\Http\Controllers\HelpArticleController;
 | Auth: Laravel Sanctum (token-based)
 | Branch isolation is enforced via BranchIsolation middleware (global)
 | Permissions enforced via permission:slug middleware on each route
+| License middleware applied to all write operations
 |--------------------------------------------------------------------------
 */
 
-
 // ── Public Routes (no auth required) ─────────────────────────────────────
+Route::get('settings/system/public', [SystemSettingController::class, 'public']);
+
 Route::prefix('auth')->group(function () {
-     Route::post('login', [AuthController::class, 'login']);
-     Route::post('forgot-password', [AuthController::class, 'forgotPassword']);
-     Route::post('reset-password', [AuthController::class, 'resetPassword']);
+    Route::post('login', [AuthController::class, 'login']);
+    Route::post('forgot-password', [AuthController::class, 'forgotPassword']);
+    Route::post('reset-password', [AuthController::class, 'resetPassword']);
 });
 Route::middleware('auth:sanctum')->post('auth/set-initial-password', [AuthController::class, 'setInitialPassword']);
 
-// ── Authenticated (NO branch isolation) ───────────────────
+// Super-admin only management (GET is read, PUT/POST are writes)
+Route::prefix('settings/system')
+    ->middleware(['auth:sanctum'])
+    ->group(function () {
+        Route::get('/', [SystemSettingController::class, 'index']); // READ - no license
+        Route::put('/', [SystemSettingController::class, 'updateMany']); // WRITE
+        Route::put('/{key}', [SystemSettingController::class, 'update']) // WRITE
+            ->where('key', '.+');
+        Route::post('/reset/{key}', [SystemSettingController::class, 'reset']) // WRITE
+            ->where('key', '.+');
+    });
+
+// ── Authenticated (NO branch isolation) ──────────────────────────────────
 Route::middleware('auth:sanctum')->prefix('auth')->group(function () {
-     Route::get('me', [AuthController::class, 'me']);
-     Route::post('logout', [AuthController::class, 'logout']);
-     Route::post('logout-all', [AuthController::class, 'logoutAll']);
-     Route::post('change-password', [AuthController::class, 'changePassword']);
-     Route::post('2fa/setup', [AuthController::class, 'setup2FA']);
-     Route::post('2fa/confirm', [AuthController::class, 'confirm2FA']);
-     Route::post('2fa/disable', [AuthController::class, 'disable2FA']);
+    Route::get('me', [AuthController::class, 'me']); // READ
+    Route::post('logout', [AuthController::class, 'logout']); // READ (special case - always allowed)
+    Route::post('logout-all', [AuthController::class, 'logoutAll']); // READ (special case)
+    Route::post('change-password', [AuthController::class, 'changePassword']); // WRITE
+    Route::post('2fa/setup', [AuthController::class, 'setup2FA']); // WRITE
+    Route::post('2fa/confirm', [AuthController::class, 'confirm2FA']); // WRITE
+    Route::post('2fa/disable', [AuthController::class, 'disable2FA']); // WRITE
 });
 
-// ── Authenticated + Branch-Isolated Routes ────────────────────────────────
+// ── License Status (special case - always accessible) ────────────────────
+Route::prefix('settings/license')
+    ->middleware('auth:sanctum')
+    ->group(function () {
+        Route::get('/', [LicenseController::class, 'status']); // READ
+        Route::post('/emergency', [LicenseController::class, 'applyEmergency']); // WRITE (super_admin only)
+        Route::post('/check-in', [LicenseController::class, 'forceCheckin']); // WRITE (super_admin only)
+    });
+
+// ─────────────────────────────────────────────────────────────────────────
+// READ-ONLY ROUTES (GET only, no license check, with branch isolation)
+// ─────────────────────────────────────────────────────────────────────────
 Route::middleware(['auth:sanctum', 'branch.isolation'])->group(function () {
 
-     // ── Branches ──────────────────────────────────────────────────────────
-     Route::middleware('permission:branches.view')
-          ->prefix('branches')
-          ->group(function () {
-               Route::get('/', [BranchController::class, 'index']);
-               Route::get('{branch}', [BranchController::class, 'show']);
-               Route::post('/', [BranchController::class, 'store'])
-                    ->middleware('permission:branches.create');
-               Route::put('{branch}', [BranchController::class, 'update'])
-                    ->middleware('permission:branches.edit');
-               Route::delete('{branch}', [BranchController::class, 'destroy'])
-                    ->middleware('permission:branches.delete');
-               Route::patch('{branch}/status', [BranchController::class, 'toggleStatus'])
-                    ->middleware('permission:branches.edit');
-          });
+    // ── Branches - READ only ─────────────────────────────────────────────
+    Route::middleware('permission:branches.view')
+        ->prefix('branches')
+        ->group(function () {
+            Route::get('/', [BranchController::class, 'index']);
+            Route::get('{branch}', [BranchController::class, 'show']);
+        });
 
-     // ── Users ─────────────────────────────────────────────────────────────
-     Route::middleware('permission:users.view')
-          ->prefix('users')
-          ->group(function () {
-               Route::get('/', [UserController::class, 'index']);
-               Route::get('{user}', [UserController::class, 'show']);
-               Route::post('/', [UserController::class, 'store'])
-                    ->middleware('permission:users.create');
-               Route::put('{user}', [UserController::class, 'update'])
-                    ->middleware('permission:users.edit');
-               Route::delete('{user}', [UserController::class, 'destroy'])
-                    ->middleware('permission:users.delete');
-               Route::patch('{user}/status', [UserController::class, 'toggleStatus'])
-                    ->middleware('permission:users.suspend');
-               Route::post('{user}/roles', [UserController::class, 'syncRoles'])
-                    ->middleware('permission:users.assign_roles');
-          });
+    // ── Users - READ only ────────────────────────────────────────────────
+    Route::middleware('permission:users.view')
+        ->prefix('users')
+        ->group(function () {
+            Route::get('/', [UserController::class, 'index']);
+            Route::get('{user}', [UserController::class, 'show']);
+        });
 
-     // ── Roles & Permissions ───────────────────────────────────────────────
-     Route::middleware('permission:roles.view')
-          ->prefix('roles')
-          ->group(function () {
-               Route::get('/', [RoleController::class, 'index']);
-               Route::get('{role}', [RoleController::class, 'show']);
-               Route::put('{role}/permissions', [RoleController::class, 'syncPermissions'])
-                    ->middleware('permission:roles.manage');
-          });
+    // ── Roles & Permissions - READ only ──────────────────────────────────
+    Route::middleware('permission:roles.view')
+        ->prefix('roles')
+        ->group(function () {
+            Route::get('/', [RoleController::class, 'index']);
+            Route::get('{role}', [RoleController::class, 'show']);
+        });
+    Route::middleware('permission:roles.view')
+        ->get('permissions', [RoleController::class, 'allPermissions']);
 
-     Route::middleware('permission:roles.view')
-          ->get('permissions', [RoleController::class, 'allPermissions']);
+    // ── Corporates - READ only ───────────────────────────────────────────
+    Route::middleware('permission:corporates.view')
+        ->prefix('corporates')
+        ->group(function () {
+            Route::get('/', [CorporateController::class, 'index']);
+            Route::get('{corporate}', [CorporateController::class, 'show']);
 
-     // ── Corporates ────────────────────────────────────────────────────────
-     Route::middleware('permission:corporates.view')
-          ->prefix('corporates')
-          ->group(function () {
-               Route::get('/', [CorporateController::class, 'index']);
-               Route::get('{corporate}', [CorporateController::class, 'show']);
-               Route::post('/', [CorporateController::class, 'store'])
-                    ->middleware('permission:corporates.create');
-               Route::put('{corporate}', [CorporateController::class, 'update'])
-                    ->middleware('permission:corporates.edit');
-               Route::delete('{corporate}', [CorporateController::class, 'destroy'])
-                    ->middleware('permission:corporates.delete');
-               Route::patch('{corporate}/suspend', [CorporateController::class, 'suspend'])
-                    ->middleware('permission:corporates.suspend');
-               Route::post('{corporate}/bulk-upload-enrollees', [CorporateController::class, 'bulkUpload'])
-                    ->middleware('permission:enrollees.create');
+            // Corporate Plans - READ only
+            Route::get('{corporate}/plans', [CorporatePlanController::class, 'index'])
+                ->middleware('permission:corporates.view');
+            Route::get('{corporate}/plans/{plan}', [CorporatePlanController::class, 'show'])
+                ->middleware('permission:corporates.view');
 
-               // ── Corporate Plans (Enhanced) ─────────────────────────────────
-               Route::prefix('{corporate}/plans')->group(function () {
-                    // List plans for this corporate
-                    Route::get('/', [CorporatePlanController::class, 'index'])
-                         ->middleware('permission:corporates.view');
+            // Corporate Invoices - READ only
+            Route::get('{corporate}/invoices', [CorporateInvoiceController::class, 'index'])
+                ->middleware('permission:corporates.invoices');
+        });
 
-                    // Create a new plan
-                    Route::post('/', [CorporatePlanController::class, 'store'])
-                         ->middleware('permission:plans.create');
+    // ── Cross-Corporate Plans - READ only ────────────────────────────────
+    Route::get('plans', [CorporatePlanController::class, 'allPlans'])
+        ->middleware('permission:plans.view');
 
-                    // Show a single plan (with benefit items)
-                    Route::get('{plan}', [CorporatePlanController::class, 'show'])
-                         ->middleware('permission:corporates.view');
+    // ── Enrollees - READ only ────────────────────────────────────────────
+    Route::middleware('permission:enrollees.view')
+        ->prefix('enrollees')
+        ->group(function () {
+            Route::get('/', [EnrolleeController::class, 'index']);
+            Route::get('{enrollee}', [EnrolleeController::class, 'show']);
+            Route::get('{enrollee}/claims', [EnrolleeController::class, 'claimsHistory']);
+            Route::get('{enrollee}/card', [EnrolleeController::class, 'card']);
+            Route::get('{enrollee}/benefit-summary', [EnrolleeController::class, 'benefitSummary']);
 
-                    // Update plan header fields
-                    Route::put('{plan}', [CorporatePlanController::class, 'update'])
-                         ->middleware('permission:plans.edit');
+            // Dependents - READ only
+            Route::get('{enrollee}/dependents', [DependentController::class, 'index']);
+            Route::get('{enrollee}/dependents/{dependent}', [DependentController::class, 'show']);
+        });
 
-                    // Discontinue a plan (logical delete)
-                    Route::patch('{plan}/discontinue', [CorporatePlanController::class, 'discontinue'])
-                         ->middleware('permission:plans.edit');
+    // ── HCPs - READ only ─────────────────────────────────────────────────
+    Route::middleware('permission:hcps.view')
+        ->prefix('hcps')
+        ->group(function () {
+            Route::get('/', [HCPController::class, 'index']);
+            Route::get('{hcp}', [HCPController::class, 'show']);
+            Route::get('{hcp}/performance', [HCPController::class, 'performance']);
+            Route::get('{hcp}/payment-history', [HCPController::class, 'paymentHistory']);
 
-                    // Duplicate a plan (copy with new name)
-                    Route::post('{plan}/duplicate', [CorporatePlanController::class, 'duplicate'])
-                         ->middleware('permission:plans.create');
+            // Tariffs - READ only
+            Route::get('{hcp}/tariffs', [TariffController::class, 'index']);
 
-                    // Replace all benefit items for this plan
-                    Route::put('{plan}/benefit-items', [CorporatePlanController::class, 'syncBenefitItems'])
-                         ->middleware('permission:plans.edit');
-               });
+            // Contracts - READ only
+            Route::get('{hcp}/contracts', [ContractController::class, 'index'])
+                ->middleware('permission:hcps.contracts');
+            Route::get('{hcp}/contracts/{contract}', [ContractController::class, 'show'])
+                ->middleware('permission:hcps.contracts');
 
-               // Corporate Invoices
-               Route::get('{corporate}/invoices', [CorporateInvoiceController::class, 'index'])
-                    ->middleware('permission:corporates.invoices');
-               Route::post('{corporate}/invoices', [CorporateInvoiceController::class, 'store'])
-                    ->middleware('permission:corporates.invoices');
-               Route::patch('{corporate}/invoices/{invoice}/mark-paid', [CorporateInvoiceController::class, 'markPaid'])
-                    ->middleware('permission:corporates.invoices');
-          });
+            // Bank Details - READ only
+            Route::get('{hcp}/bank-details', [HcpBankDetailController::class, 'index'])
+                ->middleware('permission:hcps.bank_details');
+        });
 
-     // ── Cross-Corporate Plans (HQ only) ────────────────────────────────────
-     Route::get('plans', [CorporatePlanController::class, 'allPlans'])
-          ->middleware('permission:plans.view');
+    // ── Claims - READ only ───────────────────────────────────────────────
+    Route::middleware('permission:claims.view')
+        ->prefix('claims')
+        ->group(function () {
+            Route::get('/', [ClaimController::class, 'index']);
+            Route::get('{claim}', [ClaimController::class, 'show']);
+            Route::get('{claim}/timeline', [ClaimController::class, 'timeline']);
 
-     // ── Enrollees ─────────────────────────────────────────────────────────
-     Route::middleware('permission:enrollees.view')
-          ->prefix('enrollees')
-          ->group(function () {
-               Route::get('/', [EnrolleeController::class, 'index']);
-               Route::get('{enrollee}', [EnrolleeController::class, 'show']);
-               Route::post('/', [EnrolleeController::class, 'store'])
-                    ->middleware('permission:enrollees.create');
-               Route::put('{enrollee}', [EnrolleeController::class, 'update'])
-                    ->middleware('permission:enrollees.edit');
-               Route::patch('{enrollee}/suspend', [EnrolleeController::class, 'suspend'])
-                    ->middleware('permission:enrollees.suspend');
-               Route::post('{enrollee}/transfer', [EnrolleeController::class, 'transfer'])
-                    ->middleware('permission:enrollees.transfer');
-               Route::get('{enrollee}/claims', [EnrolleeController::class, 'claimsHistory']);
-               Route::get('{enrollee}/card', [EnrolleeController::class, 'card']);
-               Route::post('{enrollee}/regenerate-card', [EnrolleeController::class, 'regenerateCard'])
-                    ->middleware('permission:enrollees.edit');
-               Route::get('{enrollee}/benefit-summary', [EnrolleeController::class, 'benefitSummary']);
+            // Claim Documents - READ only
+            Route::get('{claim}/documents', [ClaimDocumentController::class, 'index']);
+            Route::get('{claim}/documents/{document}/download', [ClaimDocumentController::class, 'download']);
 
-               // Dependents
-               Route::get('{enrollee}/dependents', [DependentController::class, 'index']);
-               Route::post('{enrollee}/dependents', [DependentController::class, 'store'])
-                    ->middleware('permission:enrollees.edit');
-               Route::get('{enrollee}/dependents/{dependent}', [DependentController::class, 'show']);
-               Route::put('{enrollee}/dependents/{dependent}', [DependentController::class, 'update'])
-                    ->middleware('permission:enrollees.edit');
-               Route::delete('{enrollee}/dependents/{dependent}', [DependentController::class, 'destroy'])
-                    ->middleware('permission:enrollees.edit');
-          });
+            // Fraud Flags - READ only
+            Route::get('{claim}/fraud-flags', [ClaimController::class, 'fraudFlags'])
+                ->middleware('permission:claims.fraud_view');
+        });
 
-     // ── HCPs ──────────────────────────────────────────────────────────────
-     Route::middleware('permission:hcps.view')
-          ->prefix('hcps')
-          ->group(function () {
-               Route::get('/', [HCPController::class, 'index']);
-               Route::get('{hcp}', [HCPController::class, 'show']);
-               Route::post('/', [HCPController::class, 'store'])
-                    ->middleware('permission:hcps.create');
-               Route::put('{hcp}', [HCPController::class, 'update'])
-                    ->middleware('permission:hcps.edit');
-               Route::patch('{hcp}/accredit', [HCPController::class, 'accredit'])
-                    ->middleware('permission:hcps.accredit');
-               Route::patch('{hcp}/blacklist', [HCPController::class, 'blacklist'])
-                    ->middleware('permission:hcps.blacklist');
-               Route::get('{hcp}/performance', [HCPController::class, 'performance']);
-               Route::get('{hcp}/payment-history', [HCPController::class, 'paymentHistory']);
+    // ── Claims Import - READ only ────────────────────────────────────────
+    Route::prefix('claims/import')
+        ->middleware('permission:claims.import')
+        ->group(function () {
+            Route::get('/', [ClaimImportController::class, 'index']);
+            Route::get('/{batch}', [ClaimImportController::class, 'show']);
+            Route::get('/{batch}/rows', [ClaimImportController::class, 'rows']);
+        });
+    Route::get('claims/imports', [ClaimImportController::class, 'index'])
+        ->middleware('permission:claims.import');
 
-               // Tariffs
-               Route::get('{hcp}/tariffs', [TariffController::class, 'index']);
-               Route::post('{hcp}/tariffs', [TariffController::class, 'store'])
-                    ->middleware('permission:hcps.tariffs');
-               Route::post('{hcp}/tariffs/bulk', [TariffController::class, 'bulkUpload'])
-                    ->middleware('permission:hcps.tariffs');
-               Route::put('{hcp}/tariffs/{tariff}', [TariffController::class, 'update'])
-                    ->middleware('permission:hcps.tariffs');
-               Route::delete('{hcp}/tariffs/{tariff}', [TariffController::class, 'destroy'])
-                    ->middleware('permission:hcps.tariffs');
+    // ── Finance - READ only ──────────────────────────────────────────────
+    Route::middleware('permission:finance.view')
+        ->prefix('finance')
+        ->group(function () {
+            // Payment Batches - READ only
+            Route::get('batches', [PaymentBatchController::class, 'index']);
+            Route::get('batches/{batch}', [PaymentBatchController::class, 'show']);
+            Route::get('batches/{batch}/export', [PaymentBatchController::class, 'exportBankFile'])
+                ->middleware('permission:finance.batch_approve');
 
-               // Contracts
-               Route::get('{hcp}/contracts', [ContractController::class, 'index'])
-                    ->middleware('permission:hcps.contracts');
-               Route::post('{hcp}/contracts', [ContractController::class, 'store'])
-                    ->middleware('permission:hcps.contracts');
-               Route::get('{hcp}/contracts/{contract}', [ContractController::class, 'show'])
-                    ->middleware('permission:hcps.contracts');
+            // Ledger - READ only
+            Route::get('ledger', [LedgerController::class, 'index'])
+                ->middleware('permission:finance.ledger_view');
+            Route::get('ledger/summary', [LedgerController::class, 'summary'])
+                ->middleware('permission:finance.ledger_view');
 
-               // Bank Details (used for payment processing)
-               Route::get('{hcp}/bank-details', [HcpBankDetailController::class, 'index'])
-                    ->middleware('permission:hcps.bank_details');
-               Route::post('{hcp}/bank-details', [HcpBankDetailController::class, 'store'])
-                    ->middleware('permission:hcps.bank_details');
-               Route::patch('{hcp}/bank-details/{bankDetail}/verify', [HcpBankDetailController::class, 'verify'])
-                    ->middleware('permission:hcps.bank_details');
-               Route::delete('{hcp}/bank-details/{bankDetail}', [HcpBankDetailController::class, 'destroy'])
-                    ->middleware('permission:hcps.bank_details');
-          });
+            // Remittance - READ only
+            Route::get('remittance/{payment}/download', [RemittanceController::class, 'download'])
+                ->middleware('permission:finance.remittance');
 
-     // ── Claims ────────────────────────────────────────────────────────────
-     Route::middleware('permission:claims.view')
-          ->prefix('claims')
-          ->group(function () {
-               Route::get('/', [ClaimController::class, 'index']);
-               Route::get('{claim}', [ClaimController::class, 'show']);
-               Route::post('/', [ClaimController::class, 'store'])
-                    ->middleware('permission:claims.submit');
-               Route::post('{claim}/process', [ClaimController::class, 'process'])
-                    ->middleware('permission:claims.process');
-               Route::post('{claim}/approve', [ClaimController::class, 'approve'])
-                    ->middleware('permission:claims.approve');
-               Route::post('{claim}/reject', [ClaimController::class, 'reject'])
-                    ->middleware('permission:claims.reject');
-               Route::post('{claim}/assign', [ClaimController::class, 'assign'])
-                    ->middleware('permission:claims.assign');
-               Route::post('{claim}/reverse', [ClaimController::class, 'reverse'])
-                    ->middleware('permission:claims.reverse');
-               Route::get('{claim}/timeline', [ClaimController::class, 'timeline']);
+            // Capitation - READ only
+            Route::middleware('permission:finance.capitation')
+                ->prefix('capitation')
+                ->group(function () {
+                    Route::get('/rates', [CapitationController::class, 'rateIndex']);
+                    Route::get('/', [CapitationController::class, 'index']);
+                    Route::get('/summary', [CapitationController::class, 'summary']);
+                    Route::get('/{run}', [CapitationController::class, 'show']);
+                });
 
-               // Claim Documents
-               Route::get('{claim}/documents', [ClaimDocumentController::class, 'index']);
-               Route::post('{claim}/documents', [ClaimDocumentController::class, 'store'])
-                    ->middleware('permission:claims.submit');
-               Route::get('{claim}/documents/{document}/download', [ClaimDocumentController::class, 'download']);
+            // HCP Payment Summary - READ only
+            Route::get('/hcp-payment-summary', [HCPPaymentSummaryController::class, 'index'])
+                ->middleware('permission:finance.view');
+            Route::get('/hcp-payment-summary/ffs-vs-capitation', [HCPPaymentSummaryController::class, 'fvsCapitationTrend'])
+                ->middleware('permission:finance.view');
+        });
 
-               // Fraud Flags
-               Route::get('{claim}/fraud-flags', [ClaimController::class, 'fraudFlags'])
-                    ->middleware('permission:claims.fraud_view');
-               Route::patch('{claim}/fraud-flags/{flag}/review', [ClaimController::class, 'reviewFraudFlag'])
-                    ->middleware('permission:claims.fraud_review');
-          });
+    // ── Reports - READ only (all GET) ────────────────────────────────────
+    Route::middleware('permission:reports.branch')
+        ->prefix('reports')
+        ->group(function () {
+            Route::get('dashboard', [DashboardController::class, 'index']);
+            Route::get('claims-aging', [ReportController::class, 'claimsAging']);
+            Route::get('claims-by-hcp', [ReportController::class, 'claimsByHcp']);
+            Route::get('claims-by-type', [ReportController::class, 'claimsByType']);
+            Route::get('cost-by-corporate', [ReportController::class, 'costByCorporate']);
+            Route::get('high-cost-enrollees', [ReportController::class, 'highCostEnrollees']);
+            Route::get('hcp-performance', [ReportController::class, 'hcpPerformance']);
+            Route::get('branch-comparison', [ReportController::class, 'branchComparison'])
+                ->middleware('permission:reports.all_branches');
+            Route::get('fraud-heatmap', [ReportController::class, 'fraudHeatmap'])
+                ->middleware('permission:reports.fraud_heatmap');
+            Route::get('sla-dashboard', [SLAController::class, 'dashboard']);
+            Route::get('overdue-claims', [SLAController::class, 'overdueClaims']);
+            Route::get('audit-logs', [AuditLogController::class, 'index'])
+                ->middleware('permission:reports.audit_logs');
+            Route::get('schedules', [ReportController::class, 'schedules']);
 
-     // Claims Import
-     Route::prefix('claims/import')->middleware('permission:claims.import')->group(function () {
-          Route::get('/',                                     [ClaimImportController::class, 'index']);
-          Route::post('/upload',                              [ClaimImportController::class, 'upload']);
-          Route::post('/{batch}/map',                         [ClaimImportController::class, 'confirmMapping']);
-          Route::get('/{batch}/rows',                         [ClaimImportController::class, 'rows']);
-          Route::patch('/{batch}/rows/{row}',                 [ClaimImportController::class, 'updateRow']);
-          Route::post('/{batch}/bulk-approve-valid',          [ClaimImportController::class, 'bulkApproveValid']);
-          Route::post('/{batch}/push',                        [ClaimImportController::class, 'push']);
-          Route::get('/{batch}',                              [ClaimImportController::class, 'show']);
-     });
-     Route::prefix('claims/imports')->middleware('permission:claims.import')->group(function () {
-          Route::get('/', [ClaimImportController::class, 'index']);
-     });
+            // Generated Reports - READ only
+            Route::prefix('generated')->group(function () {
+                Route::get('/', [ReportController::class, 'index']);
+                Route::get('summary', [ReportController::class, 'summary']);
+                Route::get('{report}/download/{format?}', [ReportController::class, 'download']);
+            });
+        });
 
-     // ── Finance ───────────────────────────────────────────────────────────
-     Route::middleware('permission:finance.view')
-          ->prefix('finance')
-          ->group(function () {
-               // Payment Batches
-               Route::get('batches', [PaymentBatchController::class, 'index']);
-               Route::get('batches/{batch}', [PaymentBatchController::class, 'show']);
-               Route::post('batches', [PaymentBatchController::class, 'store'])
-                    ->middleware('permission:finance.batch_create');
-               Route::post('batches/{batch}/submit', [PaymentBatchController::class, 'submit'])
-                    ->middleware('permission:finance.batch_create');
-               Route::post('batches/{batch}/approve', [PaymentBatchController::class, 'approve'])
-                    ->middleware('permission:finance.batch_approve');
-               Route::get('batches/{batch}/export', [PaymentBatchController::class, 'exportBankFile'])
-                    ->middleware('permission:finance.batch_approve');
+    // ── Compliance - READ only ───────────────────────────────────────────
+    Route::middleware('permission:compliance.view')
+        ->prefix('compliance')
+        ->group(function () {
+            Route::get('filings', [ComplianceController::class, 'index']);
+            Route::get('filings/summary', [ComplianceController::class, 'summary']);
+            Route::get('filings/{filing}', [ComplianceController::class, 'show']);
+        });
 
-               // Ledger
-               Route::get('ledger', [LedgerController::class, 'index'])
-                    ->middleware('permission:finance.ledger_view');
-               Route::get('ledger/summary', [LedgerController::class, 'summary'])
-                    ->middleware('permission:finance.ledger_view');
+    // ── AI Tools - READ only (GET) ───────────────────────────────────────
+    Route::middleware('permission:ai.tools')
+        ->prefix('ai')
+        ->group(function () {
+            Route::get('fraud-clusters', [AIController::class, 'fraudClusters']);
+        });
 
-               // Remittance
-               Route::post('remittance/{payment}', [RemittanceController::class, 'generate'])
-                    ->middleware('permission:finance.remittance');
-               Route::get('remittance/{payment}/download', [RemittanceController::class, 'download'])
-                    ->middleware('permission:finance.remittance');
+    // ── Export - READ only ───────────────────────────────────────────────
+    Route::middleware('permission:reports.export')
+        ->prefix('export')
+        ->group(function () {
+            Route::get('claims-aging', [ExportController::class, 'claimsAging']);
+            Route::get('claims-by-hcp', [ExportController::class, 'claimsByHcp']);
+            Route::get('cost-by-corporate', [ExportController::class, 'costByCorporate']);
+            Route::get('high-cost-enrollees', [ExportController::class, 'highCostEnrollees']);
+            Route::get('branch-comparison', [ExportController::class, 'branchComparison']);
+            Route::get('enrollees', [ExportController::class, 'enrollees']);
+            Route::get('hcps', [ExportController::class, 'hcps']);
+            Route::get('tariffs', [ExportController::class, 'tariffs']);
+        });
 
+    // ── Import - READ only (template downloads) ──────────────────────────
+    Route::middleware('permission:import.enrollees')
+        ->prefix('import')
+        ->group(function () {
+            Route::get('template/{type}', [ImportController::class, 'downloadTemplate']);
+        });
 
-               // Capitation routes require a specific sub-permission
-               Route::middleware('permission:finance.capitation')
-                    ->prefix('capitation')
-                    ->group(function () {
-                         // Rates management
-                         Route::get('/rates', [CapitationController::class, 'rateIndex']);
-                         Route::post('/rates', [CapitationController::class, 'rateStore']);
+    // ── Portal - READ only ───────────────────────────────────────────────
+    Route::prefix('portal')->group(function () {
+        // Enrollee Portal - READ only
+        Route::prefix('enrollee')->group(function () {
+            Route::get('/dashboard', [App\Http\Controllers\Portal\EnrolleePortalController::class, 'dashboard']);
+            Route::get('/id-card', [App\Http\Controllers\Portal\EnrolleePortalController::class, 'idCard']);
+            Route::get('/id-card/download', [App\Http\Controllers\Portal\EnrolleePortalController::class, 'downloadIdCard']);
+            Route::get('/benefits', [App\Http\Controllers\Portal\EnrolleePortalController::class, 'benefits']);
+            Route::get('/claims', [App\Http\Controllers\Portal\EnrolleePortalController::class, 'claims']);
+            Route::get('/find-hcp', [App\Http\Controllers\Portal\EnrolleePortalController::class, 'findHcp']);
+            Route::get('/complaints', [App\Http\Controllers\Portal\EnrolleePortalController::class, 'complaints']);
+        });
 
-                         // Capitation runs
-                         Route::get('/', [CapitationController::class, 'index']);           // List runs
-                         Route::get('/summary', [CapitationController::class, 'summary']);        // Dashboard summary
-                         Route::post('/generate', [CapitationController::class, 'generate']);       // Create new run
-                         Route::get('/{run}', [CapitationController::class, 'show']);           // View run details
-                         Route::post('/{run}/approve', [CapitationController::class, 'approve']);        // Approve & create batch
-                         Route::patch('/{run}/records/{record}', [CapitationController::class, 'adjustRecord']);   // Adjust individual HCP
-                    });
+        // Corporate Portal - READ only
+        Route::prefix('corporate')->group(function () {
+            Route::get('/dashboard', [App\Http\Controllers\Portal\CorporatePortalController::class, 'dashboard']);
+            Route::get('/enrollees', [App\Http\Controllers\Portal\CorporatePortalController::class, 'enrollees']);
+            Route::get('/claims', [App\Http\Controllers\Portal\CorporatePortalController::class, 'claims']);
+            Route::get('/invoices', [App\Http\Controllers\Portal\CorporatePortalController::class, 'invoices']);
+            Route::get('/profile', [App\Http\Controllers\Portal\CorporatePortalController::class, 'profile']);
+        });
+    });
 
-               // HCP Payment Summary (FFS + Capitation combined view)
-               Route::get(
-                    '/hcp-payment-summary',
-                    [HCPPaymentSummaryController::class, 'index']
-               )
-                    ->middleware('permission:finance.view');
+    // ── Pre-Auth - READ only ─────────────────────────────────────────────
+    Route::prefix('pre-auth')->middleware(['branch.scope'])->group(function () {
+        Route::get('/', [PreAuthController::class, 'index']);
+        Route::get('/stats', [PreAuthController::class, 'stats']);
+        Route::get('/{pa}', [PreAuthController::class, 'show']);
+        Route::get('/{pa}/download', [PreAuthController::class, 'downloadLetter']);
+    });
 
-               Route::get(
-                    '/hcp-payment-summary/ffs-vs-capitation',
-                    [HCPPaymentSummaryController::class, 'fvsCapitationTrend']
-               )
-                    ->middleware('permission:finance.view');
-          });
+    // ── Help Centre - READ only ──────────────────────────────────────────
+    Route::prefix('help')->group(function () {
+        Route::get('/', [HelpArticleController::class, 'index']);
+        Route::get('/for-page', [HelpArticleController::class, 'forPage']);
+        Route::get('/admin/list', [HelpArticleController::class, 'adminIndex'])
+            ->middleware('permission:help.admin');
+        Route::get('/admin/articles/{article}', [HelpArticleController::class, 'adminShow'])
+            ->middleware('permission:help.admin');
+        Route::get('/{slug}', [HelpArticleController::class, 'show']);
+    });
 
-     // ── Reports & Analytics ───────────────────────────────────────────────
-     Route::middleware('permission:reports.branch')
-          ->prefix('reports')
-          ->group(function () {
-
-               // ── Operational Reports (real-time) ─────────────────────────
-               Route::get('dashboard', [DashboardController::class, 'index']);
-               Route::get('claims-aging', [ReportController::class, 'claimsAging']);
-               Route::get('claims-by-hcp', [ReportController::class, 'claimsByHcp']);
-               Route::get('claims-by-type', [ReportController::class, 'claimsByType']);
-               Route::get('cost-by-corporate', [ReportController::class, 'costByCorporate']);
-               Route::get('high-cost-enrollees', [ReportController::class, 'highCostEnrollees']);
-               Route::get('hcp-performance', [ReportController::class, 'hcpPerformance']);
-
-               // HQ Only Reports
-               Route::get('branch-comparison', [ReportController::class, 'branchComparison'])
-                    ->middleware('permission:reports.all_branches');
-               Route::get('fraud-heatmap', [ReportController::class, 'fraudHeatmap'])
-                    ->middleware('permission:reports.fraud_heatmap');
-
-               // ── SLA Monitoring ─────────────────────────────────────────
-               Route::get('sla-dashboard',  [SLAController::class, 'dashboard']);
-               Route::get('overdue-claims', [SLAController::class, 'overdueClaims']);
-               Route::post('sla/breach-scan', [SLAController::class, 'scanBreaches']);
-
-               // ── Audit Logs ─────────────────────────────────────────────
-               Route::get('audit-logs', [AuditLogController::class, 'index'])
-                    ->middleware('permission:reports.audit_logs');
-
-               // ── Generated Reports Management ───────────────────────────
-               Route::prefix('generated')->group(function () {
-                    Route::get('/', [ReportController::class, 'index']);
-                    Route::get('summary', [ReportController::class, 'summary']);
-                    Route::post('generate', [ReportController::class, 'generate']);
-                    Route::get('schedules', [ReportController::class, 'schedules']);
-                    Route::put('schedules/{type}', [ReportController::class, 'updateSchedule']);
-                    Route::get('{report}/download/{format?}', [ReportController::class, 'download']);
-               });
-
-               // ── Exports (kept separate) ────────────────────────────────
-               Route::post('export', [ReportController::class, 'export'])
-                    ->middleware('permission:reports.export');
-          });
-
-     // ── Compliance Calendar ───────────────────────────────────────────────
-     Route::middleware('permission:compliance.view')
-          ->prefix('compliance')
-          ->group(function () {
-               Route::get('filings',                            [ComplianceController::class, 'index']);
-               Route::get('filings/summary',                    [ComplianceController::class, 'summary']);
-               Route::get('filings/{filing}',                   [ComplianceController::class, 'show']);
-               Route::post('filings',                           [ComplianceController::class, 'store'])
-                    ->middleware('permission:compliance.manage');
-               Route::put('filings/{filing}',                   [ComplianceController::class, 'update'])
-                    ->middleware('permission:compliance.manage');
-               Route::post('filings/{filing}/complete',         [ComplianceController::class, 'complete'])
-                    ->middleware('permission:compliance.manage');
-               Route::post('filings/{filing}/documents',        [ComplianceController::class, 'uploadDocument'])
-                    ->middleware('permission:compliance.manage');
-               Route::delete('filings/{filing}/documents/{doc}', [ComplianceController::class, 'deleteDocument'])
-                    ->middleware('permission:compliance.manage');
-          });
-
-     // ── AI Tools (requires new permission: ai.tools) ─────────────────────────
-     Route::middleware('permission:ai.tools')
-          ->prefix('ai')
-          ->group(function () {
-               Route::post('classify-document', [AIController::class, 'classifyDocument']);
-               Route::post('smart-route', [AIController::class, 'smartRoute']);
-               Route::post('ocr-document', [AIController::class, 'ocrDocument']);
-               Route::post('summarize-report', [AIController::class, 'summarizeReport']);
-               Route::get('fraud-clusters', [AIController::class, 'fraudClusters']);
-               Route::post('chat', [AIController::class, 'chat']);
-          });
-
-     // ── Import / Export ─────────────────────────────────────────────────────
-     Route::middleware('permission:import.enrollees')
-          ->prefix('import')
-          ->group(function () {
-               Route::get('template/{type}', [ImportController::class, 'downloadTemplate']);
-
-               Route::post('enrollees', [ImportController::class, 'enrollees']);
-               Route::post('tariffs', [ImportController::class, 'tariffs']);
-               Route::post('hcps', [ImportController::class, 'hcps']);
-          });
-
-     Route::middleware('permission:reports.export')
-          ->prefix('export')
-          ->group(function () {
-
-               Route::get('claims-aging', [ExportController::class, 'claimsAging']);
-               Route::get('claims-by-hcp', [ExportController::class, 'claimsByHcp']);
-               Route::get('cost-by-corporate', [ExportController::class, 'costByCorporate']);
-               Route::get('high-cost-enrollees', [ExportController::class, 'highCostEnrollees']);
-               Route::get('branch-comparison', [ExportController::class, 'branchComparison']);
-               Route::get('enrollees', [ExportController::class, 'enrollees']);
-               Route::get('hcps', [ExportController::class, 'hcps']);
-               Route::get('tariffs', [ExportController::class, 'tariffs']);
-          });
+    // ── Notifications - READ only ────────────────────────────────────────
+    Route::prefix('notifications')->group(function () {
+        Route::get('/', [NotificationController::class, 'index']);
+        Route::get('/unread-count', [NotificationController::class, 'unreadCount']);
+    });
 });
 
-Route::prefix('notifications')->middleware('auth:sanctum')->group(function () {
-     Route::get('/',              [NotificationController::class, 'index']);
-     Route::get('/unread-count',  [NotificationController::class, 'unreadCount']);
-     Route::patch('/{notification}/read', [NotificationController::class, 'markRead']);
-     Route::post('/mark-all-read', [NotificationController::class, 'markAllRead']);
+// ─────────────────────────────────────────────────────────────────────────
+// WRITE OPERATIONS (with license check + branch isolation)
+// ─────────────────────────────────────────────────────────────────────────
+Route::middleware(['auth:sanctum', 'branch.isolation', 'license'])->group(function () {
+
+    // ── Branches - WRITE operations ──────────────────────────────────────
+    Route::middleware('permission:branches.create')->post('branches', [BranchController::class, 'store']);
+    Route::middleware('permission:branches.edit')->put('branches/{branch}', [BranchController::class, 'update']);
+    Route::middleware('permission:branches.delete')->delete('branches/{branch}', [BranchController::class, 'destroy']);
+    Route::middleware('permission:branches.edit')->patch('branches/{branch}/status', [BranchController::class, 'toggleStatus']);
+
+    // ── Users - WRITE operations ─────────────────────────────────────────
+    Route::middleware('permission:users.create')->post('users', [UserController::class, 'store']);
+    Route::middleware('permission:users.edit')->put('users/{user}', [UserController::class, 'update']);
+    Route::middleware('permission:users.delete')->delete('users/{user}', [UserController::class, 'destroy']);
+    Route::middleware('permission:users.suspend')->patch('users/{user}/status', [UserController::class, 'toggleStatus']);
+    Route::middleware('permission:users.assign_roles')->post('users/{user}/roles', [UserController::class, 'syncRoles']);
+
+    // ── Roles - WRITE operations ─────────────────────────────────────────
+    Route::middleware('permission:roles.manage')->put('roles/{role}/permissions', [RoleController::class, 'syncPermissions']);
+
+    // ── Corporates - WRITE operations ────────────────────────────────────
+    Route::middleware('permission:corporates.create')->post('corporates', [CorporateController::class, 'store']);
+    Route::middleware('permission:corporates.edit')->put('corporates/{corporate}', [CorporateController::class, 'update']);
+    Route::middleware('permission:corporates.delete')->delete('corporates/{corporate}', [CorporateController::class, 'destroy']);
+    Route::middleware('permission:corporates.suspend')->patch('corporates/{corporate}/suspend', [CorporateController::class, 'suspend']);
+    Route::middleware('permission:enrollees.create')->post('corporates/{corporate}/bulk-upload-enrollees', [CorporateController::class, 'bulkUpload']);
+
+    // ── Corporate Plans - WRITE operations ───────────────────────────────
+    Route::prefix('corporates/{corporate}/plans')->group(function () {
+        Route::middleware('permission:plans.create')->post('/', [CorporatePlanController::class, 'store']);
+        Route::middleware('permission:plans.edit')->put('{plan}', [CorporatePlanController::class, 'update']);
+        Route::middleware('permission:plans.edit')->patch('{plan}/discontinue', [CorporatePlanController::class, 'discontinue']);
+        Route::middleware('permission:plans.create')->post('{plan}/duplicate', [CorporatePlanController::class, 'duplicate']);
+        Route::middleware('permission:plans.edit')->put('{plan}/benefit-items', [CorporatePlanController::class, 'syncBenefitItems']);
+    });
+
+    // ── Corporate Invoices - WRITE operations ────────────────────────────
+    Route::middleware('permission:corporates.invoices')->post('corporates/{corporate}/invoices', [CorporateInvoiceController::class, 'store']);
+    Route::middleware('permission:corporates.invoices')->patch('corporates/{corporate}/invoices/{invoice}/mark-paid', [CorporateInvoiceController::class, 'markPaid']);
+
+    // ── Enrollees - WRITE operations ─────────────────────────────────────
+    Route::middleware('permission:enrollees.create')->post('enrollees', [EnrolleeController::class, 'store']);
+    Route::middleware('permission:enrollees.edit')->put('enrollees/{enrollee}', [EnrolleeController::class, 'update']);
+    Route::middleware('permission:enrollees.suspend')->patch('enrollees/{enrollee}/suspend', [EnrolleeController::class, 'suspend']);
+    Route::middleware('permission:enrollees.transfer')->post('enrollees/{enrollee}/transfer', [EnrolleeController::class, 'transfer']);
+    Route::middleware('permission:enrollees.edit')->post('enrollees/{enrollee}/regenerate-card', [EnrolleeController::class, 'regenerateCard']);
+
+    // Dependents - WRITE operations
+    Route::middleware('permission:enrollees.edit')->post('enrollees/{enrollee}/dependents', [DependentController::class, 'store']);
+    Route::middleware('permission:enrollees.edit')->put('enrollees/{enrollee}/dependents/{dependent}', [DependentController::class, 'update']);
+    Route::middleware('permission:enrollees.edit')->delete('enrollees/{enrollee}/dependents/{dependent}', [DependentController::class, 'destroy']);
+
+    // ── HCPs - WRITE operations ──────────────────────────────────────────
+    Route::middleware('permission:hcps.create')->post('hcps', [HCPController::class, 'store']);
+    Route::middleware('permission:hcps.edit')->put('hcps/{hcp}', [HCPController::class, 'update']);
+    Route::middleware('permission:hcps.accredit')->patch('hcps/{hcp}/accredit', [HCPController::class, 'accredit']);
+    Route::middleware('permission:hcps.blacklist')->patch('hcps/{hcp}/blacklist', [HCPController::class, 'blacklist']);
+
+    // Tariffs - WRITE operations
+    Route::middleware('permission:hcps.tariffs')->post('hcps/{hcp}/tariffs', [TariffController::class, 'store']);
+    Route::middleware('permission:hcps.tariffs')->post('hcps/{hcp}/tariffs/bulk', [TariffController::class, 'bulkUpload']);
+    Route::middleware('permission:hcps.tariffs')->put('hcps/{hcp}/tariffs/{tariff}', [TariffController::class, 'update']);
+    Route::middleware('permission:hcps.tariffs')->delete('hcps/{hcp}/tariffs/{tariff}', [TariffController::class, 'destroy']);
+
+    // Contracts - WRITE operations
+    Route::middleware('permission:hcps.contracts')->post('hcps/{hcp}/contracts', [ContractController::class, 'store']);
+
+    // Bank Details - WRITE operations
+    Route::middleware('permission:hcps.bank_details')->post('hcps/{hcp}/bank-details', [HcpBankDetailController::class, 'store']);
+    Route::middleware('permission:hcps.bank_details')->patch('hcps/{hcp}/bank-details/{bankDetail}/verify', [HcpBankDetailController::class, 'verify']);
+    Route::middleware('permission:hcps.bank_details')->delete('hcps/{hcp}/bank-details/{bankDetail}', [HcpBankDetailController::class, 'destroy']);
+
+    // ── Claims - WRITE operations ────────────────────────────────────────
+    Route::middleware('permission:claims.submit')->post('claims', [ClaimController::class, 'store']);
+    Route::middleware('permission:claims.process')->post('claims/{claim}/process', [ClaimController::class, 'process']);
+    Route::middleware('permission:claims.approve')->post('claims/{claim}/approve', [ClaimController::class, 'approve']);
+    Route::middleware('permission:claims.reject')->post('claims/{claim}/reject', [ClaimController::class, 'reject']);
+    Route::middleware('permission:claims.assign')->post('claims/{claim}/assign', [ClaimController::class, 'assign']);
+    Route::middleware('permission:claims.reverse')->post('claims/{claim}/reverse', [ClaimController::class, 'reverse']);
+
+    // Claim Documents - WRITE operations
+    Route::middleware('permission:claims.submit')->post('claims/{claim}/documents', [ClaimDocumentController::class, 'store']);
+
+    // Fraud Flags - WRITE operations
+    Route::middleware('permission:claims.fraud_review')->patch('claims/{claim}/fraud-flags/{flag}/review', [ClaimController::class, 'reviewFraudFlag']);
+
+    // ── Claims Import - WRITE operations ─────────────────────────────────
+    Route::prefix('claims/import')
+        ->middleware('permission:claims.import')
+        ->group(function () {
+            Route::post('/upload', [ClaimImportController::class, 'upload']);
+            Route::post('/{batch}/map', [ClaimImportController::class, 'confirmMapping']);
+            Route::patch('/{batch}/rows/{row}', [ClaimImportController::class, 'updateRow']);
+            Route::post('/{batch}/bulk-approve-valid', [ClaimImportController::class, 'bulkApproveValid']);
+            Route::post('/{batch}/push', [ClaimImportController::class, 'push']);
+        });
+
+    // ── Finance - WRITE operations ───────────────────────────────────────
+    Route::middleware('permission:finance.view')->prefix('finance')->group(function () {
+        // Payment Batches - WRITE
+        Route::middleware('permission:finance.batch_create')->post('batches', [PaymentBatchController::class, 'store']);
+        Route::middleware('permission:finance.batch_create')->post('batches/{batch}/submit', [PaymentBatchController::class, 'submit']);
+        Route::middleware('permission:finance.batch_approve')->post('batches/{batch}/approve', [PaymentBatchController::class, 'approve']);
+
+        // Remittance - WRITE
+        Route::middleware('permission:finance.remittance')->post('remittance/{payment}', [RemittanceController::class, 'generate']);
+
+        // Capitation - WRITE
+        Route::middleware('permission:finance.capitation')
+            ->prefix('capitation')
+            ->group(function () {
+                Route::post('/rates', [CapitationController::class, 'rateStore']);
+                Route::post('/generate', [CapitationController::class, 'generate']);
+                Route::post('/{run}/approve', [CapitationController::class, 'approve']);
+                Route::patch('/{run}/records/{record}', [CapitationController::class, 'adjustRecord']);
+            });
+    });
+
+    // ── Reports - WRITE operations ───────────────────────────────────────
+    Route::middleware('permission:reports.branch')
+        ->prefix('reports')
+        ->group(function () {
+            Route::post('sla/breach-scan', [SLAController::class, 'scanBreaches']);
+
+            // Generated Reports - WRITE
+            Route::prefix('generated')->group(function () {
+                Route::post('generate', [ReportController::class, 'generate']);
+                Route::put('schedules/{type}', [ReportController::class, 'updateSchedule']);
+            });
+
+            // Export - WRITE
+            Route::middleware('permission:reports.export')->post('export', [ReportController::class, 'export']);
+        });
+
+    // ── Compliance - WRITE operations ────────────────────────────────────
+    Route::middleware('permission:compliance.view')
+        ->prefix('compliance')
+        ->group(function () {
+            Route::middleware('permission:compliance.manage')->post('filings', [ComplianceController::class, 'store']);
+            Route::middleware('permission:compliance.manage')->put('filings/{filing}', [ComplianceController::class, 'update']);
+            Route::middleware('permission:compliance.manage')->post('filings/{filing}/complete', [ComplianceController::class, 'complete']);
+            Route::middleware('permission:compliance.manage')->post('filings/{filing}/documents', [ComplianceController::class, 'uploadDocument']);
+            Route::middleware('permission:compliance.manage')->delete('filings/{filing}/documents/{doc}', [ComplianceController::class, 'deleteDocument']);
+        });
+
+    // ── AI Tools - WRITE operations ──────────────────────────────────────
+    Route::middleware('permission:ai.tools')
+        ->prefix('ai')
+        ->group(function () {
+            Route::post('classify-document', [AIController::class, 'classifyDocument']);
+            Route::post('smart-route', [AIController::class, 'smartRoute']);
+            Route::post('ocr-document', [AIController::class, 'ocrDocument']);
+            Route::post('summarize-report', [AIController::class, 'summarizeReport']);
+            Route::post('chat', [AIController::class, 'chat']);
+        });
+
+    // ── Import - WRITE operations ────────────────────────────────────────
+    Route::middleware('permission:import.enrollees')
+        ->prefix('import')
+        ->group(function () {
+            Route::post('enrollees', [ImportController::class, 'enrollees']);
+            Route::post('tariffs', [ImportController::class, 'tariffs']);
+            Route::post('hcps', [ImportController::class, 'hcps']);
+        });
+
+    // ── Portal - WRITE operations ────────────────────────────────────────
+    Route::prefix('portal')->group(function () {
+        // Enrollee Portal - WRITE
+        Route::prefix('enrollee')->group(function () {
+            Route::post('/complaints', [App\Http\Controllers\Portal\EnrolleePortalController::class, 'submitComplaint']);
+        });
+
+        // Corporate Portal - WRITE
+        Route::prefix('corporate')->group(function () {
+            Route::post('/enrollees', [App\Http\Controllers\Portal\CorporatePortalController::class, 'addEnrollee']);
+            Route::delete('/enrollees/{id}', [App\Http\Controllers\Portal\CorporatePortalController::class, 'removeEnrollee']);
+            Route::post('/enrollees/bulk', [App\Http\Controllers\Portal\CorporatePortalController::class, 'bulkUploadEnrollees']);
+            Route::post('/claims/export', [App\Http\Controllers\Portal\CorporatePortalController::class, 'exportClaims']);
+            Route::put('/profile', [App\Http\Controllers\Portal\CorporatePortalController::class, 'updateProfile']);
+        });
+    });
+
+    // ── Pre-Auth - WRITE operations ──────────────────────────────────────
+    Route::prefix('pre-auth')->middleware(['branch.scope'])->group(function () {
+        Route::post('/', [PreAuthController::class, 'store']);
+        Route::post('/validate-code', [PreAuthController::class, 'validateCode']);
+        Route::post('/{pa}/approve', [PreAuthController::class, 'approve']);
+        Route::post('/{pa}/decline', [PreAuthController::class, 'decline']);
+        Route::post('/{pa}/revoke', [PreAuthController::class, 'revoke']);
+    });
+
+    // ── Help Centre - WRITE operations ───────────────────────────────────
+    Route::prefix('help')->group(function () {
+        Route::middleware('permission:help.admin')->group(function () {
+            Route::post('/admin/articles', [HelpArticleController::class, 'store']);
+            Route::put('/admin/articles/{article}', [HelpArticleController::class, 'update']);
+            Route::delete('/admin/articles/{article}', [HelpArticleController::class, 'destroy']);
+        });
+        Route::post('/{article}/feedback', [HelpArticleController::class, 'feedback'])
+            ->where('article', '[0-9]+');
+    });
+
+    // ── Notifications - WRITE operations ─────────────────────────────────
+    Route::prefix('notifications')->group(function () {
+        Route::patch('/{notification}/read', [NotificationController::class, 'markRead']);
+        Route::post('/mark-all-read', [NotificationController::class, 'markAllRead']);
+    });
+
+    // ── Auth - WRITE operations (already covered in no-branch group) ─────
+    // These are kept separate since they don't need branch isolation
 });
 
-
-// Pre-Authorisation
-Route::prefix('pre-auth')->middleware(['auth:sanctum', 'branch.scope'])->group(function () {
-     Route::get('/',                  [PreAuthController::class, 'index']);
-     Route::post('/',                 [PreAuthController::class, 'store']);
-     Route::get('/stats',             [PreAuthController::class, 'stats']);
-     Route::post('/validate-code',    [PreAuthController::class, 'validateCode']);
-     Route::get('/{pa}',              [PreAuthController::class, 'show']);
-     Route::post('/{pa}/approve',     [PreAuthController::class, 'approve']);
-     Route::post('/{pa}/decline',     [PreAuthController::class, 'decline']);
-     Route::post('/{pa}/revoke',      [PreAuthController::class, 'revoke']);
-     Route::get('/{pa}/download',     [PreAuthController::class, 'downloadLetter']);
+// ── Auth write operations (no branch isolation, but need license) ────────
+Route::middleware(['auth:sanctum', 'license'])->prefix('auth')->group(function () {
+    Route::post('change-password', [AuthController::class, 'changePassword']);
+    Route::post('2fa/setup', [AuthController::class, 'setup2FA']);
+    Route::post('2fa/confirm', [AuthController::class, 'confirm2FA']);
+    Route::post('2fa/disable', [AuthController::class, 'disable2FA']);
 });
 
-// PA TAT Report (under /reports)
-// Route::prefix('reports')->middleware(['auth:sanctum'])->group(function () {
-//     // ...existing report routes...
-//     Route::get('/pa-tat',        [PAReportController::class, 'tatSummary']);
-//     Route::get('/pa-tat/export', [PAReportController::class, 'exportTAT']);
-// });
+// ── System Settings - WRITE operations (super_admin only) ────────────────
+Route::prefix('settings/system')
+    ->middleware(['auth:sanctum', 'license'])
+    ->group(function () {
+        Route::put('/', [SystemSettingController::class, 'updateMany']);
+        Route::put('/{key}', [SystemSettingController::class, 'update'])->where('key', '.+');
+        Route::post('/reset/{key}', [SystemSettingController::class, 'reset'])->where('key', '.+');
+    });
 
-// Help Centre routes
-Route::prefix('help')->middleware('auth:sanctum')->group(function () {
-
-     Route::get('/',          [HelpArticleController::class, 'index']);
-     Route::get('/for-page',  [HelpArticleController::class, 'forPage']);  // ← must be before /{slug}
-
-     Route::post('/{article}/feedback', [HelpArticleController::class, 'feedback'])
-          ->where('article', '[0-9]+');  // integer only — won't collide with /{slug}
-
-     // Admin routes — must be before /{slug}
-     Route::middleware('permission:help.admin')->group(function () {
-          Route::get('/admin/list', [HelpArticleController::class, 'adminIndex']);
-          Route::get('/admin/articles/{article}', [HelpArticleController::class, 'adminShow']);
-          Route::post('/admin/articles', [HelpArticleController::class, 'store']);
-          Route::put('/admin/articles/{article}', [HelpArticleController::class, 'update']);
-          Route::delete('/admin/articles/{article}', [HelpArticleController::class, 'destroy']);
-     });
-     Route::get('/{slug}', [HelpArticleController::class, 'show']);  // ← LAST
-
-});
-
-// ============= PORTAL ROUTES =============
-Route::middleware(['auth:sanctum'])->prefix('portal')->group(function () {
-
-     // Enrollee Portal Routes
-     Route::prefix('enrollee')->group(function () {
-          Route::get('/dashboard', [App\Http\Controllers\Portal\EnrolleePortalController::class, 'dashboard']);
-          Route::get('/id-card', [App\Http\Controllers\Portal\EnrolleePortalController::class, 'idCard']);
-          Route::get('/id-card/download', [App\Http\Controllers\Portal\EnrolleePortalController::class, 'downloadIdCard']);
-          Route::get('/benefits', [App\Http\Controllers\Portal\EnrolleePortalController::class, 'benefits']);
-          Route::get('/claims', [App\Http\Controllers\Portal\EnrolleePortalController::class, 'claims']);
-          Route::get('/find-hcp', [App\Http\Controllers\Portal\EnrolleePortalController::class, 'findHcp']);
-          Route::get('/complaints', [App\Http\Controllers\Portal\EnrolleePortalController::class, 'complaints']);
-          Route::post('/complaints', [App\Http\Controllers\Portal\EnrolleePortalController::class, 'submitComplaint']);
-     });
-
-     // Corporate Portal Routes (add later)
-     Route::prefix('corporate')->group(function () {
-          Route::get('/dashboard', [App\Http\Controllers\Portal\CorporatePortalController::class, 'dashboard']);
-          Route::get('/enrollees', [App\Http\Controllers\Portal\CorporatePortalController::class, 'enrollees']);
-          Route::post('/enrollees', [App\Http\Controllers\Portal\CorporatePortalController::class, 'addEnrollee']);
-          Route::delete('/enrollees/{id}', [App\Http\Controllers\Portal\CorporatePortalController::class, 'removeEnrollee']);
-          Route::post('/enrollees/bulk', [App\Http\Controllers\Portal\CorporatePortalController::class, 'bulkUploadEnrollees']);
-          Route::get('/claims', [App\Http\Controllers\Portal\CorporatePortalController::class, 'claims']);
-          Route::post('/claims/export', [App\Http\Controllers\Portal\CorporatePortalController::class, 'exportClaims']);
-          Route::get('/invoices', [App\Http\Controllers\Portal\CorporatePortalController::class, 'invoices']);
-          Route::get('/profile', [App\Http\Controllers\Portal\CorporatePortalController::class, 'profile']);
-          Route::put('/profile', [App\Http\Controllers\Portal\CorporatePortalController::class, 'updateProfile']);
-     });
-});
+// ── License emergency endpoints (super_admin only, need license) ─────────
+Route::prefix('settings/license')
+    ->middleware(['auth:sanctum', 'license'])
+    ->group(function () {
+        Route::post('/emergency', [LicenseController::class, 'applyEmergency']);
+        Route::post('/check-in', [LicenseController::class, 'forceCheckin']);
+    });

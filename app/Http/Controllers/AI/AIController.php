@@ -7,6 +7,8 @@ use Illuminate\Http\Request;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Support\Facades\Http;
 use Illuminate\Support\Facades\Log;
+use App\Models\SystemSetting; // This is already added at the top ✓
+use App\Models\Claim; // Add this if not already imported
 
 class AIController extends Controller
 {
@@ -75,7 +77,11 @@ class AIController extends Controller
         ]);
 
         // Get claim data for context
-        $claim = \App\Models\Claim::with(['hcp', 'enrollee'])->find($request->claim_id);
+        $claim = Claim::with(['hcp', 'enrollee'])->find($request->claim_id);
+        
+        // Get dynamic thresholds from system settings
+        $highValueThreshold = SystemSetting::get('financial.ai_high_value_threshold', 500000);
+        $quarantineThreshold = SystemSetting::get('fraud.auto_quarantine_threshold', 70);
         
         $payload = [
             'claim_amount' => $claim->total_amount_claimed,
@@ -84,6 +90,10 @@ class AIController extends Controller
             'pa_status' => $claim->pa_status,
             'fraud_flags' => $claim->fraudFlags()->count(),
             'hcp_tier' => $claim->hcp?->tier,
+            'thresholds' => [ // Include thresholds for context
+                'high_value' => $highValueThreshold,
+                'quarantine' => $quarantineThreshold,
+            ],
         ];
 
         return $this->forwardRequest('/route', $payload, [
@@ -180,8 +190,8 @@ class AIController extends Controller
         // Add system stats for context
         if ($request->input('persona', 'staff') === 'staff') {
             $stats = [
-                'total_claims' => \App\Models\Claim::count(),
-                'pending_claims' => \App\Models\Claim::whereIn('status', ['submitted', 'auto_validated'])->count(),
+                'total_claims' => Claim::count(),
+                'pending_claims' => Claim::whereIn('status', ['submitted', 'auto_validated'])->count(),
                 'active_enrollees' => \App\Models\Enrollee::where('status', 'active')->count(),
                 'today' => now()->format('Y-m-d'),
             ];
@@ -193,11 +203,33 @@ class AIController extends Controller
         ]);
     }
 
+    /**
+     * Rule-based routing fallback when AI service is unavailable
+     * Now uses dynamic thresholds from system settings
+     */
     protected function ruleBasedRouting($claim): string
     {
-        if ($claim->risk_score >= 70) return 'supervisor';
-        if ($claim->total_amount_claimed > 2000000) return 'finance';
-        if ($claim->fraudFlags()->count() > 0) return 'medical_review';
+        // Get dynamic thresholds
+        $quarantineThreshold = SystemSetting::get('fraud.auto_quarantine_threshold', 70);
+        $highValueThreshold = SystemSetting::get('financial.ai_high_value_threshold', 500000);
+        $ceoThreshold = SystemSetting::get('financial.pa_ceo_threshold', 2000000);
+        
+        if ($claim->risk_score >= $quarantineThreshold) {
+            return 'supervisor';
+        }
+        
+        if ($claim->total_amount_claimed > $ceoThreshold) {
+            return 'finance';
+        }
+        
+        if ($claim->total_amount_claimed > $highValueThreshold) {
+            return 'medical_review';
+        }
+        
+        if ($claim->fraudFlags()->count() > 0) {
+            return 'medical_review';
+        }
+        
         return 'standard';
     }
 }

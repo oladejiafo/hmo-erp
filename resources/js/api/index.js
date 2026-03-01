@@ -10,6 +10,22 @@ export const setup2FA = () => apiClient.post('/auth/2fa/setup');
 export const confirm2FA = (otp) => apiClient.post('/auth/2fa/confirm', { otp });
 export const disable2FA = (otp) => apiClient.post('/auth/2fa/disable', { otp });
 
+// ============= 🆕 SYSTEM SETTINGS =============
+export const fetchSystemSettings = () => 
+    apiClient.get('/settings/system').then(r => r.data);
+
+export const updateSystemSettings = (data) => 
+    apiClient.put('/settings/system', data).then(r => r.data);
+
+export const updateSystemSetting = (key, value) => 
+    apiClient.put(`/settings/system/${key}`, { value }).then(r => r.data);
+
+export const resetSystemSetting = (key) => 
+    apiClient.post(`/settings/system/reset/${key}`).then(r => r.data);
+
+export const fetchPublicSettings = () => 
+    apiClient.get('/settings/system/public').then(r => r.data);
+
 // ============= BRANCHES =============
 export const fetchBranches = (params) => apiClient.get('/branches', { params });
 export const fetchBranch = (id) => apiClient.get(`/branches/${id}`);
@@ -432,6 +448,10 @@ export default {
     // 🆕 Compliance
     fetchFilings, fetchFiling, fetchComplianceSummary,  // ← add fetchComplianceSummary
     createFiling, updateFiling, completeFiling, uploadFilingDoc,  // ← add completeFiling
+
+    // 🆕 SYSTEM SETTINGS (ADD THESE)
+    fetchSystemSettings, updateSystemSettings, updateSystemSetting, 
+    resetSystemSetting, fetchPublicSettings,
 
     // 🆕 Pre-Authorisation
     fetchPARequests, fetchPARequest, submitPARequest, approvePA, declinePA, fetchPAStats,

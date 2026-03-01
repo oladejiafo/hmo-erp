@@ -14,13 +14,16 @@ export default function AuthLayout() {
                         className="d-inline-flex align-items-center justify-content-center rounded-3 mb-3"
                         style={{ width: 60, height: 60, background: 'rgba(255,255,255,0.15)' }}
                     >
-                        <svg width="32" height="32" viewBox="0 0 32 32" fill="none">
-                            <path d="M16 2L28 8V16C28 22.6 22.8 28.6 16 30C9.2 28.6 4 22.6 4 16V8L16 2Z"
-                                  fill="white" fillOpacity="0.9"/>
-                            <path d="M13 16H19M16 13V19" stroke="#1e3a5f" strokeWidth="2.5" strokeLinecap="round"/>
-                        </svg>
+                    <img 
+                        src="/images/g8-nexum-logo.png"
+                        alt="G8 Nexum"
+                        width="40"
+                        height="40"
+                        className="rounded-2 flex-shrink-0"
+                        style={{ background: "#2d6a9f" }}
+                    />
                     </div>
-                    <h4 className="text-white fw-bold mb-1">HMO ERP</h4>
+                    <h4 className="text-white fw-bold mb-1">G8 Nexum - HMO ERP</h4>
                     <p className="text-white-50 small">Health Management Operations Platform</p>
                 </div>
 

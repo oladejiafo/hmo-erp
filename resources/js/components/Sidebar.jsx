@@ -19,6 +19,7 @@ import {
     CreditCard,
     BarChart3,
     Settings,
+    Settings2,
     Shield,
     ShieldCheck,
     Upload,
@@ -30,6 +31,7 @@ import {
     Sparkles,
     Activity,
     Layers,
+    Key,
 } from "lucide-react";
 import { useAuth } from "../contexts/AuthContext";
 import { useQuery } from "@tanstack/react-query";
@@ -196,6 +198,20 @@ const settingsItems = [
         permission: "reports.audit_logs",
         group: "admin",
     },
+    {
+        label: 'System Settings',
+        icon: Settings2, // or CogIcon
+        path: '/settings/system',
+        permission: 'settings.system',
+        group: "admin",
+    },
+    { 
+        label: 'Licence', 
+        icon: Key, 
+        path: '/settings/license', 
+        permission: 'settings.system',
+        group: "admin", 
+    }
 ];
 
 const groupTitles = {
@@ -255,19 +271,14 @@ export default function Sidebar({ collapsed }) {
                     className="rounded-2 d-flex align-items-center justify-content-center flex-shrink-0"
                     style={{ width: 36, height: 36, background: "#2d6a9f" }}
                 >
-                    <svg width="20" height="20" viewBox="0 0 32 32" fill="none">
-                        <path
-                            d="M16 2L28 8V16C28 22.6 22.8 28.6 16 30C9.2 28.6 4 22.6 4 16V8L16 2Z"
-                            fill="white"
-                            fillOpacity="0.9"
-                        />
-                        <path
-                            d="M13 16H19M16 13V19"
-                            stroke="#1e3a5f"
-                            strokeWidth="2.5"
-                            strokeLinecap="round"
-                        />
-                    </svg>
+                <img 
+                    src="/images/g8-nexum-logo.png"
+                    alt="G8 Nexum"
+                    width="40"
+                    height="40"
+                    className="rounded-2 flex-shrink-0"
+                    style={{ background: "#2d6a9f" }}
+                />
                 </div>
                 {!collapsed && (
                     <div className="ms-3 overflow-hidden">
@@ -275,7 +286,7 @@ export default function Sidebar({ collapsed }) {
                             className="fw-bold text-truncate"
                             style={{ fontSize: 14 }}
                         >
-                            HMO ERP
+                            G8 Nexum - HMO ERP
                         </div>
                         <div
                             className="text-white-50 text-truncate"

@@ -115,8 +115,8 @@ class AuthService
 
         // Revoke all previous tokens to enforce single-session per user
         $user->tokens()->delete();
-
-        $expiresAt = now()->addHours(config('hmo.token_lifetime_hours', 12));
+        
+        $expiresAt = now()->addHours((int) config('hmo.token_lifetime_hours', 12));
         $token     = $user->createToken('hmo-erp', ['*'], $expiresAt);
 
         $user->recordLogin($ip);

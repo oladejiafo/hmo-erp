@@ -66,11 +66,19 @@ export default function EnrolleeLayout() {
                                 background: 'linear-gradient(135deg, #0f4c81, #1a6fad)',
                                 display: 'flex', alignItems: 'center', justifyContent: 'center',
                             }}>
-                                <svg width="18" height="18" viewBox="0 0 32 32" fill="none">
+                                {/* <svg width="18" height="18" viewBox="0 0 32 32" fill="none">
                                     <path d="M16 2L28 8V16C28 22.6 22.8 28.6 16 30C9.2 28.6 4 22.6 4 16V8L16 2Z"
                                           fill="white" fillOpacity="0.95"/>
                                     <path d="M13 16H19M16 13V19" stroke="#0f4c81" strokeWidth="2.5" strokeLinecap="round"/>
-                                </svg>
+                                </svg> */}
+                                <img 
+                                    src="/images/g8-nexum-logo.png"
+                                    alt="G8 Nexum"
+                                    width="20"
+                                    height="20"
+                                    className="rounded-2 flex-shrink-0"
+                                    style={{ background: "#2d6a9f" }}
+                                />
                             </div>
                             <div>
                                 <div style={{ fontWeight: 700, fontSize: 13, color: '#1a202c', lineHeight: 1.2 }}>

@@ -1,7 +1,35 @@
 <?php
 
+/**
+ * FILE LOCATION: app/Http/Resources/ContractResource.php
+ * NAMESPACE:     App\Http\Resources
+ *
+ * Transforms an HcpContract model into a JSON response array.
+ *
+ * RETURNED BY:
+ *   GET  /api/v1/hcps/{hcp}/contracts          → index()
+ *   POST /api/v1/hcps/{hcp}/contracts          → store()
+ *   GET  /api/v1/hcps/{hcp}/contracts/{id}     → show()
+ *   Also embedded in HcpResource as active_contract (whenLoaded)
+ *
+ * RELATED:
+ *   Model      → app/Models/HcpContract.php
+ *   Controller → app/Http/Controllers/HCP/ContractController.php
+ *
+ * PAYMENT MODELS:
+ *   fee_for_service → each claim item paid against tariff
+ *   capitation      → monthly fixed payment per enrolled member
+ *   hybrid          → combination of the above
+ *
+ * COMPUTED FIELDS:
+ *   days_remaining  → calendar days until end_date (0 if expired)
+ *   is_expiring_soon → true if ends within 30 days
+ *   has_document    → true if a signed PDF was uploaded
+ */
+
 namespace App\Http\Resources;
 
+use App\Models\SystemSetting;
 use Illuminate\Http\Request;
 use Illuminate\Http\Resources\Json\JsonResource;
 use Illuminate\Support\Facades\Storage;
@@ -11,61 +39,50 @@ class ContractResource extends JsonResource
     public function toArray(Request $request): array
     {
         return [
-            'id' => $this->id,
-            'hcp_id' => $this->hcp_id,
-            'contract_number' => $this->contract_number,
-            'start_date' => $this->start_date?->toDateString(),
-            'end_date' => $this->end_date?->toDateString(),
-            'payment_model' => $this->payment_model,
-            'payment_model_label' => $this->getPaymentModelLabel(),
-            'capitation_rate' => (float) $this->capitation_rate,
-            'ffs_discount_rate' => (float) $this->ffs_discount_rate,
-            'terms_summary' => $this->terms_summary,
-            'special_terms' => $this->special_terms,
-            'status' => $this->status,
-            'status_label' => $this->getStatusLabel(),
-            'document_path' => $this->document_path,
-            
-            'document_url' => $this->document_path 
+            'id'               => $this->id,
+            'contract_number'  => $this->contract_number,
+
+            // Payment terms
+            'payment_model'    => $this->payment_model,
+            'capitation_rate'  => $this->capitation_rate,
+            'terms_summary'    => $this->terms_summary,
+
+            // Status
+            'status'           => $this->status,
+            'is_active'        => $this->status === 'active',
+
+            // Dates
+            'start_date'       => $this->start_date?->format('Y-m-d'),
+            'end_date'         => $this->end_date?->format('Y-m-d'),
+            'signed_at'        => $this->signed_at?->format('Y-m-d'),
+            'days_remaining'   => $this->end_date
+                ? max(0, (int) now()->diffInDays($this->end_date, false))
+                : null,
+            'is_expiring_soon' => $this->end_date
+                && $this->end_date->isFuture()
+                && $this->end_date->diffInDays(now()) <= SystemSetting::get('financial.contract_expiry_warning_days', 30),
+
+            // Signed PDF
+            'has_document'     => ! is_null($this->document_path),
+
+            'document_url' => $this->document_path
                 ? asset('storage/' . $this->document_path)
                 : null,
-                
-            'submitted_at' => $this->submitted_at?->toISOString(),
-            'approved_by' => $this->approved_by ? [
-                'id' => $this->approvedBy?->id,
-                'name' => $this->approvedBy?->name,
-            ] : null,
-            'approved_at' => $this->approved_at?->toISOString(),
-            'terminated_at' => $this->terminated_at?->toISOString(),
-            'termination_reason' => $this->termination_reason,
-            'created_by' => $this->created_by ? [
-                'id' => $this->createdBy?->id,
-                'name' => $this->createdBy?->name,
-            ] : null,
-            'created_at' => $this->created_at?->toISOString(),
-            'updated_at' => $this->updated_at?->toISOString(),
+
+            'created_at'       => $this->created_at?->toISOString(),
+
+            // Who signed the contract — loaded on demand
+            'signed_by'        => $this->whenLoaded('signedBy', fn () => $this->signedBy ? [
+                'id'   => $this->signedBy->id,
+                'name' => $this->signedBy->name,
+            ] : null),
+
+            // Parent HCP — loaded on demand
+            'hcp'              => $this->whenLoaded('hcp', fn () => [
+                'id'       => $this->hcp->id,
+                'hcp_code' => $this->hcp->hcp_code,
+                'name'     => $this->hcp->name,
+            ]),
         ];
-    }
-
-    protected function getPaymentModelLabel(): string
-    {
-        return match($this->payment_model) {
-            'capitation' => 'Capitation',
-            'ffs' => 'Fee-for-Service',
-            'hybrid' => 'Hybrid',
-            default => ucfirst($this->payment_model),
-        };
-    }
-
-    protected function getStatusLabel(): string
-    {
-        return match($this->status) {
-            'draft' => 'Draft',
-            'pending_approval' => 'Pending Approval',
-            'active' => 'Active',
-            'expired' => 'Expired',
-            'terminated' => 'Terminated',
-            default => ucfirst($this->status),
-        };
     }
 }

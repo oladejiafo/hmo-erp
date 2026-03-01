@@ -9,6 +9,7 @@ use App\Models\FraudFlag;
 use App\Models\PreAuthorisation;
 use App\Models\PaymentBatch;
 use App\Models\ComplianceFiling;
+use App\Models\SystemSetting; // ADD THIS USE STATEMENT
 use Illuminate\Support\Collection;
 use Illuminate\Support\Facades\DB;
 
@@ -75,11 +76,15 @@ class NotificationService
     public function fraudFlagged(Claim $claim, FraudFlag $flag): void
     {
         $recipients = $this->usersWithPermission('claims.fraud_review', $claim->branch_id);
+        
+        // Get critical threshold from system settings
+        $criticalThreshold = SystemSetting::get('fraud.critical_notification_threshold', 90);
 
         foreach ($recipients as $user) {
             $this->create($user->id, $claim->branch_id, [
                 'type'             => 'fraud_flag',
-                'severity'         => $claim->risk_score >= 90 ? 'critical' : 'warning',
+                // 'severity'         => $claim->risk_score >= 90 ? 'critical' : 'warning',
+                'severity'         => $claim->risk_score >= $criticalThreshold ? 'critical' : 'warning',
                 'title'            => "Fraud Flag: {$claim->claim_number}",
                 'body'             => "Claim {$claim->claim_number} flagged [{$flag->flag_type}] with risk score {$claim->risk_score}/100. " . $flag->description,
                 'action_url'       => "/claims/{$claim->id}",
@@ -145,9 +150,14 @@ class NotificationService
             }
         }
 
+        // Get compliance critical days from system settings
+        $criticalDays = SystemSetting::get('notifications.compliance_critical_days', 3);
+
         $type     = $daysLeft < 0  ? 'compliance_overdue' : 'compliance_due';
+        // $severity = $daysLeft < 0  ? 'critical'
+        //           : ($daysLeft <= 3 ? 'critical' : 'warning');
         $severity = $daysLeft < 0  ? 'critical'
-                  : ($daysLeft <= 3 ? 'critical' : 'warning');
+                  : ($daysLeft <= $criticalDays ? 'critical' : 'warning');
         $body     = $daysLeft < 0
             ? "Compliance filing \"{$filing->title}\" was due on {$filing->due_date->format('d M Y')} and is now " . abs($daysLeft) . " day(s) overdue."
             : "Compliance filing \"{$filing->title}\" is due in {$daysLeft} day(s) on {$filing->due_date->format('d M Y')}.";

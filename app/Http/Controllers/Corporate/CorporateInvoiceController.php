@@ -11,6 +11,7 @@ use App\Models\CorporateInvoice;
 use App\Services\InvoiceService;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
+use App\Models\SystemSetting;
 
 class CorporateInvoiceController extends Controller
 {
@@ -144,6 +145,49 @@ class CorporateInvoiceController extends Controller
         ]);
     }
 
+    /**
+     * Generate invoice for corporate
+     */
+    public function generateInvoice(Corporate $corporate, array $data): CorporateInvoice
+    {
+        // Calculate amounts
+        $subtotal = $data['amount'] ?? $this->calculateSubtotal($corporate, $data);
+        
+        // Get tax rate from settings or use default
+        $taxRate = $data['tax_rate'] ?? SystemSetting::get('financial.vat_rate', 7.5);
+        
+        $taxAmount = $subtotal * ($taxRate / 100);
+        $totalAmount = $subtotal + $taxAmount;
+
+        // Generate invoice number
+        $invoiceNumber = $this->generateInvoiceNumber();
+
+        // Create invoice
+        $invoice = CorporateInvoice::create([
+            'corporate_id' => $corporate->id,
+            'plan_id' => $data['plan_id'] ?? $corporate->current_plan_id,
+            'invoice_number' => $invoiceNumber,
+            'invoice_date' => now(),
+            'due_date' => now()->addDays($data['payment_terms'] ?? 30),
+            'period_start' => $data['period_start'] ?? now()->startOfMonth(),
+            'period_end' => $data['period_end'] ?? now()->endOfMonth(),
+            'subtotal' => $subtotal,
+            'tax_rate' => $taxRate,
+            'tax_amount' => $taxAmount,
+            'total_amount' => $totalAmount,
+            'amount_due' => $totalAmount,
+            'status' => 'draft',
+            'metadata' => $data['metadata'] ?? [],
+        ]);
+
+        // Generate invoice items if provided
+        if (!empty($data['items'])) {
+            $this->createInvoiceItems($invoice, $data['items']);
+        }
+
+        return $invoice;
+    }
+    
     /**
      * Download invoice PDF
      * 

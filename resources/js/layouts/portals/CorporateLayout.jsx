@@ -59,11 +59,19 @@ export default function CorporateLayout() {
                                 background: 'rgba(255,255,255,0.2)',
                                 display: 'flex', alignItems: 'center', justifyContent: 'center',
                             }}>
-                                <svg width="20" height="20" viewBox="0 0 32 32" fill="none">
+                                {/* <svg width="20" height="20" viewBox="0 0 32 32" fill="none">
                                     <path d="M16 2L28 8V16C28 22.6 22.8 28.6 16 30C9.2 28.6 4 22.6 4 16V8L16 2Z"
                                           fill="white" fillOpacity="0.9"/>
                                     <path d="M13 16H19M16 13V19" stroke="#0f4c81" strokeWidth="2.5" strokeLinecap="round"/>
-                                </svg>
+                                </svg> */}
+                                <img 
+                                    src="/images/g8-nexum-logo.png"
+                                    alt="G8 Nexum"
+                                    width="20"
+                                    height="20"
+                                    className="rounded-2 flex-shrink-0"
+                                    style={{ background: "#2d6a9f" }}
+                                />
                             </div>
                             <div>
                                 <div style={{ color: '#fff', fontWeight: 700, fontSize: 14, lineHeight: 1.2 }}>

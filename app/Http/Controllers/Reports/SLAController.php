@@ -8,6 +8,7 @@ use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 use Carbon\Carbon;
+use App\Models\SystemSetting;
 
 /**
  * FILE LOCATION: app/Http/Controllers/Reports/SLAController.php
@@ -33,18 +34,43 @@ class SLAController extends Controller
      * SLA target days per claim type.
      * Matches values stamped on claim.sla_target_days at submission.
      */
-    private array $slaTargets = [
-        'emergency'  => 2,
-        'outpatient' => 5,
-        'inpatient'  => 10,
-        'surgery'    => 10,
-        'maternity'  => 10,
-        'dental'     => 5,
-        'optical'    => 5,
-        'laboratory' => 5,
-        'radiology'  => 7,
-        'drug_refill'=> 5,
-    ];
+    // private array $slaTargets = [
+    //     'emergency'  => 2,
+    //     'outpatient' => 5,
+    //     'inpatient'  => 10,
+    //     'surgery'    => 10,
+    //     'maternity'  => 10,
+    //     'dental'     => 5,
+    //     'optical'    => 5,
+    //     'laboratory' => 5,
+    //     'radiology'  => 7,
+    //     'drug_refill'=> 5,
+    // ];
+
+    private function getSlaTargets(): array
+    {
+        return [
+            'emergency'   => SystemSetting::get('sla.emergency',   2),
+            'outpatient'  => SystemSetting::get('sla.outpatient',  5),
+            'inpatient'   => SystemSetting::get('sla.inpatient',   10),
+            'surgery'     => SystemSetting::get('sla.surgery',     10),
+            'maternity'   => SystemSetting::get('sla.maternity',   10),
+            'dental'      => SystemSetting::get('sla.dental',      5),
+            'optical'     => SystemSetting::get('sla.optical',     5),
+            'laboratory'  => SystemSetting::get('sla.laboratory',  5),
+            'radiology'   => SystemSetting::get('sla.radiology',   7),
+            'drug_refill' => SystemSetting::get('sla.drug_refill', 5),
+        ];
+    }
+
+    /**
+     * Get SLA target for a specific claim type
+     */
+    private function getSlaTarget(string $type, int $default = 5): int
+    {
+        return $this->getSlaTargets()[$type] ?? $default;
+    }
+
 
     // ─────────────────────────────────────────────────────────────────────────
     // DASHBOARD — KPIs and trend data for the SLA page
@@ -144,7 +170,9 @@ class SLAController extends Controller
                 'by_type'       => $byType,
                 'weekly_trend'  => $weeklyTrend,
                 'oldest_open'   => $oldestOpen,
-                'sla_targets'   => $this->slaTargets,
+                // 'sla_targets'   => $this->slaTargets, // was
+                'sla_targets'   => $this->getSlaTargets(),
+
             ],
         ]);
     }

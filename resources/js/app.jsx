@@ -12,6 +12,11 @@ import 'bootstrap/dist/css/bootstrap.min.css';
 import 'react-toastify/dist/ReactToastify.css';
 import './styles/app.css';
 
+import { setupLicenseInterceptor } from './hooks/useLicense';
+import { toast } from 'react-toastify';  // or your toast library
+
+setupLicenseInterceptor((msg, opts) => toast.error(msg, opts));
+
 const queryClient = new QueryClient({
     defaultOptions: {
         queries: {

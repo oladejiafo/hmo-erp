@@ -49,6 +49,7 @@ return Application::configure(basePath: dirname(__DIR__))
             'permission'       => CheckPermission::class,
             'branch.isolation' => BranchIsolation::class,
             'branch.scope'     => BranchScope::class,
+            'license' => \App\Http\Middleware\EnforceLicense::class,
         ]);
         
         // Add this - handle unauthenticated requests without redirects

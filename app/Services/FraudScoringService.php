@@ -6,6 +6,7 @@ use App\Models\Claim;
 use App\Models\FraudFlag;
 use Carbon\Carbon;
 use Illuminate\Support\Facades\DB;
+use App\Models\SystemSetting;
 
 class FraudScoringService
 {
@@ -60,7 +61,8 @@ class FraudScoringService
      */
     protected function scoreHcpFrequency(Claim $claim): float
     {
-        $threshold = config('fraud.frequency_threshold_monthly', 4);
+        $threshold = SystemSetting::get('fraud.frequency_threshold_monthly', 4);
+        $weight = SystemSetting::get('fraud.weight_frequency_anomaly', 20); // ← ADD THIS
         $windowStart = Carbon::parse($claim->service_date)->startOfMonth();
         $windowEnd   = Carbon::parse($claim->service_date)->endOfMonth();
 
@@ -75,10 +77,10 @@ class FraudScoringService
             return 0;
         }
 
-        // Scale: each claim above threshold adds 5 points, max 20
+        // Scale: each claim above threshold adds points based on weight
         $excess = $count - $threshold + 1;
-
-        $flagScore = min($excess * 5, 20);
+        $pointsPerExcess = $weight / 4; // Divide weight by max excess (4) to scale properly
+        $flagScore = min($excess * $pointsPerExcess, $weight);
 
         FraudFlag::firstOrCreate(
             [
@@ -88,12 +90,13 @@ class FraudScoringService
             [
                 'hcp_id'      => $claim->hcp_id,
                 'enrollee_id' => $claim->enrollee_id,
-                'flag_score'  => $flagScore,
+                'flag_score'  => round($flagScore, 2),
                 'description' => "HCP submitted {$count} claims for this enrollee in the same month (threshold: {$threshold}).",
                 'details'     => [
                     'monthly_count' => $count,
                     'threshold'     => $threshold,
                     'month'         => $windowStart->format('F Y'),
+                    'weight_used'   => $weight,
                 ],
                 'status'      => 'open',
             ]
@@ -107,7 +110,8 @@ class FraudScoringService
      */
     protected function scoreEnrolleeUsage(Claim $claim): float
     {
-        $highCostThreshold = config('fraud.high_cost_enrollee_threshold', 2000000);
+        $highCostThreshold = SystemSetting::get('fraud.high_cost_enrollee_threshold', 2000000);
+        $weight = SystemSetting::get('fraud.weight_high_cost', 20); // ← ADD THIS
 
         $annualTotal = Claim::withoutGlobalScopes()
             ->where('enrollee_id', $claim->enrollee_id)
@@ -122,9 +126,9 @@ class FraudScoringService
             return 0; // Under 80% of threshold — no flag
         }
 
-        // Scale 0–10 based on how far over they are
+        // Scale 0–weight based on how far over they are
         $ratio = min($annualTotal / $highCostThreshold, 2.0);
-        $score = ($ratio - 0.8) / 1.2 * 10;
+        $score = ($ratio - 0.8) / 1.2 * $weight;
 
         FraudFlag::firstOrCreate(
             [
@@ -145,6 +149,7 @@ class FraudScoringService
                     'annual_total'        => $annualTotal,
                     'threshold'           => $highCostThreshold,
                     'percentage_consumed' => round(($annualTotal / $highCostThreshold) * 100, 1),
+                    'weight_used'         => $weight,
                 ],
                 'status' => 'open',
             ]
@@ -160,10 +165,14 @@ class FraudScoringService
     protected function scoreProviderDeviation(Claim $claim): float
     {
         // Get HCP's average claim amount over last 6 months
+        $baselineMonths = SystemSetting::get('fraud.provider_baseline_months', 6);
+        $costSpikeMultiplier = SystemSetting::get('fraud.cost_spike_multiplier', 3.0);
+        $weight = SystemSetting::get('fraud.weight_cost_spike', 10); // ← ADD THIS
+
         $avgClaimAmount = Claim::withoutGlobalScopes()
             ->where('hcp_id', $claim->hcp_id)
             ->where('id', '!=', $claim->id)
-            ->where('service_date', '>=', now()->subMonths(6))
+            ->where('service_date', '>=', now()->subMonths($baselineMonths))
             ->whereNotIn('status', ['rejected', 'reversed'])
             ->avg('total_amount_claimed');
 
@@ -173,12 +182,12 @@ class FraudScoringService
 
         $deviationRatio = $claim->total_amount_claimed / $avgClaimAmount;
 
-        // If this claim is > 3x the HCP's typical claim, flag it
-        if ($deviationRatio < 3.0) {
-            return 0;
+        if ($deviationRatio < $costSpikeMultiplier) {
+            return 0; 
         }
 
-        $score = min(($deviationRatio - 3.0) * 2, 10);
+        // Scale based on weight
+        $score = min(($deviationRatio - $costSpikeMultiplier) * ($weight / 2), $weight);
 
         FraudFlag::firstOrCreate(
             [
@@ -190,15 +199,19 @@ class FraudScoringService
                 'enrollee_id' => $claim->enrollee_id,
                 'flag_score'  => round($score, 2),
                 'description' => sprintf(
-                    'Claim amount ₦%s is %.1fx the HCP average (₦%s) over last 6 months.',
+                    'Claim amount ₦%s is %.1fx the HCP average (₦%s) over last %d months.',
                     number_format($claim->total_amount_claimed, 2),
                     $deviationRatio,
-                    number_format($avgClaimAmount, 2)
+                    number_format($avgClaimAmount, 2),
+                    $baselineMonths
                 ),
                 'details'     => [
-                    'claim_amount'  => $claim->total_amount_claimed,
-                    'hcp_avg'       => $avgClaimAmount,
-                    'deviation_x'   => round($deviationRatio, 2),
+                    'claim_amount'     => $claim->total_amount_claimed,
+                    'hcp_avg'          => $avgClaimAmount,
+                    'deviation_x'      => round($deviationRatio, 2),
+                    'baseline_months'  => $baselineMonths,
+                    'multiplier_used'  => $costSpikeMultiplier,
+                    'weight_used'      => $weight,
                 ],
                 'status' => 'open',
             ]
@@ -209,8 +222,77 @@ class FraudScoringService
 
     protected function scoreHighCostEnrollee(Claim $claim): float
     {
-        // Covered in scoreEnrolleeUsage — no double scoring needed here
-        return 0;
+        // This is covered in scoreEnrolleeUsage, but we can add a provider anomaly check here
+        $weight = SystemSetting::get('fraud.weight_provider_anomaly', 10); // ← ADD THIS
+        
+        // Check if this provider has unusual patterns with this enrollee
+        $providerAnomalyScore = $this->checkProviderAnomaly($claim, $weight);
+        
+        return $providerAnomalyScore;
+    }
+
+    /**
+     * Additional check for provider anomalies
+     */
+    protected function checkProviderAnomaly(Claim $claim, float $weight): float
+    {
+        // Example: Check if this HCP is billing unusually high for this specific procedure
+        // This is a placeholder - implement based on your business logic
+        
+        $procedureCode = $claim->procedure_code ?? null;
+        if (!$procedureCode) {
+            return 0;
+        }
+        
+        // Get average for this procedure from this HCP
+        $avgProcedureCost = Claim::withoutGlobalScopes()
+            ->where('hcp_id', $claim->hcp_id)
+            ->where('procedure_code', $procedureCode)
+            ->where('id', '!=', $claim->id)
+            ->where('service_date', '>=', now()->subMonths(12))
+            ->avg('total_amount_claimed');
+            
+        if (!$avgProcedureCost || $avgProcedureCost == 0) {
+            return 0;
+        }
+        
+        $deviationRatio = $claim->total_amount_claimed / $avgProcedureCost;
+        $anomalyThreshold = SystemSetting::get('fraud.provider_anomaly_threshold', 2.5);
+        
+        if ($deviationRatio < $anomalyThreshold) {
+            return 0;
+        }
+        
+        $score = min(($deviationRatio - $anomalyThreshold) * ($weight / 2), $weight);
+        
+        FraudFlag::firstOrCreate(
+            [
+                'claim_id'  => $claim->id,
+                'flag_type' => 'provider_anomaly',
+            ],
+            [
+                'hcp_id'      => $claim->hcp_id,
+                'enrollee_id' => $claim->enrollee_id,
+                'flag_score'  => round($score, 2),
+                'description' => sprintf(
+                    'Procedure %s cost is %.1fx the HCP average (₦%s).',
+                    $procedureCode,
+                    $deviationRatio,
+                    number_format($avgProcedureCost, 2)
+                ),
+                'details'     => [
+                    'procedure_code'   => $procedureCode,
+                    'claim_amount'     => $claim->total_amount_claimed,
+                    'hcp_avg'          => $avgProcedureCost,
+                    'deviation_x'      => round($deviationRatio, 2),
+                    'threshold'        => $anomalyThreshold,
+                    'weight_used'      => $weight,
+                ],
+                'status' => 'open',
+            ]
+        );
+        
+        return round($score, 2);
     }
 
     protected function persistDynamicFlags(Claim $claim, float $finalScore): void

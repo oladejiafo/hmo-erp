@@ -702,12 +702,12 @@ function HistoryTab() {
 
     const { data, isLoading, error, refetch } = useQuery({
         queryKey: ['reports', { typeFilter, statusFilter }],
-        queryFn: () => client.get('/reports', { params: { report_type: typeFilter||undefined, status: statusFilter||undefined } }),
+        queryFn: () => client.get('/reports/generated', { params: { report_type: typeFilter||undefined, status: statusFilter||undefined } }),
         refetchInterval: 10_000,  // poll while any are generating
     });
-
-    const reports = data?.data?.data ?? data?.data ?? [];
-
+    console.log('History data:', data);
+    // const reports = data?.data?.data ?? data?.data ?? [];
+    const reports = data?.data?.data?.data ?? data?.data?.data ?? data?.data ?? [];
     if (error) return <ErrorAlert error={error} onRetry={refetch}/>;
 
     return (
@@ -810,7 +810,7 @@ function SchedulesTab() {
         queryFn: () => client.get('/reports/schedules'),
     });
 
-    const schedules  = data?.data?.data ?? data?.data ?? [];
+    const schedules  = data?.data?.data?.data ?? data?.data?.data ?? data?.data ?? [];
 
     const updateMutation = useMutation({
         mutationFn: ({ reportType, payload }) => client.put(`/reports/schedules/${reportType}`, payload),
