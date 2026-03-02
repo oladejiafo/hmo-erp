@@ -7,21 +7,22 @@ Extracts structured fields from a claim document image or PDF.
 Uses Claude's vision capabilities (primary) or GPT-4o (fallback if configured).
 
 Input:
-    file_base64  Base64-encoded file content
-    mime_type    application/pdf | image/jpeg | image/png
-    claim_id     Optional — for context in the prompt
+    filename      Original filename
+    content_type  application/pdf | image/jpeg | image/png
+    content       Base64-encoded file content
+    claim_id      Optional — for context in the prompt
 
 Output:
-    patient_name     str
-    date_of_service  str  (ISO date YYYY-MM-DD if parseable)
-    diagnosis        str
-    procedures       list of { code, name, amount }
-    total_amount     float
-    provider_name    str
-    provider_code    str
-    raw_text         str  (best-effort full text extraction)
-    confidence       int  (0-100)
-    fields_found     list of field names successfully extracted
+    patient_name      str
+    service_date      str  (ISO date YYYY-MM-DD if parseable)
+    diagnosis         str
+    items             list of { service, quantity, price }
+    total_amount      float
+    provider_name     str
+    provider_code     str
+    provider_address  str
+    raw_text          str  (best-effort full text extraction)
+    confidence_scores dict (per-field confidence 0-100)
 """
 
 import base64
@@ -32,217 +33,138 @@ from typing import Optional
 from fastapi import APIRouter
 from pydantic import BaseModel
 
-# from routers._client import call_claude, claude_client, claude_model, openai_client
-from routers._client import claude_client, claude_model, openai_client
+from routers._client import call_vision
+
 logger = logging.getLogger("ai-microservice.ocr")
 router = APIRouter()
 
 
 class OcrRequest(BaseModel):
-    file_base64:  str
-    mime_type:    Optional[str] = "application/pdf"
+    filename:     str
+    content_type: str
+    content:      str  # base64-encoded
     claim_id:     Optional[int] = None
 
 
-class ProcedureItem(BaseModel):
-    code:   Optional[str] = None
-    name:   Optional[str] = None
-    amount: Optional[float] = None
+class OcrItem(BaseModel):
+    service:  str
+    quantity: Optional[int] = 1
+    price:    Optional[float] = None
 
 
 class OcrResponse(BaseModel):
-    patient_name:    Optional[str] = None
-    date_of_service: Optional[str] = None
-    diagnosis:       Optional[str] = None
-    procedures:      list = []
-    total_amount:    Optional[float] = None
-    provider_name:   Optional[str] = None
-    provider_code:   Optional[str] = None
-    raw_text:        str = ""
-    confidence:      int = 0
-    fields_found:    list = []
+    patient_name:      Optional[str] = None
+    service_date:      Optional[str] = None
+    diagnosis:         Optional[str] = None
+    items:             list[OcrItem] = []
+    total_amount:      Optional[float] = None
+    provider_name:     Optional[str] = None
+    provider_code:     Optional[str] = None
+    provider_address:  Optional[str] = None
+    raw_text:          Optional[str] = None
+    confidence_scores: dict = {}
 
 
-OCR_SYSTEM = """
-You are a medical document OCR specialist for a Nigerian HMO.
+SYSTEM_PROMPT = """
+You are an OCR extraction engine for a Nigerian HMO claims department.
+Extract all structured data from this medical bill or claim document.
 
-Extract structured information from the claim document and return a JSON object:
+Return ONLY a JSON object with these fields (use null if not found):
 {
-  "patient_name":    "Full name as it appears on the document",
-  "date_of_service": "YYYY-MM-DD format if possible, else as written",
-  "diagnosis":       "Primary diagnosis or chief complaint",
-  "procedures":      [{"code": "SVC code or null", "name": "procedure name", "amount": numeric or null}],
-  "total_amount":    numeric value in Naira (no commas or currency symbols),
-  "provider_name":   "Hospital/clinic name",
-  "provider_code":   "NHIA code or HCP code if visible",
-  "raw_text":        "Complete extracted text from the document",
-  "confidence":      integer 0-100 (how confident you are in the extraction)
+  "patient_name":      "full name of patient",
+  "service_date":      "date of service in YYYY-MM-DD format",
+  "diagnosis":         "primary diagnosis or presenting complaint",
+  "provider_name":     "name of hospital/clinic/pharmacy",
+  "provider_code":     "HCP code or provider ID if visible",
+  "provider_address":  "address of provider",
+  "total_amount":      numeric total amount in naira (no currency symbol, no commas),
+  "items": [
+    { "service": "item/service name", "quantity": integer, "price": numeric }
+  ],
+  "raw_text": "complete extracted text from the document",
+  "confidence_scores": {
+    "patient_name": 0-100,
+    "total_amount": 0-100,
+    "service_date": 0-100,
+    "provider_name": 0-100,
+    "items": 0-100
+  }
 }
 
-Extraction tips:
-- Nigerian hospital receipts often list drug names, consultation fees, lab costs separately
-- Dates may be written as DD/MM/YYYY — convert to YYYY-MM-DD
-- Amounts are in Naira (₦) — extract as plain numbers
-- If a field is not present, set it to null
+Important:
+- Amounts should be plain numbers (e.g. 45000, not ₦45,000)
+- Dates must be YYYY-MM-DD (convert DD/MM/YYYY as needed)
+- Include ALL line items from the bill
 - Return ONLY valid JSON — no preamble, no markdown fences
 """
 
 
 @router.post("/ocr", response_model=OcrResponse)
-async def ocr(req: OcrRequest):
+async def ocr_document(req: OcrRequest):
     """
     Run OCR on a claim document using Claude Vision.
     Falls back to GPT-4o Vision if Claude is unavailable.
     """
-    # Validate and decode base64
+    # Validate base64 and size
     try:
-        raw_bytes = base64.b64decode(req.file_base64)
+        raw_bytes = base64.b64decode(req.content)
         if len(raw_bytes) > 20 * 1024 * 1024:  # 20MB limit
             return OcrResponse(
-                raw_text="",
-                confidence=0,
-                fields_found=[],
+                raw_text="Document too large (max 20MB)",
+                confidence_scores={},
             )
     except Exception as e:
         logger.error(f"Base64 decode failed: {e}")
-        return OcrResponse(raw_text="", confidence=0, fields_found=[])
+        return OcrResponse(
+            raw_text="Invalid base64 encoding",
+            confidence_scores={},
+        )
 
     # Determine media type for vision API
-    media_type = req.mime_type or "application/pdf"
+    media_type = req.content_type
     if media_type not in ("image/jpeg", "image/png", "image/gif", "image/webp", "application/pdf"):
         media_type = "image/jpeg"  # fallback
 
-    result = await _ocr_with_claude(req.file_base64, media_type, req.claim_id)
+    # Add claim_id context if provided
+    user_message = "Extract all data from this claim document."
+    if req.claim_id:
+        user_message = f"Extract all data from claim document #{req.claim_id}."
 
-    if not result and openai_client:
-        logger.info("Claude OCR failed — trying GPT-4o fallback")
-        result = await _ocr_with_openai(req.file_base64, media_type)
+    result = await call_vision(
+        system=SYSTEM_PROMPT,
+        user_message=user_message,
+        image_base64=req.content,
+        media_type=media_type,
+        max_tokens=1500,
+    )
 
     if not result:
-        return OcrResponse(raw_text="", confidence=0, fields_found=[])
+        return OcrResponse(
+            raw_text="OCR service unavailable. Please process this document manually.",
+            confidence_scores={},
+        )
 
-    # Determine which fields were successfully extracted
-    fields_found = [
-        key for key in ("patient_name", "date_of_service", "diagnosis",
-                        "total_amount", "provider_name", "provider_code")
-        if result.get(key) is not None
-    ]
+    # Parse items
+    items = []
+    for i in result.get("items", []):
+        items.append(OcrItem(
+            service=i.get("service", ""),
+            quantity=i.get("quantity", 1),
+            price=_parse_float(i.get("price")),
+        ))
 
     return OcrResponse(
         patient_name=result.get("patient_name"),
-        date_of_service=result.get("date_of_service"),
+        service_date=result.get("service_date"),
         diagnosis=result.get("diagnosis"),
-        procedures=result.get("procedures") or [],
+        items=items,
         total_amount=_parse_float(result.get("total_amount")),
         provider_name=result.get("provider_name"),
         provider_code=result.get("provider_code"),
-        raw_text=result.get("raw_text") or "",
-        confidence=int(result.get("confidence") or 0),
-        fields_found=fields_found,
+        provider_address=result.get("provider_address"),
+        raw_text=result.get("raw_text"),
+        confidence_scores=result.get("confidence_scores", {}),
     )
-
-
-async def _ocr_with_claude(file_b64: str, media_type: str, claim_id: int | None) -> dict | None:
-    """Use Claude Vision for OCR."""
-    if not claude_client:
-        return None
-
-    import anthropic
-
-    try:
-        # For PDFs, Claude supports document blocks; for images, image blocks
-        if media_type == "application/pdf":
-            content_block = {
-                "type": "document",
-                "source": {
-                    "type": "base64",
-                    "media_type": "application/pdf",
-                    "data": file_b64,
-                },
-            }
-        else:
-            content_block = {
-                "type": "image",
-                "source": {
-                    "type": "base64",
-                    "media_type": media_type,
-                    "data": file_b64,
-                },
-            }
-
-        response = await claude_client.messages.create(
-            model=claude_model,
-            max_tokens=1500,
-            system=OCR_SYSTEM,
-            messages=[{
-                "role": "user",
-                "content": [
-                    content_block,
-                    {
-                        "type": "text",
-                        "text": f"Extract all structured fields from this claim document.{' (Claim ID: ' + str(claim_id) + ')' if claim_id else ''}",
-                    },
-                ],
-            }],
-        )
-
-        text = response.content[0].text if response.content else ""
-        return _parse_json_response(text)
-
-    except Exception as e:
-        logger.error(f"Claude Vision OCR error: {e}", exc_info=True)
-        return None
-
-
-async def _ocr_with_openai(file_b64: str, media_type: str) -> dict | None:
-    """GPT-4o Vision fallback for OCR."""
-    if not openai_client:
-        return None
-
-    try:
-        # GPT-4o only supports image types, not PDF directly
-        if media_type == "application/pdf":
-            logger.info("PDF OCR via OpenAI not supported — skipping")
-            return None
-
-        response = await openai_client.chat.completions.create(
-            model="gpt-4o",
-            max_tokens=1500,
-            messages=[{
-                "role": "user",
-                "content": [
-                    {
-                        "type": "image_url",
-                        "image_url": {"url": f"data:{media_type};base64,{file_b64}"},
-                    },
-                    {
-                        "type": "text",
-                        "text": OCR_SYSTEM + "\n\nExtract all structured fields from this claim document.",
-                    },
-                ],
-            }],
-        )
-
-        text = response.choices[0].message.content if response.choices else ""
-        return _parse_json_response(text)
-
-    except Exception as e:
-        logger.error(f"OpenAI Vision OCR error: {e}", exc_info=True)
-        return None
-
-
-def _parse_json_response(text: str) -> dict | None:
-    """Parse JSON from AI response, stripping markdown fences."""
-    import json
-    cleaned = text.strip()
-    if cleaned.startswith("```"):
-        lines   = cleaned.split("\n")
-        cleaned = "\n".join(lines[1:-1]) if len(lines) > 2 else cleaned
-    try:
-        return json.loads(cleaned)
-    except json.JSONDecodeError:
-        logger.error(f"OCR JSON parse failed. Raw: {text[:300]}")
-        return None
 
 
 def _parse_float(val) -> float | None:

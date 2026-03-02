@@ -54,7 +54,7 @@ const navItems = [
         icon: ShieldCheck,
         path: "/pre-auth",
         permission: "pa.view",
-        shortLabel: "Pre-Auth",
+        shortLabel: "Pre-Auth Code",
         group: "core",
     },
     {

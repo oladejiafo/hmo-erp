@@ -11,31 +11,54 @@ import { PageHeader, LoadingSpinner, ErrorAlert } from '../../components/ui/inde
 import { useAuth } from '../../contexts/AuthContext';
 import AIChatSidebar from '../../components/ai/AIChatSidebar';
 
+// Add these constants at the top of the file, right after the imports
+const AI_BASE_URL = 'http://127.0.0.1:8004';
+const AI_API_KEY = 'd3ceebd9d94416962a39b896806fc0df69010108396630329cb3de1987536e18';
+
 // API functions
 const api = {
-    classifyDocument: (data) => fetch('/api/ai/classify-document', {
+    summarizeReport: (data) => fetch(`${AI_BASE_URL}/summarise-report`, {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
+        headers: { 
+            'Content-Type': 'application/json',
+            'X-AI-Key': AI_API_KEY
+        },
         body: JSON.stringify(data),
     }).then(res => res.json()),
 
-    smartRoute: (data) => fetch('/api/ai/smart-route', {
+    classifyDocument: (data) => fetch(`${AI_BASE_URL}/classify`, {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
+        headers: { 
+            'Content-Type': 'application/json',
+            'X-AI-Key': AI_API_KEY
+        },
         body: JSON.stringify(data),
     }).then(res => res.json()),
 
-    ocrDocument: (formData) => fetch('/api/ai/ocr-document', {
+    smartRoute: (data) => fetch(`${AI_BASE_URL}/route`, {
         method: 'POST',
+        headers: { 
+            'Content-Type': 'application/json',
+            'X-AI-Key': AI_API_KEY
+        },
+        body: JSON.stringify(data),
+    }).then(res => res.json()),
+
+    ocrDocument: (formData) => fetch(`${AI_BASE_URL}/ocr`, {
+        method: 'POST',
+        headers: { 
+            'X-AI-Key': AI_API_KEY
+        },
         body: formData,
     }).then(res => res.json()),
 
-    fraudClusters: () => fetch('/api/ai/fraud-clusters').then(res => res.json()),
-
-    summarizeReport: (data) => fetch('/api/ai/summarize-report', {
+    fraudClusters: () => fetch(`${AI_BASE_URL}/fraud-cluster`, {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(data),
+        headers: { 
+            'Content-Type': 'application/json',
+            'X-AI-Key': AI_API_KEY
+        },
+        body: JSON.stringify({}),
     }).then(res => res.json()),
 };
 

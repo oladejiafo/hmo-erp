@@ -30,9 +30,13 @@ export default function AIChatSidebar({ isOpen, onClose }) {
         setLoading(true);
 
         try {
-            const response = await fetch('/api/ai/chat', {
+            // CALL AI SERVICE DIRECTLY - bypass Laravel
+            const response = await fetch('http://127.0.0.1:8004/chat', {
                 method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
+                headers: { 
+                    'Content-Type': 'application/json',
+                    'X-AI-Key': 'd3ceebd9d94416962a39b896806fc0df69010108396630329cb3de1987536e18'
+                },
                 body: JSON.stringify({
                     messages: [...messages, userMessage],
                     persona: persona,
@@ -45,9 +49,10 @@ export default function AIChatSidebar({ isOpen, onClose }) {
                 content: data.message || 'Sorry, I encountered an error.',
             }]);
         } catch (error) {
+            console.error('Chat error:', error);
             setMessages(prev => [...prev, {
                 role: 'assistant',
-                content: 'I apologize, but the AI service is currently unavailable. Please try again later.',
+                content: 'Service unavailable. Please try again.',
             }]);
         } finally {
             setLoading(false);

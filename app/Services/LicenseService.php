@@ -102,15 +102,18 @@ class LicenseService
     {
         $cache  = LicenseCache::instance();
         $status = $this->resolveStatus();
-
+        
+        // Get license key from cache if available, otherwise from config
+        $licenseKey = $cache->license_key ?? config('licensing.license_key');
+    
         return [
             'status'                  => $status,
             'is_restricted'           => $status === 'restricted',
             'is_grace'                => $status === 'grace',
             'plan'                    => $cache->plan ?? 'No license data',
             'client_name'             => $cache->client_name,
-            'license_key'             => $cache->license_key
-                ? $this->maskKey($cache->license_key)
+            'license_key'             => $licenseKey
+                ? $this->maskKey($licenseKey)
                 : null,
             'license_expires_at'      => $cache->license_expires_at?->toDateString(),
             'grace_ends_at'           => $cache->grace_ends_at?->toDateString(),

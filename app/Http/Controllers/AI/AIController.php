@@ -26,7 +26,7 @@ class AIController extends Controller
     /**
      * Forward request to AI microservice with graceful fallback
      */
-    protected function forwardRequest(string $endpoint, array $payload, array $fallback): JsonResponse
+    protected function forwardRequestxx(string $endpoint, array $payload, array $fallback): JsonResponse
     {
         try {
             $response = Http::timeout($this->timeout)
@@ -53,7 +53,46 @@ class AIController extends Controller
         // Graceful fallback
         return response()->json($fallback);
     }
-
+    protected function forwardRequest(string $endpoint, array $payload, array $fallback): JsonResponse
+    {
+        // DEBUG: Log what we're sending
+        Log::info('AI Request', [
+            'url' => $this->serviceUrl . $endpoint,
+            'key_present' => !empty($this->serviceKey),
+            'key_prefix' => substr($this->serviceKey, 0, 10) . '...',
+            'payload_keys' => array_keys($payload),
+        ]);
+    
+        try {
+            $response = Http::timeout($this->timeout)
+                ->withHeaders(['X-AI-Key' => $this->serviceKey])
+                ->post($this->serviceUrl . $endpoint, $payload);
+    
+            // DEBUG: Log response status
+            Log::info('AI Response', [
+                'status' => $response->status(),
+                'body_preview' => substr($response->body(), 0, 200),
+            ]);
+    
+            if ($response->successful()) {
+                return response()->json($response->json());
+            }
+            
+            Log::warning('AI service error', [
+                'endpoint' => $endpoint,
+                'status' => $response->status(),
+                'body' => $response->body()
+            ]);
+            
+        } catch (\Exception $e) {
+            Log::error('AI service unavailable', [
+                'endpoint' => $endpoint,
+                'error' => $e->getMessage()
+            ]);
+        }
+    
+        return response()->json($fallback);
+    }
     public function classifyDocument(Request $request): JsonResponse
     {
         $request->validate([

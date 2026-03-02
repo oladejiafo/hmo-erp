@@ -3,14 +3,12 @@ routers/route.py
 ─────────────────
 POST /route
 
-Suggests which processing queue a claim should be routed to.
-Considers claim type, risk score, amount, PA status, and HCP type.
+Recommends a processing queue for a claim based on risk score, amount,
+PA status, fraud flags, and HCP tier.
 
-Queues:
-    standard        Normal claims officer review
-    medical_review  Requires a medical officer sign-off
-    supervisor      High-risk / disputed claims
-    finance         Finance-only approvals (large but clean claims)
+Input:  { claim_amount, claim_type, risk_score, pa_status,
+          fraud_flags, hcp_tier, thresholds }
+Output: { queue, priority, eta, reasoning, flags }
 """
 
 import logging
@@ -19,56 +17,58 @@ from typing import Optional
 from fastapi import APIRouter
 from pydantic import BaseModel
 
-# from routers._client import call_claude
 from routers._client import call_ai
 
 logger = logging.getLogger("ai-microservice.route")
 router = APIRouter()
 
+router = APIRouter()
+
+
+class ThresholdsModel(BaseModel):
+    high_value:  float = 500_000
+    quarantine:  float = 70
+
 
 class RouteRequest(BaseModel):
-    claim_id:    int
-    claim_type:  Optional[str]  = None
-    amount:      Optional[float]= None
-    risk_score:  Optional[float]= None
-    hcp_type:    Optional[str]  = None
-    plan_tier:   Optional[str]  = None
-    fraud_flags: Optional[int]  = 0
-    has_pa:      Optional[bool] = False
+    claim_amount: float
+    claim_type:   str
+    risk_score:   float = 0
+    pa_status:    Optional[str] = None
+    fraud_flags:  int = 0
+    hcp_tier:     Optional[str] = None
+    thresholds:   Optional[ThresholdsModel] = None
 
 
 class RouteResponse(BaseModel):
-    suggested_queue: str
-    reason:          str
-    urgency:         str   # low | normal | high | critical
-    pa_required:     bool
-    estimated_tat:   int   # business days
+    queue:     str   # standard | medical_review | supervisor | finance | auto_approve
+    priority:  str   # low | normal | high | urgent
+    eta:       str
+    reasoning: str
+    flags:     list[str] = []
 
 
 SYSTEM_PROMPT = """
-You are a claims routing expert for a Nigerian HMO.
+You are a claims routing engine for a Nigerian HMO. Based on the provided claim data,
+recommend the appropriate processing queue and priority level.
 
-Given claim metadata, determine the optimal processing queue and return a JSON object:
+Queue definitions:
+- auto_approve:   Low-value, low-risk, clean claim — approve without human review
+- standard:       Normal claims officer queue (24-48 hour SLA)
+- medical_review: Requires medical director sign-off (PA issues, complex diagnosis)
+- supervisor:     Elevated risk score or fraud flags — supervisor must review
+- finance:        High-value claims exceeding major financial thresholds
+
+Priority levels: low | normal | high | urgent
+
+Return ONLY a JSON object:
 {
-  "suggested_queue": one of ["standard", "medical_review", "supervisor", "finance"],
-  "reason":          clear 1-sentence explanation for the routing decision,
-  "urgency":         one of ["low", "normal", "high", "critical"],
-  "pa_required":     true if PA is needed but not yet obtained,
-  "estimated_tat":   integer — estimated turnaround in business days
+  "queue":     "queue name from above",
+  "priority":  "priority level",
+  "eta":       "human-readable processing time e.g. '24-48 hours' or 'Same day'",
+  "reasoning": "brief explanation of routing decision",
+  "flags":     ["list any risk factors that influenced routing"]
 }
-
-Routing rules:
-- supervisor:     risk_score >= 70, OR fraud_flags >= 3, OR amount > ₦500k without PA
-- medical_review: claim_type in [inpatient, surgical, maternity, emergency, chronic_care]
-                  OR amount > ₦200k
-- finance:        amount > ₦300k AND risk_score < 40 AND no fraud flags
-- standard:       everything else
-
-Urgency rules:
-- critical: emergency claim type OR risk_score >= 90
-- high:     risk_score >= 70 OR amount > ₦500k
-- normal:   most claims
-- low:      amount < ₦5k AND risk_score < 30
 
 Return ONLY valid JSON — no preamble, no markdown.
 """
@@ -76,54 +76,54 @@ Return ONLY valid JSON — no preamble, no markdown.
 
 @router.post("/route", response_model=RouteResponse)
 async def smart_route(req: RouteRequest):
+    thresholds = req.thresholds or ThresholdsModel()
+
     user_message = f"""
-Claim ID:     {req.claim_id}
-Claim Type:   {req.claim_type or 'unknown'}
-Amount:       ₦{req.amount:,.2f if req.amount else '—'}
-Risk Score:   {req.risk_score or 0}/100
-HCP Type:     {req.hcp_type or 'unknown'}
-Plan Tier:    {req.plan_tier or 'unknown'}
-Fraud Flags:  {req.fraud_flags or 0}
-PA Obtained:  {'Yes' if req.has_pa else 'No'}
-""".strip()
+Route this claim:
+- Amount: ₦{req.claim_amount:,.0f}
+- Type: {req.claim_type}
+- Risk Score: {req.risk_score}/100
+- PA Status: {req.pa_status or 'none'}
+- Fraud Flags: {req.fraud_flags}
+- HCP Tier: {req.hcp_tier or 'unknown'}
+- High-value threshold: ₦{thresholds.high_value:,.0f}
+- Auto-quarantine threshold: {thresholds.quarantine} risk score
+"""
 
     result = await call_ai(
         system=SYSTEM_PROMPT,
         user_message=user_message,
-        max_tokens=256,
+        max_tokens=384,
         expect_json=True,
     )
 
     if not result:
-        # Rule-based fallback (mirrors Laravel AIController fallback)
-        queue   = "standard"
-        reason  = "AI unavailable — rule-based fallback"
-        urgency = "normal"
-
-        if req.risk_score and req.risk_score >= 70:
-            queue   = "supervisor"
-            reason  = "High fraud risk score (≥70)"
-            urgency = "high"
-        elif req.amount and req.amount > 500_000:
-            queue   = "medical_review"
-            reason  = "High-value claim (>₦500k)"
-            urgency = "high"
-        elif req.claim_type in ("inpatient", "surgical", "maternity", "emergency"):
-            queue  = "medical_review"
-            reason = f"Claim type '{req.claim_type}' requires medical review"
-
+        # Rule-based fallback
+        queue = _rule_based_queue(req, thresholds)
         return RouteResponse(
-            suggested_queue=queue,
-            reason=reason,
-            urgency=urgency,
-            pa_required=not req.has_pa and req.claim_type in ("inpatient", "surgical", "maternity"),
-            estimated_tat=1 if urgency in ("critical", "high") else 3,
+            queue=queue,
+            priority="normal",
+            eta="24-48 hours",
+            reasoning="AI unavailable — rule-based routing applied.",
+            flags=["ai_fallback"],
         )
 
     return RouteResponse(
-        suggested_queue=result.get("suggested_queue", "standard"),
-        reason=result.get("reason", ""),
-        urgency=result.get("urgency", "normal"),
-        pa_required=bool(result.get("pa_required", False)),
-        estimated_tat=int(result.get("estimated_tat", 3)),
+        queue=result.get("queue", "standard"),
+        priority=result.get("priority", "normal"),
+        eta=result.get("eta", "24-48 hours"),
+        reasoning=result.get("reasoning", ""),
+        flags=result.get("flags", []),
     )
+
+
+def _rule_based_queue(req: RouteRequest, t: ThresholdsModel) -> str:
+    if req.risk_score >= t.quarantine:
+        return "supervisor"
+    if req.claim_amount > 2_000_000:
+        return "finance"
+    if req.claim_amount > t.high_value or req.fraud_flags > 0:
+        return "medical_review"
+    if req.claim_amount < 15_000 and req.risk_score < 20 and req.fraud_flags == 0:
+        return "auto_approve"
+    return "standard"
