@@ -1,28 +1,25 @@
 import React, { useState, useRef, useEffect } from 'react';
 import { X, Send, Bot, User, AlertCircle } from 'lucide-react';
+import aiApi from '../../api/aiApi';
 
 export default function AIChatSidebar({ isOpen, onClose }) {
     const [messages, setMessages] = useState([
         {
             role: 'assistant',
-            content: 'Hello! I\'m your AI assistant. Ask me about claims, PA rules, NHIA regulations, or any HMO processes.',
+            content: "Hello! I'm your AI assistant. Ask me about claims, PA rules, NHIA regulations, or any HMO processes.",
         },
     ]);
-    const [input, setInput] = useState('');
+    const [input, setInput]     = useState('');
     const [loading, setLoading] = useState(false);
     const [persona, setPersona] = useState('staff');
-    const messagesEndRef = useRef(null);
-
-    const scrollToBottom = () => {
-        messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
-    };
+    const messagesEndRef        = useRef(null);
 
     useEffect(() => {
-        scrollToBottom();
+        messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
     }, [messages]);
 
     const sendMessage = async () => {
-        if (!input.trim()) return;
+        if (!input.trim() || loading) return;
 
         const userMessage = { role: 'user', content: input };
         setMessages(prev => [...prev, userMessage]);
@@ -30,29 +27,17 @@ export default function AIChatSidebar({ isOpen, onClose }) {
         setLoading(true);
 
         try {
-            // CALL AI SERVICE DIRECTLY - bypass Laravel
-            const response = await fetch('http://127.0.0.1:8004/chat', {
-                method: 'POST',
-                headers: { 
-                    'Content-Type': 'application/json',
-                    'X-AI-Key': 'd3ceebd9d94416962a39b896806fc0df69010108396630329cb3de1987536e18'
-                },
-                body: JSON.stringify({
-                    messages: [...messages, userMessage],
-                    persona: persona,
-                }),
-            });
-
-            const data = await response.json();
+            const data = await aiApi.chat([...messages, userMessage], persona);
             setMessages(prev => [...prev, {
                 role: 'assistant',
                 content: data.message || 'Sorry, I encountered an error.',
             }]);
         } catch (error) {
-            console.error('Chat error:', error);
             setMessages(prev => [...prev, {
                 role: 'assistant',
-                content: 'Service unavailable. Please try again.',
+                content: error.message?.includes('Session expired')
+                    ? 'Your session has expired. Please log in again.'
+                    : 'The AI assistant is temporarily unavailable. Please try again.',
             }]);
         } finally {
             setLoading(false);
@@ -62,9 +47,10 @@ export default function AIChatSidebar({ isOpen, onClose }) {
     if (!isOpen) return null;
 
     return (
-        <div className="position-fixed top-0 end-0 h-100 bg-white shadow-lg d-flex flex-column"
-             style={{ width: 400, zIndex: 1060, borderLeft: '1px solid #dee2e6' }}>
-
+        <div
+            className="position-fixed top-0 end-0 h-100 bg-white shadow-lg d-flex flex-column"
+            style={{ width: 400, zIndex: 1060, borderLeft: '1px solid #dee2e6' }}
+        >
             {/* Header */}
             <div className="d-flex align-items-center justify-content-between p-3 border-bottom">
                 <div className="d-flex align-items-center gap-2">
@@ -92,44 +78,58 @@ export default function AIChatSidebar({ isOpen, onClose }) {
             {/* Messages */}
             <div className="flex-grow-1 p-3 overflow-auto" style={{ backgroundColor: '#f8f9fa' }}>
                 {messages.map((msg, idx) => (
-                    <div key={idx} className={`d-flex mb-3 ${msg.role === 'user' ? 'justify-content-end' : 'justify-content-start'}`}>
+                    <div
+                        key={idx}
+                        className={`d-flex mb-3 ${msg.role === 'user' ? 'justify-content-end' : 'justify-content-start'}`}
+                    >
                         {msg.role === 'assistant' && (
-                            <div className="me-2">
-                                <div className="rounded-circle bg-primary d-flex align-items-center justify-content-center"
-                                     style={{ width: 28, height: 28 }}>
+                            <div className="me-2 flex-shrink-0">
+                                <div
+                                    className="rounded-circle bg-primary d-flex align-items-center justify-content-center"
+                                    style={{ width: 28, height: 28 }}
+                                >
                                     <Bot size={14} className="text-white" />
                                 </div>
                             </div>
                         )}
-                        <div className={`p-2 rounded-3 ${msg.role === 'user' ? 'bg-primary text-white' : 'bg-white border'}`}
-                             style={{ maxWidth: '80%', wordBreak: 'break-word' }}>
+
+                        <div
+                            className={`p-2 rounded-3 ${msg.role === 'user' ? 'bg-primary text-white' : 'bg-white border'}`}
+                            style={{ maxWidth: '80%', wordBreak: 'break-word', whiteSpace: 'pre-wrap' }}
+                        >
                             {msg.content}
                         </div>
+
                         {msg.role === 'user' && (
-                            <div className="ms-2">
-                                <div className="rounded-circle bg-secondary d-flex align-items-center justify-content-center"
-                                     style={{ width: 28, height: 28 }}>
+                            <div className="ms-2 flex-shrink-0">
+                                <div
+                                    className="rounded-circle bg-secondary d-flex align-items-center justify-content-center"
+                                    style={{ width: 28, height: 28 }}
+                                >
                                     <User size={14} className="text-white" />
                                 </div>
                             </div>
                         )}
                     </div>
                 ))}
-                
+
                 {loading && (
                     <div className="d-flex justify-content-start mb-3">
-                        <div className="me-2">
-                            <div className="rounded-circle bg-primary d-flex align-items-center justify-content-center"
-                                 style={{ width: 28, height: 28 }}>
+                        <div className="me-2 flex-shrink-0">
+                            <div
+                                className="rounded-circle bg-primary d-flex align-items-center justify-content-center"
+                                style={{ width: 28, height: 28 }}
+                            >
                                 <Bot size={14} className="text-white" />
                             </div>
                         </div>
-                        <div className="p-2 bg-white border rounded-3">
-                            <span className="spinner-border spinner-border-sm me-2" />Thinking...
+                        <div className="p-2 bg-white border rounded-3 text-muted">
+                            <span className="spinner-border spinner-border-sm me-2" />
+                            Thinking...
                         </div>
                     </div>
                 )}
-                
+
                 <div ref={messagesEndRef} />
             </div>
 

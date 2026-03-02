@@ -112,33 +112,40 @@ class AIController extends Controller
     public function smartRoute(Request $request): JsonResponse
     {
         $request->validate([
-            'claim_id' => 'required|exists:claims,id',
+            'claim_id' => 'required',   // ← remove exists:claims,id
         ]);
-
-        // Get claim data for context
+    
         $claim = Claim::with(['hcp', 'enrollee'])->find($request->claim_id);
-        
-        // Get dynamic thresholds from system settings
-        $highValueThreshold = SystemSetting::get('financial.ai_high_value_threshold', 500000);
+    
+        // Return a clear error if claim not found
+        if (!$claim) {
+            return response()->json([
+                'message' => "Claim #{$request->claim_id} not found in the system.",
+            ], 404);
+        }
+    
+        $highValueThreshold  = SystemSetting::get('financial.ai_high_value_threshold', 500000);
         $quarantineThreshold = SystemSetting::get('fraud.auto_quarantine_threshold', 70);
-        
+    
         $payload = [
             'claim_amount' => $claim->total_amount_claimed,
-            'claim_type' => $claim->claim_type,
-            'risk_score' => $claim->risk_score,
-            'pa_status' => $claim->pa_status,
-            'fraud_flags' => $claim->fraudFlags()->count(),
-            'hcp_tier' => $claim->hcp?->tier,
-            'thresholds' => [ // Include thresholds for context
-                'high_value' => $highValueThreshold,
-                'quarantine' => $quarantineThreshold,
+            'claim_type'   => $claim->claim_type,
+            'risk_score'   => $claim->risk_score,
+            'pa_status'    => $claim->pa_status,
+            'fraud_flags'  => $claim->fraudFlags()->count(),
+            'hcp_tier'     => $claim->hcp?->tier,
+            'thresholds'   => [
+                'high_value'  => $highValueThreshold,
+                'quarantine'  => $quarantineThreshold,
             ],
         ];
-
+    
         return $this->forwardRequest('/route', $payload, [
-            'queue' => $this->ruleBasedRouting($claim),
-            'eta' => '24-48 hours',
+            'queue'     => $this->ruleBasedRouting($claim),
+            'priority'  => 'normal',
+            'eta'       => '24-48 hours',
             'reasoning' => 'AI service unavailable. Using standard routing rules.',
+            'flags'     => [],
         ]);
     }
 
