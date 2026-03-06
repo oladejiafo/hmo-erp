@@ -3,7 +3,7 @@ import { useNavigate, useParams } from 'react-router-dom';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { toast } from 'react-toastify';
 import { ArrowLeft, Save, Shield } from 'lucide-react';
-import { fetchUserById, createUser, updateUser, fetchRoles, assignUserRoles } from '../../api/index';
+import { fetchUserById, createUser, updateUser, fetchRoles, assignUserRoles, fetchBranches } from '../../api/index';
 import { PageHeader, LoadingSpinner, ErrorAlert } from '../../components/ui/index';
 
 export default function UserFormPage() {
@@ -36,6 +36,13 @@ export default function UserFormPage() {
         queryFn: fetchRoles,
     });
 
+    // Fetch all branches
+    const { data: branchesData, isLoading: branchesLoading } = useQuery({
+        queryKey: ['branches'],
+        queryFn: fetchBranches,
+        enabled: true, // Force it to run
+    });
+
     // Load user data into form when available
     useEffect(() => {
         if (userData?.data?.data) {
@@ -57,6 +64,7 @@ export default function UserFormPage() {
     }, [userData]);
 
     const roles = rolesData?.data?.data || [];
+    const branches = branchesData?.data|| [];
 
     const createMutation = useMutation({
         mutationFn: createUser,
@@ -130,7 +138,7 @@ export default function UserFormPage() {
         );
     };
 
-    if ((isEditMode && userLoading) || rolesLoading) return <LoadingSpinner />;
+    if ((isEditMode && userLoading) || rolesLoading || branchesLoading) return <LoadingSpinner />;
 
     return (
         <div>
@@ -199,7 +207,11 @@ export default function UserFormPage() {
                                             required
                                         >
                                             <option value="">Select Branch</option>
-                                            {/* Add branch options here */}
+                                            {branches.map(branch => (
+                                                <option key={branch.id} value={branch.id}>
+                                                    {branch.name}
+                                                </option>
+                                            ))}
                                         </select>
                                     </div>
                                 </div>

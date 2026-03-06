@@ -39,4 +39,11 @@ return [
         'key' => env('AI_SERVICE_KEY'),
         'timeout' => env('AI_SERVICE_TIMEOUT', 30),
     ],
+
+    'anthropic' => [
+        'key' => env('ANTHROPIC_API_KEY'),
+    ],
+    'openai' => [
+        'key' => env('OPENAI_API_KEY', ''),
+    ],
 ];

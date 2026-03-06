@@ -42,7 +42,7 @@ class LicenseService
      *
      * Returns: 'valid' | 'grace' | 'restricted' | 'unlicensed'
      */
-    public function resolveStatus(): string
+    public function resolveStatusx(): string
     {
         $cache = LicenseCache::instance();
 
@@ -78,7 +78,58 @@ class LicenseService
         // (could be grace if they're in a grace period, or restricted)
         return $cache->status === 'valid' ? 'grace' : ($cache->status ?? 'restricted');
     }
-
+    public function resolveStatus(): string
+    {
+        $cache = LicenseCache::instance();
+    
+        // 1. Emergency token overrides everything
+        if ($this->emergencyTokenValid($cache)) {
+            return 'valid';
+        }
+    
+        // 2. No license key configured at all
+        $licenseKey = config('licensing.license_key');
+        if (! $licenseKey) {
+            return 'unlicensed';
+        }
+    
+        // 3. Valid cached token from licensing server
+        if ($cache->valid_until && now()->lt($cache->valid_until)) {
+            $status = $cache->status ?? 'restricted';
+            
+            // 🔴 FIX: Check if grace period has actually expired
+            if ($status === 'grace' && $cache->grace_ends_at) {
+                if (now()->gte($cache->grace_ends_at)) {
+                    return 'restricted';
+                }
+            }
+            
+            return $status;
+        }
+    
+        // 4. Cache expired — check consecutive failure history
+        if ($cache->consecutive_failures < self::MIN_FAILURES_BEFORE_GRACE) {
+            return 'grace';
+        }
+    
+        if ($cache->first_failure_at &&
+            now()->diffInHours($cache->first_failure_at) < self::MIN_FAILURE_HOURS) {
+            return 'grace';
+        }
+    
+        // 5. Enough failures have accumulated
+        $status = $cache->status === 'valid' ? 'grace' : ($cache->status ?? 'restricted');
+        
+        // 🔴 FIX: Double-check grace expiry
+        if ($status === 'grace' && $cache->grace_ends_at) {
+            if (now()->gte($cache->grace_ends_at)) {
+                return 'restricted';
+            }
+        }
+        
+        return $status;
+    }
+    
     /**
      * Returns true if the system is in restricted mode (write operations blocked).
      */

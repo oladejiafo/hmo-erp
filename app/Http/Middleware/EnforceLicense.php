@@ -45,7 +45,28 @@ class EnforceLicense
         $this->license = $license;
     }
 
-    public function handle(Request $request, Closure $next): Response
+    public function handle($request, $next)
+    {
+        // Skip license check for GET requests (read-only)
+        if ($request->isMethod('GET')) {
+            return $next($request);
+        }
+        
+        $status = app(LicenseService::class)->resolveStatus();
+        
+        // Block all write operations if restricted
+        if ($status === 'restricted') {
+            return response()->json([
+                'message' => 'System is in restricted mode due to license expiration. Please contact your administrator.',
+                'error' => 'license_restricted'
+            ], 403);
+        }
+        
+        // Allow writes during grace period
+        return $next($request);
+    }
+    
+    public function handlex(Request $request, Closure $next): Response
     {
         // Read-only methods are always allowed
         if (in_array($request->method(), ['GET', 'HEAD', 'OPTIONS'])) {

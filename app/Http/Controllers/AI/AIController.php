@@ -1,212 +1,100 @@
 <?php
-
 namespace App\Http\Controllers\AI;
 
 use App\Http\Controllers\Controller;
+use App\Services\AIService;
+use App\Models\Claim;
+use App\Models\Enrollee;
+use App\Models\FraudFlag;
 use Illuminate\Http\Request;
 use Illuminate\Http\JsonResponse;
-use Illuminate\Support\Facades\Http;
-use Illuminate\Support\Facades\Log;
-use App\Models\SystemSetting; // This is already added at the top ✓
-use App\Models\Claim; // Add this if not already imported
 
 class AIController extends Controller
 {
-    protected string $serviceUrl;
-    protected string $serviceKey;
-    protected int $timeout;
+    public function __construct(protected AIService $ai) {}
 
-    public function __construct()
-    {
-        $this->serviceUrl = config('services.ai.url', env('AI_SERVICE_URL', 'http://localhost:8001'));
-        $this->serviceKey = config('services.ai.key', env('AI_SERVICE_KEY'));
-        $this->timeout = config('services.ai.timeout', env('AI_SERVICE_TIMEOUT', 30));
-    }
-
-    /**
-     * Forward request to AI microservice with graceful fallback
-     */
-    protected function forwardRequestxx(string $endpoint, array $payload, array $fallback): JsonResponse
-    {
-        try {
-            $response = Http::timeout($this->timeout)
-                ->withHeaders(['X-AI-Key' => $this->serviceKey])
-                ->post($this->serviceUrl . $endpoint, $payload);
-
-            if ($response->successful()) {
-                return response()->json($response->json());
-            }
-            
-            Log::warning('AI service error', [
-                'endpoint' => $endpoint,
-                'status' => $response->status(),
-                'body' => $response->body()
-            ]);
-            
-        } catch (\Exception $e) {
-            Log::error('AI service unavailable', [
-                'endpoint' => $endpoint,
-                'error' => $e->getMessage()
-            ]);
-        }
-
-        // Graceful fallback
-        return response()->json($fallback);
-    }
-    protected function forwardRequest(string $endpoint, array $payload, array $fallback): JsonResponse
-    {
-        // DEBUG: Log what we're sending
-        Log::info('AI Request', [
-            'url' => $this->serviceUrl . $endpoint,
-            'key_present' => !empty($this->serviceKey),
-            'key_prefix' => substr($this->serviceKey, 0, 10) . '...',
-            'payload_keys' => array_keys($payload),
-        ]);
-    
-        try {
-            $response = Http::timeout($this->timeout)
-                ->withHeaders(['X-AI-Key' => $this->serviceKey])
-                ->post($this->serviceUrl . $endpoint, $payload);
-    
-            // DEBUG: Log response status
-            Log::info('AI Response', [
-                'status' => $response->status(),
-                'body_preview' => substr($response->body(), 0, 200),
-            ]);
-    
-            if ($response->successful()) {
-                return response()->json($response->json());
-            }
-            
-            Log::warning('AI service error', [
-                'endpoint' => $endpoint,
-                'status' => $response->status(),
-                'body' => $response->body()
-            ]);
-            
-        } catch (\Exception $e) {
-            Log::error('AI service unavailable', [
-                'endpoint' => $endpoint,
-                'error' => $e->getMessage()
-            ]);
-        }
-    
-        return response()->json($fallback);
-    }
     public function classifyDocument(Request $request): JsonResponse
     {
         $request->validate([
-            'claim_id' => 'sometimes|exists:claims,id',
-            'document_text' => 'required_without:claim_id|string',
+            'document_text' => 'required|string|min:10'
         ]);
-
-        return $this->forwardRequest('/classify', $request->all(), [
-            'claim_type' => 'Unknown',
-            'icd_codes' => [],
-            'pa_required' => false,
-            'confidence' => 0,
-            'reasoning' => 'AI service unavailable. Using fallback rules.',
-        ]);
+        
+        return response()->json(
+            $this->ai->classifyDocument($request->document_text)
+        );
     }
 
     public function smartRoute(Request $request): JsonResponse
     {
         $request->validate([
-            'claim_id' => 'required',   // ← remove exists:claims,id
+            'claim_id' => 'nullable|integer',
+            'claim_amount' => 'required_without:claim_id|numeric',
+            'claim_type' => 'required_without:claim_id|string',
+            'risk_score' => 'nullable|numeric'
         ]);
-    
-        $claim = Claim::with(['hcp', 'enrollee'])->find($request->claim_id);
-    
-        // Return a clear error if claim not found
-        if (!$claim) {
-            return response()->json([
-                'message' => "Claim #{$request->claim_id} not found in the system.",
-            ], 404);
+
+        if ($request->claim_id) {
+            $claim = Claim::with(['hcp', 'enrollee'])->find($request->claim_id);
+            if (!$claim) {
+                return response()->json([
+                    'message' => "Claim #{$request->claim_id} not found."
+                ], 404);
+            }
+            
+            $data = [
+                'claim_amount' => $claim->total_amount_claimed,
+                'claim_type' => $claim->claim_type,
+                'risk_score' => $claim->risk_score ?? 0,
+                'pa_status' => $claim->pa_status,
+                'fraud_flags' => $claim->fraudFlags()->count(),
+                'hcp_tier' => $claim->hcp?->tier,
+            ];
+        } else {
+            $data = $request->only([
+                'claim_amount', 'claim_type', 'risk_score', 
+                'pa_status', 'fraud_flags', 'hcp_tier'
+            ]);
         }
-    
-        $highValueThreshold  = SystemSetting::get('financial.ai_high_value_threshold', 500000);
-        $quarantineThreshold = SystemSetting::get('fraud.auto_quarantine_threshold', 70);
-    
-        $payload = [
-            'claim_amount' => $claim->total_amount_claimed,
-            'claim_type'   => $claim->claim_type,
-            'risk_score'   => $claim->risk_score,
-            'pa_status'    => $claim->pa_status,
-            'fraud_flags'  => $claim->fraudFlags()->count(),
-            'hcp_tier'     => $claim->hcp?->tier,
-            'thresholds'   => [
-                'high_value'  => $highValueThreshold,
-                'quarantine'  => $quarantineThreshold,
-            ],
-        ];
-    
-        return $this->forwardRequest('/route', $payload, [
-            'queue'     => $this->ruleBasedRouting($claim),
-            'priority'  => 'normal',
-            'eta'       => '24-48 hours',
-            'reasoning' => 'AI service unavailable. Using standard routing rules.',
-            'flags'     => [],
-        ]);
+
+        return response()->json($this->ai->smartRoute($data));
     }
 
     public function ocrDocument(Request $request): JsonResponse
     {
         $request->validate([
-            'document_id' => 'sometimes|exists:claim_documents,id',
-            'file' => 'required_without:document_id|file|mimes:pdf,jpg,jpeg,png|max:10240',
+            'file' => 'required|file|mimes:pdf,jpg,jpeg,png|max:10240'
         ]);
 
-        // Handle file upload if present
-        if ($request->hasFile('file')) {
-            $file = $request->file('file');
-            $base64File = base64_encode(file_get_contents($file->path()));
-            $payload = [
-                'filename' => $file->getClientOriginalName(),
-                'content_type' => $file->getMimeType(),
-                'content' => $base64File,
-            ];
-        } else {
-            // Get document from database
-            $document = \App\Models\ClaimDocument::find($request->document_id);
-            $payload = [
-                'filename' => $document->filename,
-                'content_type' => $document->mime_type,
-                'content' => base64_encode($document->getContent()),
-            ];
-        }
-
-        return $this->forwardRequest('/ocr', $payload, [
-            'patient_name' => null,
-            'service_date' => null,
-            'diagnosis' => null,
-            'items' => [],
-            'total_amount' => null,
-            'provider_name' => null,
-            'raw_text' => 'OCR service unavailable.',
-            'confidence_scores' => [],
-        ]);
+        $file = $request->file('file');
+        $base64 = base64_encode(file_get_contents($file->path()));
+        
+        return response()->json(
+            $this->ai->ocrDocument(
+                $base64, 
+                $file->getMimeType(), 
+                $file->getClientOriginalName()
+            )
+        );
     }
 
     public function summarizeReport(Request $request): JsonResponse
     {
         $request->validate([
             'report_type' => 'required|string',
-            'report_data' => 'required|array',
-            'report_data.*' => 'array',
+            'report_data' => 'required|array'
         ]);
 
-        return $this->forwardRequest('/summarise', $request->all(), [
-            'summary' => 'AI summary unavailable.',
-            'bullets' => ['Please try again later.'],
-            'key_metric' => 'N/A',
-            'recommendation' => 'Manual review recommended.',
-        ]);
+        return response()->json(
+            $this->ai->summarizeReport(
+                $request->report_type, 
+                $request->report_data
+            )
+        );
     }
 
     public function fraudClusters(): JsonResponse
     {
-        // Get last 3 months of fraud flags
-        $flags = \App\Models\FraudFlag::with('claim')
+        $flags = FraudFlag::with('claim')
             ->where('created_at', '>=', now()->subMonths(3))
             ->get()
             ->map(fn($f) => [
@@ -217,11 +105,7 @@ class AIController extends Controller
             ])
             ->toArray();
 
-        return $this->forwardRequest('/cluster', ['flags' => $flags], [
-            'clusters' => [],
-            'noise_points' => 0,
-            'fallback_reason' => 'Clustering service unavailable.',
-        ]);
+        return response()->json($this->ai->fraudClusters($flags));
     }
 
     public function chat(Request $request): JsonResponse
@@ -230,52 +114,23 @@ class AIController extends Controller
             'messages' => 'required|array',
             'messages.*.role' => 'required|in:user,assistant',
             'messages.*.content' => 'required|string',
-            'persona' => 'sometimes|in:staff,enrollee,finance',
+            'persona' => 'sometimes|in:staff,enrollee,finance'
         ]);
 
-        // Add system stats for context
-        if ($request->input('persona', 'staff') === 'staff') {
+        $persona = $request->input('persona', 'staff');
+        $stats = [];
+
+        if ($persona === 'staff') {
             $stats = [
                 'total_claims' => Claim::count(),
                 'pending_claims' => Claim::whereIn('status', ['submitted', 'auto_validated'])->count(),
-                'active_enrollees' => \App\Models\Enrollee::where('status', 'active')->count(),
+                'active_enrollees' => Enrollee::where('status', 'active')->count(),
                 'today' => now()->format('Y-m-d'),
             ];
-            $request->merge(['system_stats' => $stats]);
         }
 
-        return $this->forwardRequest('/chat', $request->all(), [
-            'message' => 'I apologize, but the AI assistant is currently unavailable. Please try again later or contact support.',
+        return response()->json([
+            'message' => $this->ai->chat($request->messages, $persona, $stats)
         ]);
-    }
-
-    /**
-     * Rule-based routing fallback when AI service is unavailable
-     * Now uses dynamic thresholds from system settings
-     */
-    protected function ruleBasedRouting($claim): string
-    {
-        // Get dynamic thresholds
-        $quarantineThreshold = SystemSetting::get('fraud.auto_quarantine_threshold', 70);
-        $highValueThreshold = SystemSetting::get('financial.ai_high_value_threshold', 500000);
-        $ceoThreshold = SystemSetting::get('financial.pa_ceo_threshold', 2000000);
-        
-        if ($claim->risk_score >= $quarantineThreshold) {
-            return 'supervisor';
-        }
-        
-        if ($claim->total_amount_claimed > $ceoThreshold) {
-            return 'finance';
-        }
-        
-        if ($claim->total_amount_claimed > $highValueThreshold) {
-            return 'medical_review';
-        }
-        
-        if ($claim->fraudFlags()->count() > 0) {
-            return 'medical_review';
-        }
-        
-        return 'standard';
     }
 }
