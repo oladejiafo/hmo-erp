@@ -84,7 +84,7 @@ Route::middleware('auth:sanctum')->prefix('auth')->group(function () {
 
 // ── License Status (special case - always accessible) ────────────────────
 Route::prefix('settings/license')
-    ->middleware('auth:sanctum')
+    ->middleware('auth:sanctum', 'license')
     ->group(function () {
         Route::get('/', [LicenseController::class, 'status']); // READ
         Route::post('/emergency', [LicenseController::class, 'applyEmergency']); // WRITE (super_admin only)

@@ -46,15 +46,16 @@ class UserController extends Controller
             'password'  => ['required', 'string', 'min:8'],
             'roles'     => ['nullable', 'array'],
             'roles.*'   => ['string', 'exists:roles,name'],
+            'user_type' => ['sometimes', 'string', 'in:ceo,hq_manager,branch_manager,claims_officer,finance_officer,compliance_officer,staff'],
         ]);
-
+    
         // Non-HQ users can only create users within their own branch
         /** @disregard P1013 */
         if (! auth()->user()->isHQ()) {
             /** @disregard P1013 */
             $validated['branch_id'] = auth()->user()->branch_id;
         }
-
+    
         $user = User::create([
             'name'      => $validated['name'],
             'email'     => $validated['email'],
@@ -63,14 +64,21 @@ class UserController extends Controller
             'password'  => Hash::make($validated['password']),
             'status'    => 'active',
         ]);
-
+    
+        // Auto-assign permissions based on user type
+        app(\App\Services\UserPermissionService::class)->assignDefaultPermissions(
+            $user, 
+            $validated['user_type'] ?? 'staff'
+        );
+    
+        // If roles are explicitly provided, use those instead
         if (! empty($validated['roles'])) {
             $roles = Role::where('guard_name', 'sanctum')
                          ->whereIn('name', $validated['roles'])
                          ->get();
             $user->syncRoles($roles);
         }
-
+    
         return response()->json([
             'message' => "User created. Temporary password set — user must change on first login.",
             'data'    => new UserResource($user->load('branch', 'roles')),
@@ -87,16 +95,28 @@ class UserController extends Controller
     public function update(Request $request, User $user): JsonResponse
     {
         $validated = $request->validate([
-            'name'  => ['sometimes', 'string', 'max:100'],
-            'phone' => ['nullable', 'string', 'max:20'],
-            'email' => ['sometimes', 'email', Rule::unique('users', 'email')->ignore($user->id)],
+            'name'      => ['sometimes', 'string', 'max:100'],
+            'email'     => ['sometimes', 'email', 'unique:users,email,' . $user->id],
+            'phone'     => ['nullable', 'string', 'max:20'],
+            'branch_id' => ['sometimes', 'exists:branches,id'],
+            'status'    => ['sometimes', 'in:active,inactive,suspended'],
+            'roles'     => ['nullable', 'array'],
+            'roles.*'   => ['string', 'exists:roles,name'],
         ]);
-
+    
         $user->update($validated);
-
+    
+        // Update roles if provided
+        if (isset($validated['roles'])) {
+            $roles = Role::where('guard_name', 'sanctum')
+                         ->whereIn('name', $validated['roles'])
+                         ->get();
+            $user->syncRoles($roles);
+        }
+    
         return response()->json([
-            'message' => 'User updated.',
-            'data'    => new UserResource($user->fresh(['branch', 'roles'])),
+            'message' => 'User updated successfully.',
+            'data'    => new UserResource($user->load('branch', 'roles')),
         ]);
     }
 

@@ -96,14 +96,24 @@ class LicenseService
         // 3. Valid cached token from licensing server
         if ($cache->valid_until && now()->lt($cache->valid_until)) {
             $status = $cache->status ?? 'restricted';
-            
-            // 🔴 FIX: Check if grace period has actually expired
+        
+            // ← ADD THIS BLOCK
+            // Cache token is still fresh, but has the actual license expired?
+            if ($cache->license_expires_at && now()->gt($cache->license_expires_at)) {
+                // License has expired — honour grace period if one was granted
+                if ($cache->grace_ends_at && now()->lt($cache->grace_ends_at)) {
+                    return 'grace';
+                }
+                return 'restricted';
+            }
+            // ← END ADD
+        
             if ($status === 'grace' && $cache->grace_ends_at) {
                 if (now()->gte($cache->grace_ends_at)) {
                     return 'restricted';
                 }
             }
-            
+        
             return $status;
         }
     

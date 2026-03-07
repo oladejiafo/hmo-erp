@@ -91,7 +91,7 @@ class AuthController extends Controller
         ]);
     }
     
-    public function me(Request $request): JsonResponse
+    public function mex(Request $request): JsonResponse
     {
         $user = $request->user()->load('branch', 'corporate', 'enrollee');
 
@@ -113,7 +113,35 @@ class AuthController extends Controller
             ],
         ]);
     }
+    public function me(Request $request): JsonResponse
+{
+    $user = $request->user()->load('branch', 'corporate', 'enrollee');
     
+    // Ensure user has sanctum permissions
+    $permissions = $user->getAllPermissions()
+        ->filter(fn($perm) => $perm->guard_name === 'sanctum')
+        ->pluck('name')
+        ->sort()
+        ->values();
+
+    return response()->json([
+        'data' => [
+            'id'                 => $user->id,
+            'name'               => $user->name,
+            'email'              => $user->email,
+            'phone'              => $user->phone,
+            'status'             => $user->status,
+            'two_factor_enabled' => $user->two_factor_enabled,
+            'last_login_at'      => $user->last_login_at,
+            'branch'             => $user->branch,
+            'corporate'          => $user->corporate,
+            'enrollee'           => $user->enrollee,
+            'user_type'          => $user->user_type,
+            'roles'              => $user->getRoleNames(),
+            'permissions'        => $permissions,
+        ],
+    ]);
+}
 
     public function logout(Request $request): JsonResponse
     {
