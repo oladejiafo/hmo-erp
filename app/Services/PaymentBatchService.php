@@ -18,9 +18,9 @@ class PaymentBatchService
      * Create a payment batch from all approved, unpaid claims in the branch.
      * Groups claims by HCP so each provider gets one remittance.
      */
-    public function createFromApprovedClaims(int $branchId, ?array $claimIds = null): PaymentBatch
+    public function createFromApprovedClaims(int $branchId, ?array $claimIds = null, ?int $userId = null): PaymentBatch
     {
-        return DB::transaction(function () use ($branchId, $claimIds) {
+        return DB::transaction(function () use ($branchId, $claimIds, $userId) {
             // Get approved claims not yet in a batch
             $query = Claim::withoutGlobalScopes()
                 ->where('branch_id', $branchId)
@@ -48,7 +48,8 @@ class PaymentBatchService
                 'claim_count'    => $claims->count(),
                 'provider_count' => $claims->pluck('hcp_id')->unique()->count(),
                 'status'         => PaymentBatchStatus::DRAFT->value,
-                'created_by'     => Auth::id(),
+                // 'created_by'     => Auth::id(),
+                'created_by'     => $userId ?? Auth::id(),
             ]);
 
             // Create provider payment record per claim

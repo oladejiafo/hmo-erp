@@ -43,7 +43,8 @@ class PaymentBatchController extends Controller
             $batch = $this->batchService->createFromApprovedClaims(
                 /** @disregard P1013 */
                 Auth::user()->branch_id,
-                $request->claim_ids
+                $request->claim_ids,
+                Auth::id()   
             );
         } catch (\RuntimeException $e) {
             return response()->json(['message' => $e->getMessage()], 422);

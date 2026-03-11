@@ -171,21 +171,38 @@ export default function PAFormPage() {
     }, [form.diagnosis_description]);
 
     const submitMutation = useMutation({
-        mutationFn: () => submitPARequest({
-            ...form,
-            estimated_amount: form.estimated_amount ? parseFloat(form.estimated_amount) : null,
-            diagnosis_codes:  form.diagnosis_codes ? form.diagnosis_codes.split(',').map(s => s.trim()).filter(Boolean) : [],
-        }),
+        mutationFn: async () => {
+            // Format the data correctly for the backend
+            const payload = {
+                enrollee_id: parseInt(form.enrollee_id),
+                dependent_id: form.dependent_id ? parseInt(form.dependent_id) : null,
+                hcp_id: parseInt(form.hcp_id),
+                service_type: form.service_type,
+                urgency: form.urgency,
+                diagnosis_codes: form.diagnosis_codes 
+                    ? form.diagnosis_codes.split(',').map(s => s.trim()).filter(Boolean)
+                    : [],
+                diagnosis_description: form.diagnosis_description,
+                clinical_notes: form.clinical_notes || null,
+                estimated_amount: form.estimated_amount ? parseFloat(form.estimated_amount) : null,
+                admission_date: form.admission_date || null,
+                expected_duration: form.expected_duration ? parseInt(form.expected_duration) : null,
+                attending_doctor: form.attending_doctor || null,
+                submission_channel: 'hmo_portal'
+            };
+            
+
+            return submitPARequest(payload);
+        },
         onSuccess: (res) => {
             const pa = res.data?.data;
-            toast.success(
-                form.urgency === 'emergency'
-                    ? 'Emergency PA submitted. Care can proceed — retrospective review within 24 hours.'
-                    : `PA Request submitted successfully (${pa?.pa_code ?? 'pending code'}).`
-            );
+            toast.success('PA Request submitted successfully');
             navigate(`/pre-auth/${pa?.id}`);
         },
-        onError: (err) => toast.error(err.response?.data?.message ?? 'Submission failed.'),
+        onError: (err) => {
+            console.error('❌ Submit error:', err);
+            toast.error(err.response?.data?.message || 'Submission failed');
+        },
     });
 
     const tier   = approvalTier(parseFloat(form.estimated_amount));

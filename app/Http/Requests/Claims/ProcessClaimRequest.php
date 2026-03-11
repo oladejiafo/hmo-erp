@@ -16,7 +16,8 @@ class ProcessClaimRequest extends FormRequest
     {
         return [
             'notes'                      => ['nullable', 'string', 'max:1000'],
-            'items'                      => ['required', 'array', 'min:1'],
+            // 'items'                      => ['required', 'array', 'min:1'],
+            'items'                      => ['nullable', 'array'],  
             'items.*.id'                 => ['required', 'exists:claim_items,id'],
             'items.*.amount_approved'    => ['required', 'numeric', 'min:0'],
             'items.*.status'             => ['required', Rule::in(['approved', 'adjusted', 'rejected'])],

@@ -5,12 +5,15 @@ export const login = (credentials) => apiClient.post('/auth/login', credentials)
 export const logout = () => apiClient.post('/auth/logout');
 export const logoutAll = () => apiClient.post('/auth/logout-all');
 export const fetchUser = () => apiClient.get('/auth/me');
-export const changePassword = (data) => apiClient.post('/auth/change-password', data);
+// export const changePassword = (data) => apiClient.post('/auth/change-password', data);
 export const setup2FA = () => apiClient.post('/auth/2fa/setup');
 export const confirm2FA = (otp) => apiClient.post('/auth/2fa/confirm', { otp });
 export const disable2FA = (otp) => apiClient.post('/auth/2fa/disable', { otp });
 
 // ============= 🆕 SYSTEM SETTINGS =============
+export const updateProfile  = (data) => client.patch('/profile', data).then(r => r.data);
+export const changePassword = (data) => client.post('/profile/password', data).then(r => r.data);
+
 export const fetchSystemSettings = () => 
     apiClient.get('/settings/system').then(r => r.data);
 
@@ -40,7 +43,8 @@ export const fetchCorporate = (id) => apiClient.get(`/corporates/${id}`);
 export const createCorporate = (data) => apiClient.post('/corporates', data);
 export const updateCorporate = (id, data) => apiClient.put(`/corporates/${id}`, data);
 export const deleteCorporate = (id) => apiClient.delete(`/corporates/${id}`);
-export const suspendCorporate = (id) => apiClient.patch(`/corporates/${id}/suspend`);
+// export const suspendCorporate = (id) => apiClient.patch(`/corporates/${id}/suspend`);
+export const suspendCorporate = (id, data = {}) => apiClient.patch(`/corporates/${id}/suspend`, data);
 export const bulkUploadEnrollees = (id, file) => {
     const formData = new FormData();
     formData.append('file', file);
@@ -82,7 +86,12 @@ export const fetchEnrollees = (params) => apiClient.get('/enrollees', { params }
 export const fetchEnrollee = (id) => apiClient.get(`/enrollees/${id}`);
 export const createEnrollee = (data) => apiClient.post('/enrollees', data);
 export const updateEnrollee = (id, data) => apiClient.put(`/enrollees/${id}`, data);
-export const suspendEnrollee = (id) => apiClient.patch(`/enrollees/${id}/suspend`);
+// export const suspendEnrollee = (id) => apiClient.patch(`/enrollees/${id}/suspend`);
+export const suspendEnrollee = async (id, data = {}) => {
+    const response = await apiClient.patch(`/enrollees/${id}/suspend`, data);
+    return response.data;
+};
+
 export const transferEnrollee = (id, data) => apiClient.post(`/enrollees/${id}/transfer`, data);
 export const fetchEnrolleeClaims = (id, params) => 
     apiClient.get(`/enrollees/${id}/claims`, { params });
@@ -126,6 +135,21 @@ export const blacklistHCP = (id, data) => apiClient.patch(`/hcps/${id}/blacklist
 export const fetchHCPPerformance = (id) => apiClient.get(`/hcps/${id}/performance`);
 export const fetchHCPPaymentHistory = (id, params) => 
     apiClient.get(`/hcps/${id}/payment-history`, { params });
+
+export const unblacklistHCP = async (id, data = {}) => {
+    const response = await apiClient.patch(`/hcps/${id}/unblacklist`, data);
+    return response.data;
+};
+export const suspendHCP = async (id, data = {}) => {
+    const response = await apiClient.patch(`/hcps/${id}/suspend`, data);
+    return response.data;
+};
+
+export const reactivateHCP = async (id, data = {}) => {
+    const response = await apiClient.patch(`/hcps/${id}/reactivate`, data);
+    return response.data;
+};
+
 
 // ============= HCP TARIFFS =============
 export const fetchTariffs = (hcpId, params) => 
@@ -173,7 +197,7 @@ export const fetchClaims = (params) => apiClient.get('/claims', { params });
 export const fetchClaim = (id) => apiClient.get(`/claims/${id}`);
 export const createClaim = (data) => apiClient.post('/claims', data);
 export const processClaim = (id, data) => apiClient.post(`/claims/${id}/process`, data);
-export const approveClaim = (id) => apiClient.post(`/claims/${id}/approve`);
+export const approveClaim = (id, data) => apiClient.post(`/claims/${id}/approve`, data);
 export const rejectClaim = (id, data) => apiClient.post(`/claims/${id}/reject`, data);
 export const assignClaim = (id, data) => apiClient.post(`/claims/${id}/assign`, data);
 export const reverseClaim = (id, data) => apiClient.post(`/claims/${id}/reverse`, data);
@@ -184,9 +208,6 @@ export const reviewFraudFlag = (id, flagId, data) =>
 
 // ✅ Add these missing exports
 export const fetchFraudFlags = (id) => apiClient.get(`/claims/${id}/fraud-flags`);
-
-export const suspendHCP = (id, data) => apiClient.patch(`/hcps/${id}/suspend`, data);
-export const reactivateHCP = (id) => apiClient.patch(`/hcps/${id}/reactivate`);
 
 export const fetchImportBatches = (params) => 
     apiClient.get('/claims/imports', { params });
@@ -265,7 +286,25 @@ export const fetchAuditLogs = (params) => apiClient.get('/reports/audit-logs', {
 // ============= 🆕 PRE-AUTHORISATION (PA) =============
 export const fetchPARequests = (params) => apiClient.get('/pre-auth', { params }).then(r => r.data);
 export const fetchPARequest = (id) => apiClient.get(`/pre-auth/${id}`).then(r => r.data);
-export const submitPARequest = (data) => apiClient.post('/pre-auth/', data);
+// export const submitPARequest = (data) => apiClient.post('/pre-auth', data);
+
+export const submitPARequest = (data) => {
+    console.log('📝 Submitting PA data:', data);
+    return apiClient.post('/pre-auth', data)
+        .then(response => {
+            console.log('✅ PA submit response:', response);
+            return response.data;
+        })
+        .catch(error => {
+            console.error('❌ PA submit error:', {
+                status: error.response?.status,
+                data: error.response?.data,
+                message: error.message
+            });
+            throw error;
+        });
+};
+
 export const approvePA = (id, data) => apiClient.post(`/pre-auth/${id}/approve`, data);
 export const declinePA = (id, data) => apiClient.post(`/pre-auth/${id}/decline`, data);
 export const fetchPAStats = () => apiClient.get('/pre-auth/stats').then(r => r.data);

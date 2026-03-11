@@ -7,7 +7,7 @@ use Illuminate\Http\JsonResponse;
 use League\Csv\Reader;
 use League\Csv\Writer;
 use App\Models\Enrollee;
-use App\Models\HCP;
+use App\Models\HealthCareProvider;
 use App\Models\Tariff;
 use Illuminate\Support\Facades\Validator;
 use Illuminate\Support\Facades\DB;
@@ -73,7 +73,7 @@ class ImportController extends Controller
                 }
 
                 $corporate = \App\Models\Corporate::where('code', $row['corporate_code'])->first();
-                $plan = \App\Models\ProviderPayment::where('code', $row['plan_code'])->first();
+                $plan = \App\Models\Plan::where('code', $row['plan_code'])->first();
 
                 $enrollee = Enrollee::create([
                     'first_name' => $row['first_name'],

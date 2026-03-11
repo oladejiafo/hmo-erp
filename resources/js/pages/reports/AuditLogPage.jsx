@@ -34,7 +34,7 @@ export default function AuditLogPage() {
             date_to: '',
             search: '',
             page: 1,
-            per_page: 50,
+            per_page: 20,
         });
     };
 
@@ -44,7 +44,7 @@ export default function AuditLogPage() {
         Object.entries(filters).forEach(([key, value]) => {
             if (value) params.append(key, value);
         });
-        window.open(`/reports/audit-logs/export?${params.toString()}`, '_blank');
+        window.open(`/api/v1/reports/audit-logs/export?${params.toString()}`, '_blank');
     };
 
     const getActionBadgeClass = (action) => {
@@ -184,24 +184,24 @@ export default function AuditLogPage() {
                                     <th>User</th>
                                     <th>Branch</th>
                                     <th>Action</th>
-                                    <th>Model</th>
+                                    <th>Module</th>
                                     <th>Description</th>
                                     <th>IP Address</th>
                                 </tr>
                             </thead>
                             <tbody>
-                                {data?.data?.length > 0 ? (
-                                    data.data.map((log) => (
+                                {data?.data?.data?.length > 0 ? (
+                                    data.data.data.map((log) => (
                                         <tr key={log.id}>
                                             <td>{formatDateTime(log.created_at)}</td>
                                             <td>{log.user?.name || 'System'}</td>
                                             <td>{log.branch?.name || 'N/A'}</td>
                                             <td>
                                                 <span className={`badge ${getActionBadgeClass(log.action)}`}>
-                                                    {log.action_label || log.action}
+                                                    {log.action}
                                                 </span>
                                             </td>
-                                            <td>{log.model_name}</td>
+                                            <td>{log.model_name || log.model_type?.split('\\').pop() || '-'}</td>
                                             <td>
                                                 <span title={log.description}>
                                                     {log.description?.length > 50 
@@ -223,10 +223,17 @@ export default function AuditLogPage() {
                         </table>
                     </div>
 
-                    {data?.meta && (
+                    {/* {data?.data?.data?.meta && (
                         <Pagination
-                            currentPage={data.meta.current_page}
-                            lastPage={data.meta.last_page}
+                            currentPage={data.data.data.meta.current_page}
+                            lastPage={data.data.data.meta.last_page}
+                            onPageChange={(page) => setFilters(prev => ({ ...prev, page }))}
+                        />
+                    )} */}
+                    {data?.data?.meta && (
+                        <Pagination
+                            currentPage={data.data.meta.current_page}
+                            lastPage={data.data.meta.last_page}
                             onPageChange={(page) => setFilters(prev => ({ ...prev, page }))}
                         />
                     )}

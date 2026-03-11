@@ -1,37 +1,81 @@
 import React, { useState } from 'react';
 import { useAuth } from '../../contexts/AuthContext';
-import { useMutation } from '@tanstack/react-query';
+import { useMutation, useQueryClient } from '@tanstack/react-query';
 import { toast } from 'react-toastify';
-import { User, Mail, Phone, MapPin, Lock, Shield } from 'lucide-react';
-import { changePassword } from '../../api/index';
+import { User, Mail, Phone, MapPin, Lock, Shield, Save, X } from 'lucide-react';
+import { changePassword, updateProfile } from '../../api/index';
 import { PageHeader, LoadingSpinner } from '../../components/ui/index';
 
 export default function ProfilePage() {
-    const { user } = useAuth();
+    const { user, setUser } = useAuth();
+    const queryClient = useQueryClient();
     const [activeTab, setActiveTab] = useState('profile');
+    const [isEditing, setIsEditing] = useState(false);
+
+    const [profileData, setProfileData] = useState({
+        name:  user?.name  || '',
+        phone: user?.phone || '',
+    });
+
     const [passwordData, setPasswordData] = useState({
-        current_password: '',
-        new_password: '',
+        current_password:          '',
+        new_password:              '',
         new_password_confirmation: '',
     });
     const [errors, setErrors] = useState({});
 
+    // --- Profile update mutation ---
+    const updateProfileMutation = useMutation({
+        mutationFn: updateProfile,
+        onSuccess: (response) => {
+            // Update auth context if your context exposes setUser
+            if (setUser) {
+                setUser(prev => ({ ...prev, ...response.data?.data }));
+            }
+            queryClient.invalidateQueries(['me']);
+            toast.success('Profile updated successfully');
+            setIsEditing(false);
+        },
+        onError: (error) => {
+            setErrors(error.response?.data?.errors || {});
+            toast.error(error.response?.data?.message || 'Failed to update profile');
+        },
+    });
+
+    // --- Password change mutation ---
     const changePasswordMutation = useMutation({
         mutationFn: changePassword,
         onSuccess: () => {
             toast.success('Password changed successfully');
             setPasswordData({
-                current_password: '',
-                new_password: '',
+                current_password:          '',
+                new_password:              '',
                 new_password_confirmation: '',
             });
             setErrors({});
         },
         onError: (error) => {
             setErrors(error.response?.data?.errors || {});
-            toast.error('Failed to change password');
+            toast.error(error.response?.data?.message || 'Failed to change password');
         },
     });
+
+    const handleProfileChange = (e) => {
+        const { name, value } = e.target;
+        setProfileData(prev => ({ ...prev, [name]: value }));
+    };
+
+    const handleProfileSubmit = (e) => {
+        e.preventDefault();
+        setErrors({});
+        updateProfileMutation.mutate(profileData);
+    };
+
+    const handleCancelEdit = () => {
+        setProfileData({ name: user?.name || '', phone: user?.phone || '' });
+        setErrors({});
+        setIsEditing(false);
+    };
 
     const handlePasswordChange = (e) => {
         const { name, value } = e.target;
@@ -40,6 +84,7 @@ export default function ProfilePage() {
 
     const handlePasswordSubmit = (e) => {
         e.preventDefault();
+        setErrors({});
         changePasswordMutation.mutate(passwordData);
     };
 
@@ -51,7 +96,6 @@ export default function ProfilePage() {
 
             <div className="row">
                 <div className="col-md-4">
-                    {/* Profile Summary Card */}
                     <div className="card mb-4">
                         <div className="card-body text-center">
                             <div className="bg-primary bg-opacity-10 rounded-circle p-4 d-inline-block mb-3">
@@ -59,7 +103,7 @@ export default function ProfilePage() {
                             </div>
                             <h4>{user.name}</h4>
                             <p className="text-muted mb-2">{user.email}</p>
-                            <div className="d-flex justify-content-center gap-2 mb-3">
+                            <div className="d-flex justify-content-center gap-2 mb-3 flex-wrap">
                                 {user.roles?.map((role, index) => (
                                     <span key={index} className="badge bg-info">
                                         {role.display_name || role.name || role}
@@ -87,32 +131,9 @@ export default function ProfilePage() {
                             </div>
                         </div>
                     </div>
-
-                    {/* 2FA Status Card */}
-                    <div className="card">
-                        <div className="card-body">
-                            <h6 className="card-title">Two-Factor Authentication</h6>
-                            {user.two_factor_enabled ? (
-                                <>
-                                    <p className="text-success mb-2">✓ 2FA is enabled</p>
-                                    <button className="btn btn-sm btn-outline-danger">
-                                        Disable 2FA
-                                    </button>
-                                </>
-                            ) : (
-                                <>
-                                    <p className="text-muted mb-2">Enhance your account security</p>
-                                    <button className="btn btn-sm btn-primary">
-                                        Enable 2FA
-                                    </button>
-                                </>
-                            )}
-                        </div>
-                    </div>
                 </div>
 
                 <div className="col-md-8">
-                    {/* Tabs */}
                     <ul className="nav nav-tabs mb-4">
                         <li className="nav-item">
                             <button
@@ -134,26 +155,39 @@ export default function ProfilePage() {
                         </li>
                     </ul>
 
-                    {/* Tab Content */}
                     {activeTab === 'profile' && (
                         <div className="card">
-                            <div className="card-header">
+                            <div className="card-header d-flex justify-content-between align-items-center">
                                 <h5 className="mb-0">Profile Information</h5>
+                                {!isEditing && (
+                                    <button
+                                        className="btn btn-sm btn-primary"
+                                        onClick={() => setIsEditing(true)}
+                                    >
+                                        Edit Profile
+                                    </button>
+                                )}
                             </div>
                             <div className="card-body">
-                                <form>
+                                <form onSubmit={handleProfileSubmit}>
                                     <div className="row mb-3">
                                         <label className="col-sm-3 col-form-label">Full Name</label>
                                         <div className="col-sm-9">
                                             <input
                                                 type="text"
-                                                className="form-control"
-                                                value={user.name}
-                                                readOnly
-                                                disabled
+                                                className={`form-control ${errors.name ? 'is-invalid' : ''}`}
+                                                name="name"
+                                                value={isEditing ? profileData.name : user.name}
+                                                onChange={handleProfileChange}
+                                                readOnly={!isEditing}
+                                                disabled={!isEditing}
                                             />
+                                            {errors.name && (
+                                                <div className="invalid-feedback">{errors.name[0]}</div>
+                                            )}
                                         </div>
                                     </div>
+
                                     <div className="row mb-3">
                                         <label className="col-sm-3 col-form-label">Email</label>
                                         <div className="col-sm-9">
@@ -164,21 +198,29 @@ export default function ProfilePage() {
                                                 readOnly
                                                 disabled
                                             />
+                                            <small className="text-muted">Email can only be changed by an admin.</small>
                                         </div>
                                     </div>
+
                                     <div className="row mb-3">
                                         <label className="col-sm-3 col-form-label">Phone</label>
                                         <div className="col-sm-9">
                                             <input
                                                 type="text"
-                                                className="form-control"
-                                                value={user.phone || ''}
+                                                className={`form-control ${errors.phone ? 'is-invalid' : ''}`}
+                                                name="phone"
+                                                value={isEditing ? profileData.phone : (user.phone || '')}
+                                                onChange={handleProfileChange}
                                                 placeholder="Not provided"
-                                                readOnly
-                                                disabled
+                                                readOnly={!isEditing}
+                                                disabled={!isEditing}
                                             />
+                                            {errors.phone && (
+                                                <div className="invalid-feedback">{errors.phone[0]}</div>
+                                            )}
                                         </div>
                                     </div>
+
                                     <div className="row mb-3">
                                         <label className="col-sm-3 col-form-label">Branch</label>
                                         <div className="col-sm-9">
@@ -191,13 +233,27 @@ export default function ProfilePage() {
                                             />
                                         </div>
                                     </div>
-                                    <div className="row">
-                                        <div className="col-sm-9 offset-sm-3">
-                                            <button type="button" className="btn btn-primary" disabled>
-                                                Edit Profile (Coming Soon)
+
+                                    {isEditing && (
+                                        <div className="col-sm-9 offset-sm-3 d-flex gap-2">
+                                            <button
+                                                type="submit"
+                                                className="btn btn-primary"
+                                                disabled={updateProfileMutation.isPending}
+                                            >
+                                                <Save size={16} className="me-1" />
+                                                {updateProfileMutation.isPending ? 'Saving...' : 'Save Changes'}
+                                            </button>
+                                            <button
+                                                type="button"
+                                                className="btn btn-outline-secondary"
+                                                onClick={handleCancelEdit}
+                                            >
+                                                <X size={16} className="me-1" />
+                                                Cancel
                                             </button>
                                         </div>
-                                    </div>
+                                    )}
                                 </form>
                             </div>
                         </div>
@@ -221,12 +277,9 @@ export default function ProfilePage() {
                                             required
                                         />
                                         {errors.current_password && (
-                                            <div className="invalid-feedback">
-                                                {errors.current_password[0]}
-                                            </div>
+                                            <div className="invalid-feedback">{errors.current_password[0]}</div>
                                         )}
                                     </div>
-
                                     <div className="mb-3">
                                         <label className="form-label">New Password</label>
                                         <input
@@ -238,12 +291,9 @@ export default function ProfilePage() {
                                             required
                                         />
                                         {errors.new_password && (
-                                            <div className="invalid-feedback">
-                                                {errors.new_password[0]}
-                                            </div>
+                                            <div className="invalid-feedback">{errors.new_password[0]}</div>
                                         )}
                                     </div>
-
                                     <div className="mb-3">
                                         <label className="form-label">Confirm New Password</label>
                                         <input
@@ -255,13 +305,12 @@ export default function ProfilePage() {
                                             required
                                         />
                                     </div>
-
                                     <button
                                         type="submit"
                                         className="btn btn-primary"
-                                        disabled={changePasswordMutation.isLoading}
+                                        disabled={changePasswordMutation.isPending}
                                     >
-                                        {changePasswordMutation.isLoading ? 'Changing...' : 'Change Password'}
+                                        {changePasswordMutation.isPending ? 'Changing...' : 'Change Password'}
                                     </button>
                                 </form>
                             </div>

@@ -176,7 +176,7 @@ class EnrolleeController extends Controller
     public function suspend(Request $request, Enrollee $enrollee): JsonResponse
     {
         $request->validate([
-            'reason' => ['required', 'string', 'max:500'],
+            'reason' => ['nullable', 'string', 'max:500'],
         ]);
 
         $newStatus = $enrollee->status->value === 'active' ? 'suspended' : 'active';

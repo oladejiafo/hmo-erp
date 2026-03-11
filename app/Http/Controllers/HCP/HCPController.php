@@ -11,7 +11,6 @@ use App\Models\HealthCareProvider;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 
-
 class HCPController extends Controller
 {
     public function index(Request $request): JsonResponse
@@ -26,10 +25,11 @@ class HCPController extends Controller
                       ->orWhere('nhis_accreditation_no', 'like', "%{$s}%");
                 });
             })
-            ->when($request->type, fn ($q, $t) => $q->where('type', $t))
-            ->when($request->tier, fn ($q, $t) => $q->where('tier', $t))
-            ->when($request->status, fn ($q, $s) => $q->where('status', $s))
-            ->when($request->state, fn ($q, $s) => $q->byState($s))
+            ->when($request->type,          fn ($q, $t) => $q->where('type', $t))
+            ->when($request->tier,          fn ($q, $t) => $q->where('tier', $t))
+            ->when($request->status,        fn ($q, $s) => $q->where('status', $s))
+            ->when($request->payment_model, fn ($q, $m) => $q->where('payment_model', $m))
+            ->when($request->state,         fn ($q, $s) => $q->byState($s))
             ->orderBy('name')
             ->paginate($request->per_page ?? 20);
 
@@ -54,7 +54,7 @@ class HCPController extends Controller
             4
         );
 
-        $validated['status'] = 'pending'; // New HCPs always start as pending
+        $validated['status'] = 'pending';
 
         $hcp = HealthCareProvider::create($validated);
 
@@ -87,8 +87,8 @@ class HCPController extends Controller
     }
 
     /**
-     * Accredit an HCP — changes status from pending/suspended to active.
-     * Route: PATCH /hcps/{hcp}/accredit
+     * Accredit — pending/suspended → active.
+     * PATCH /hcps/{hcp}/accredit
      */
     public function accredit(UpdateHcpStatusRequest $request, HealthCareProvider $hcp): JsonResponse
     {
@@ -97,7 +97,7 @@ class HCPController extends Controller
         }
 
         $hcp->update([
-            'status'       => 'active',
+            'status'        => 'active',
             'accredited_at' => $request->effective_date ?? now()->toDateString(),
             'notes'         => $request->reason,
         ]);
@@ -109,8 +109,77 @@ class HCPController extends Controller
     }
 
     /**
+     * Approve a pending HCP (alias of accredit for clarity).
+     * PATCH /hcps/{hcp}/approve
+     */
+    public function approve(UpdateHcpStatusRequest $request, HealthCareProvider $hcp): JsonResponse
+    {
+        if ($hcp->status->value !== 'pending') {
+            return response()->json(['message' => 'Only pending HCPs can be approved.'], 422);
+        }
+
+        $hcp->update([
+            'status'        => 'active',
+            'accredited_at' => $request->effective_date ?? now()->toDateString(),
+            'notes'         => $request->reason,
+        ]);
+
+        return response()->json([
+            'message' => "HCP [{$hcp->name}] approved and set to active.",
+            'data'    => new HcpResource($hcp->fresh()),
+        ]);
+    }
+
+    /**
+     * Suspend an active HCP temporarily.
+     * PATCH /hcps/{hcp}/suspend
+     */
+    public function suspend(UpdateHcpStatusRequest $request, HealthCareProvider $hcp): JsonResponse
+    {
+        if ($hcp->status->value === 'suspended') {
+            return response()->json(['message' => 'HCP is already suspended.'], 422);
+        }
+
+        if (in_array($hcp->status->value, ['blacklisted', 'terminated'])) {
+            return response()->json(['message' => 'Cannot suspend a blacklisted or terminated HCP.'], 422);
+        }
+
+        $hcp->update([
+            'status' => 'suspended',
+            'notes'  => "SUSPENDED (" . now()->toDateString() . "): {$request->reason}",
+        ]);
+
+        return response()->json([
+            'message' => "HCP [{$hcp->name}] suspended.",
+            'data'    => new HcpResource($hcp->fresh()),
+        ]);
+    }
+
+    /**
+     * Reactivate a suspended HCP → active.
+     * PATCH /hcps/{hcp}/reactivate
+     */
+    public function reactivate(Request $request, HealthCareProvider $hcp): JsonResponse
+    {
+        if ($hcp->status->value !== 'suspended') {
+            return response()->json(['message' => 'Only suspended HCPs can be reactivated.'], 422);
+        }
+
+        $hcp->update([
+            'status' => 'active',
+            'notes'  => "REACTIVATED (" . now()->toDateString() . ")" .
+                        ($request->reason ? ": {$request->reason}" : ''),
+        ]);
+
+        return response()->json([
+            'message' => "HCP [{$hcp->name}] reactivated.",
+            'data'    => new HcpResource($hcp->fresh()),
+        ]);
+    }
+
+    /**
      * Blacklist an HCP — requires a documented reason.
-     * Route: PATCH /hcps/{hcp}/blacklist
+     * PATCH /hcps/{hcp}/blacklist
      */
     public function blacklist(UpdateHcpStatusRequest $request, HealthCareProvider $hcp): JsonResponse
     {
@@ -125,6 +194,27 @@ class HCPController extends Controller
 
         return response()->json([
             'message' => "HCP [{$hcp->name}] has been blacklisted.",
+            'data'    => new HcpResource($hcp->fresh()),
+        ]);
+    }
+
+    /**
+     * Reverse a blacklist — restores to active.
+     * PATCH /hcps/{hcp}/unblacklist
+     */
+    public function unblacklist(UpdateHcpStatusRequest $request, HealthCareProvider $hcp): JsonResponse
+    {
+        if ($hcp->status->value !== 'blacklisted') {
+            return response()->json(['message' => 'HCP is not blacklisted.'], 422);
+        }
+
+        $hcp->update([
+            'status' => 'active',
+            'notes'  => "BLACKLIST REVERSED (" . now()->toDateString() . "): {$request->reason}",
+        ]);
+
+        return response()->json([
+            'message' => "HCP [{$hcp->name}] blacklist reversed. Status set to active.",
             'data'    => new HcpResource($hcp->fresh()),
         ]);
     }

@@ -8,9 +8,19 @@ use Illuminate\Database\Eloquent\Relations\BelongsTo;
 class AuditLog extends Model
 {
     protected $table = 'audit_logs';
+    public $timestamps = true;
+    const UPDATED_AT = null;
 
     protected $fillable = [
         'user_id',
+
+        'branch_id',       
+        'action',           
+        'model_type',    
+        'model_id',         
+
+        'description', 
+        
         'event',
         'auditable_type',
         'auditable_id',
@@ -31,7 +41,9 @@ class AuditLog extends Model
     {
         return $this->belongsTo(User::class);
     }
-
+    public function branch() {
+        return $this->belongsTo(Branch::class);
+    }
     public function auditable()
     {
         return $this->morphTo();

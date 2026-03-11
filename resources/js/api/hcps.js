@@ -25,15 +25,41 @@ export const deleteHCP = async (id) => {
     return response.data;
 };
 
+// ── Status actions ─────────────────────────────────────────────
+
 export const accreditHCP = async (id, data = {}) => {
     const response = await apiClient.patch(`/hcps/${id}/accredit`, data);
     return response.data;
 };
 
-export const blacklistHCP = async (id, data) => {
+export const suspendHCP = async (id, data = {}) => {
+    const response = await apiClient.patch(`/hcps/${id}/suspend`, data);
+    return response.data;
+};
+
+export const reactivateHCP = async (id, data = {}) => {
+    const response = await apiClient.patch(`/hcps/${id}/reactivate`, data);
+    return response.data;
+};
+
+export const blacklistHCP = async (id, data = {}) => {
     const response = await apiClient.patch(`/hcps/${id}/blacklist`, data);
     return response.data;
 };
+
+// Undo blacklist — restores to active (or pending if never accredited)
+export const unblacklistHCP = async (id, data = {}) => {
+    const response = await apiClient.patch(`/hcps/${id}/unblacklist`, data);
+    return response.data;
+};
+
+// Approve a pending HCP (moves pending → active)
+export const approveHCP = async (id, data = {}) => {
+    const response = await apiClient.patch(`/hcps/${id}/approve`, data);
+    return response.data;
+};
+
+// ── Performance & payments ──────────────────────────────────────
 
 export const fetchHCPPerformance = async (id) => {
     const response = await apiClient.get(`/hcps/${id}/performance`);
@@ -45,7 +71,8 @@ export const fetchHCPPaymentHistory = async (id, params = {}) => {
     return response.data;
 };
 
-// Tariffs
+// ── Tariffs ─────────────────────────────────────────────────────
+
 export const fetchTariffs = async (hcpId, params = {}) => {
     const response = await apiClient.get(`/hcps/${hcpId}/tariffs`, { params });
     return response.data;
@@ -75,7 +102,8 @@ export const bulkUploadTariffs = async (hcpId, file) => {
     return response.data;
 };
 
-// Contracts
+// ── Contracts ───────────────────────────────────────────────────
+
 export const fetchContracts = async (hcpId, params = {}) => {
     const response = await apiClient.get(`/hcps/${hcpId}/contracts`, { params });
     return response.data;
@@ -86,20 +114,15 @@ export const fetchContract = async (hcpId, contractId) => {
     return response.data;
 };
 
-
 export const createContract = async (hcpId, data) => {
-    let response;
-    if (data instanceof FormData) {
-        response = await apiClient.post(`/hcps/${hcpId}/contracts`, data, {
-            headers: { 'Content-Type': 'multipart/form-data' }
-        });
-    } else {
-        response = await apiClient.post(`/hcps/${hcpId}/contracts`, data);
-    }
+    const response = await apiClient.post(`/hcps/${hcpId}/contracts`, data, {
+        headers: data instanceof FormData ? { 'Content-Type': 'multipart/form-data' } : {},
+    });
     return response.data;
 };
 
-// Bank Details
+// ── Bank Details ─────────────────────────────────────────────────
+
 export const fetchBankDetails = async (hcpId) => {
     const response = await apiClient.get(`/hcps/${hcpId}/bank-details`);
     return response.data;

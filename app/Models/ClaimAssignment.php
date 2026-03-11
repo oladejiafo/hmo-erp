@@ -14,9 +14,12 @@ class ClaimAssignment extends Model
         'user_id',
         'assigned_by',
         'assigned_at',
+        'assigned_to',
         'completed_at',
         'is_active',
         'notes',
+        'assignment_type',
+        'handover_note',
     ];
 
     protected $casts = [
@@ -36,6 +39,16 @@ class ClaimAssignment extends Model
     }
 
     public function assigner(): BelongsTo
+    {
+        return $this->belongsTo(User::class, 'assigned_by');
+    }
+
+    public function assignedTo(): BelongsTo
+    {
+        return $this->belongsTo(User::class, 'assigned_to');
+    }
+
+    public function assignedBy(): BelongsTo
     {
         return $this->belongsTo(User::class, 'assigned_by');
     }

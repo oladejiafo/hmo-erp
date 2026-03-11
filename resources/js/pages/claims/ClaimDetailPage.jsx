@@ -69,11 +69,23 @@ export default function ClaimDetailPage() {
     // ── useMemo hook (keep this here) ────────────────────────────────────
     const users = useMemo(() => {
         if (!usersData) return [];
+        // fetchUsers returns raw axios → .data is Laravel response → .data is the array
+        if (usersData?.data?.data && Array.isArray(usersData.data.data)) return usersData.data.data;
+        if (usersData?.data && Array.isArray(usersData.data)) return usersData.data;
         if (Array.isArray(usersData)) return usersData;
-        if (usersData.data && Array.isArray(usersData.data)) return usersData.data;
-        if (usersData.users && Array.isArray(usersData.users)) return usersData.users;
         return [];
     }, [usersData]);
+
+    // REPLACE WITH (data only):
+    useEffect(() => {
+        if (showApproveModal && data) {
+            const amount = data?.data?.data?.total_amount_claimed
+                        ?? data?.data?.total_amount_claimed
+                        ?? data?.total_amount_claimed
+                        ?? '';
+            setApproveAmount(String(amount));
+        }
+    }, [showApproveModal, data]);  // ← no claim
 
     // ── 🟢 MOVE ALL useMutation HOOKS HERE (BEFORE ANY EARLY RETURNS) ──
     const invalidateClaim = () => queryClient.invalidateQueries({ queryKey: ['claim', id] });
@@ -93,9 +105,11 @@ export default function ClaimDetailPage() {
 
     const approveMutation = useMutation({
         mutationFn: () => approveClaim(id, {
-            approved_amount: parseFloat(approveAmount) || (data?.data?.data?.total_amount_claimed || data?.total_amount_claimed || 0),
+            // approved_amount: parseFloat(approveAmount) || (data?.data?.data?.total_amount_claimed || data?.total_amount_claimed || 0),
+            approved_amount: parseFloat(approveAmount) || 0,
             note: approveNote,
         }),
+
         onSuccess: () => {
             toast.success('Claim approved successfully');
             setShowApproveModal(false);
@@ -135,7 +149,7 @@ export default function ClaimDetailPage() {
     });
 
     const assignMutation = useMutation({
-        mutationFn: () => assignClaim(id, { user_id: assignUserId, note: assignNote }),
+        mutationFn: () => assignClaim(id, { assignee_id: assignUserId, note: assignNote }),
         onSuccess: () => {
             toast.success('Claim assigned successfully');
             setShowAssignModal(false);
@@ -168,14 +182,16 @@ export default function ClaimDetailPage() {
     if (error) return <ErrorAlert message={error.message} />;
     
     const claim = data?.data?.data || data;
+    
     if (!claim) return <ErrorAlert message="Claim not found" />;
 
     // ── Permission checks (keep these here) ──────────────────────────────
-    const canReverse = hasPermission('claims.reverse') && (claim.status === 'approved' || claim.status === 'paid');
+    const canReverse = hasPermission('claims.reverse') && 
+    ['approved', 'paid'].includes(claim.status);
     const canApprove = hasPermission('claims.approve') && 
         ['under_review', 'supervisor_review', 'auto_validated'].includes(claim.status);
     const canReject = hasPermission('claims.reject') && 
-        !['paid', 'rejected', 'reversed'].includes(claim.status);
+        ['under_review', 'supervisor_review', 'auto_validated', 'flagged'].includes(claim.status);
     const canProcess = hasPermission('claims.process') && 
         ['submitted', 'auto_validated', 'auto_validating'].includes(claim.status);
     const canAssign = hasPermission('claims.assign') && 
@@ -604,7 +620,7 @@ export default function ClaimDetailPage() {
                                 <button
                                     className="btn btn-danger"
                                     onClick={() => reverseMutation.mutate(reverseReason)}
-                                    disabled={reverseReason.length < 10 || reverseMutation.isPending}
+                                    disabled={reverseReason.length < 20 || reverseMutation.isPending}
                                 >
                                     {reverseMutation.isPending ? 'Reversing...' : 'Confirm Reversal'}
                                 </button>

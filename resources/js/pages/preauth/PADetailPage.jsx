@@ -41,7 +41,8 @@ import { fetchPARequest, approvePA, declinePA, revokePA } from '../../api/index'
 import { PageHeader, StatusBadge, LoadingSpinner, ErrorAlert } from '../../components/ui/index';
 import { useAuth } from '../../contexts/AuthContext';
 import { formatCurrency, formatDate, formatDateTime } from '../../utils/format';
-
+import client from '../../api/client';
+import axios from 'axios';
 // ── TAT helpers (same as PAListPage) ──────────────────────────────────────────
 function minutesElapsed(isoStr) {
     return Math.floor((Date.now() - new Date(isoStr).getTime()) / 60000);
@@ -193,6 +194,7 @@ export default function PADetailPage() {
     if (error)     return <ErrorAlert error={error} />;
 
     const pa = data?.data;
+
     if (!pa) return null;
 
     // Computed permissions
@@ -208,6 +210,40 @@ export default function PADetailPage() {
 
     // Approval chain steps
     const steps = buildApprovalSteps(pa, tier);
+
+    const downloadPDF = async () => {
+        try {
+            const token = localStorage.getItem('auth_token');
+            if (!token) {
+                toast.error('Not authenticated');
+                return;
+            }
+            
+            console.log('Downloading PA ID:', pa.id);
+            
+            const response = await axios.get(`/api/v1/pre-auth/${pa.id}/download`, {
+                headers: {
+                    'Authorization': `Bearer ${token}`
+                },
+                responseType: 'blob'
+            });
+            
+            // Create download link from response
+            const url = window.URL.createObjectURL(new Blob([response.data]));
+            const link = document.createElement('a');
+            link.href = url;
+            link.setAttribute('download', `PA-Letter-${pa.pa_code || pa.id}.pdf`);
+            document.body.appendChild(link);
+            link.click();
+            link.remove();
+            window.URL.revokeObjectURL(url);
+            
+            toast.success('Download started');
+        } catch (error) {
+            console.error('Download error:', error);
+            toast.error('Download failed');
+        }
+    };
 
     return (
         <div>
@@ -314,7 +350,7 @@ export default function PADetailPage() {
             {/* ── PA Code display (approved) ──────────────────────────────── */}
             {pa.pa_code && pa.status !== 'declined' && pa.status !== 'revoked' && (
                 <div className="card border-0 shadow-sm mb-4"
-                     style={{ background: 'linear-gradient(135deg, #1a6fad 0%, #0f4c81 100%)', color: '#fff' }}>
+                     style={{ background: 'linear-gradient(135deg, #1e3a5f 0%, #1e3a5f 100%)', color: '#fff' }}>
                     <div className="card-body py-3 px-4 d-flex align-items-center justify-content-between flex-wrap gap-3">
                         <div>
                             <div style={{ fontSize: 11, opacity: 0.75, textTransform: 'uppercase', letterSpacing: '0.5px', marginBottom: 4 }}>
@@ -346,14 +382,13 @@ export default function PADetailPage() {
                             >
                                 <Copy size={13} /> Copy
                             </button>
-                            <a
-                                href={`/api/v1/pre-auth/${pa.id}/download`}
-                                target="_blank" rel="noreferrer"
+                            <button
                                 className="btn btn-sm d-flex align-items-center gap-1"
                                 style={{ background: 'rgba(255,255,255,0.2)', color: '#fff', border: '1px solid rgba(255,255,255,0.35)' }}
+                                onClick={downloadPDF}
                             >
-                                <Download size={13} /> PDF Letter
-                            </a>
+                              <Download size={13} /> PDF Letter
+                            </button>
                         </div>
                     </div>
                 </div>

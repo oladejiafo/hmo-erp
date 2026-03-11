@@ -14,7 +14,7 @@ class SuspendCorporateRequest extends FormRequest
     public function rules(): array
     {
         return [
-            'reason' => ['required', 'string', 'min:10', 'max:500'],
+            'reason' => ['nullable', 'string', 'min:10', 'max:500'],
         ];
     }
 

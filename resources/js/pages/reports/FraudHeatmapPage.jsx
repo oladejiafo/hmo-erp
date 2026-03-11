@@ -187,9 +187,10 @@ export default function FraudHeatmapPage() {
                             </select>
                         </div>
                         <div className="col-md-3">
-                            <button className="btn btn-primary btn-sm w-100"
+                            <button className="btn btn-primary btn-sm w-100 d-flex align-items-center justify-content-center gap-2"
                                     onClick={() => setApplied({ ...filters })}>
-                                <Filter size={13} className="me-1" /> Apply Filters
+                                <Filter size={13} />
+                                <span>Apply Filters</span>
                             </button>
                         </div>
                     </div>

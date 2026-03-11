@@ -35,7 +35,9 @@ export default function EnrolleeFormPage() {
     });
 
     // Extract corporates with proper nested structure
-    const corporates = corporatesData?.data?.data ?? corporatesData?.data ?? corporatesData ?? [];
+    // const corporates = corporatesData?.data?.data ?? corporatesData?.data ?? corporatesData ?? [];
+    const corporates = corporatesData?.data?.data ?? [];
+console.log('Corporates Data:', corporatesData);
 
     // Fetch plans based on selected corporate
     const { data: plansData, isLoading: plansLoading } = useQuery({
@@ -43,10 +45,13 @@ export default function EnrolleeFormPage() {
         queryFn: () => fetchPlans(formData.corporate_id),
         enabled: !!formData.corporate_id,
     });
-
+console.log('Plans Data:', plansData);
     // Extract plans with proper nested structure
     const plansRaw = plansData?.data?.data ?? plansData?.data ?? plansData ?? [];
-    const plans = Array.isArray(plansRaw) ? plansRaw : [];
+    // const plans = Array.isArray(plansRaw) ? plansRaw : [];
+    // const plans = Array.isArray(plansData?.data) ? plansData.data : 
+    // Array.isArray(plansData?.data?.data) ? plansData.data.data : [];
+    const plans = plansData?.data?.data ?? plansData?.data ?? [];
 
     // Fetch enrollee if editing
     const { data: enrolleeData, isLoading, error } = useQuery({
@@ -60,21 +65,22 @@ export default function EnrolleeFormPage() {
         if (enrolleeData) {
             // Extract the actual enrollee data (handle nested structure)
             const enrollee = enrolleeData?.data?.data || enrolleeData?.data || enrolleeData;
-            
+            console.log('Enrollee Data:', enrolleeData);
+
+            // const enrollee = enrolleeData?.data || enrolleeData;
             setFormData({
-                first_name: enrollee.first_name || '',
-                last_name: enrollee.last_name || '',
-                middle_name: enrollee.middle_name || '',
-                email: enrollee.email || '',
-                phone: enrollee.phone || '',
-                date_of_birth: enrollee.date_of_birth || '',
-                gender: enrollee.gender || '',
-                corporate_id: enrollee.corporate_id || '',
-                plan_id: enrollee.plan_id || '',
-                enrollee_number: enrollee.enrollee_number || '',
-                enrollment_date: enrollee.enrollment_date || '',
-                expiry_date: enrollee.expiry_date || '',
-                status: enrollee.status || 'active',
+                first_name:      enrollee.first_name      || '',
+                last_name:       enrollee.last_name        || '',
+                middle_name:     enrollee.middle_name      || '',
+                email:           enrollee.email            || '',
+                phone:           enrollee.phone            || '',
+                date_of_birth:   enrollee.date_of_birth    || '',
+                gender:          enrollee.gender           || '',
+                corporate_id:    String(enrollee.corporate?.id || enrollee.corporate_id || ''),
+                plan_id:         String(enrollee.plan?.id      || enrollee.plan_id      || ''),
+                enrollment_date: enrollee.enrollment_date  || '',
+                expiry_date:     enrollee.expiry_date      || '',
+                status:          enrollee.status           || 'active',
             });
         }
     }, [enrolleeData]);
@@ -220,13 +226,13 @@ export default function EnrolleeFormPage() {
                                         className="form-select"
                                     >
                                         <option value="">Select Gender</option>
-                                        <option value="male">Male</option>
-                                        <option value="female">Female</option>
-                                        <option value="other">Other</option>
+                                        <option value="M">Male</option>
+                                        <option value="F">Female</option>
+                                        <option value="O">Other</option>
                                     </select>
                                 </FormField>
                             </div>
-                            <div className="col-md-4">
+                            {/* <div className="col-md-4">
                                 <FormField label="Enrollee Number" error={errors.enrollee_number} required>
                                     <input
                                         type="text"
@@ -236,7 +242,7 @@ export default function EnrolleeFormPage() {
                                         className="form-control"
                                     />
                                 </FormField>
-                            </div>
+                            </div> */}
                         </div>
     
                         <div className="row">

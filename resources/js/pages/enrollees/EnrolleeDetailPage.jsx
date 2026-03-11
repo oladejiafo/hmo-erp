@@ -1,21 +1,42 @@
 import React from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
-import { useQuery } from '@tanstack/react-query';
-import { ArrowLeft, Edit, User, Calendar, Phone, Mail, MapPin, Users, FileText } from 'lucide-react';
-import { fetchEnrollee } from '../../api/index';
+import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
+import { ArrowLeft, Edit, User, Calendar, Phone, Mail, MapPin, Users, FileText, PauseCircle, PlayCircle } from 'lucide-react';
+import { fetchEnrollee, suspendEnrollee } from '../../api/index';
 import { PageHeader, StatusBadge, LoadingSpinner, ErrorAlert } from '../../components/ui/index';
 import { formatDate } from '../../utils/format';
+import { toast } from 'react-toastify';
 
 export default function EnrolleeDetailPage() {
     const { id } = useParams();
     const navigate = useNavigate();
+    const queryClient = useQueryClient();
 
     const { data, isLoading, error } = useQuery({
         queryKey: ['enrollee', id],
         queryFn: () => fetchEnrollee(id),
     });
 
-    const enrollee = data?.data?.data || data;
+    const suspendMutation = useMutation({
+        mutationFn: () => suspendEnrollee(id, { reason: 'Status toggled by admin' }),
+        onSuccess: (res) => {
+            toast.success(res.message ?? 'Status updated.');
+            queryClient.invalidateQueries({ queryKey: ['enrollee', id] });
+        },
+        onError: (err) => toast.error(err.response?.data?.message ?? 'Action failed.'),
+    });
+
+    // ── Early returns FIRST — before any data access ──
+    if (isLoading) return <LoadingSpinner />;
+    if (error)     return <ErrorAlert message={error.message} />;
+
+    // ── Now safe to derive from data ──
+    const enrollee    = data?.data ?.data|| data;
+
+    if (!enrollee)    return <ErrorAlert message="Enrollee not found" />;
+
+    const isSuspended = enrollee.status === 'suspended';
+    const isExpired   = enrollee.is_expired;
 
     if (isLoading) return <LoadingSpinner />;
     if (error) return <ErrorAlert message={error.message} />;
@@ -41,6 +62,16 @@ export default function EnrolleeDetailPage() {
                         >
                             <Edit size={18} className="me-1" />
                             Edit
+                        </button>
+                        <button
+                            className={`btn btn-sm btn-outline-${isSuspended ? 'success' : 'warning'} d-flex align-items-center gap-1`}
+                            onClick={() => suspendMutation.mutate()}
+                            disabled={suspendMutation.isPending}
+                        >
+                            {isSuspended
+                                ? <><PlayCircle size={14} /> Reactivate</>
+                                : <><PauseCircle size={14} /> Suspend</>
+                            }
                         </button>
                     </>
                 }

@@ -54,14 +54,14 @@ export default function CorporateListPage() {
     });
 
     const corporates = data?.data?.data ?? [];
-    const meta       = data?.meta;
+    const meta       = data?.data?.meta;
 
     if (error) return <ErrorAlert error={error} onRetry={refetch} />;
 
     return (
         <div>
             <PageHeader
-                title="Corporates"
+                title="Corporates/Clients"
                 subtitle="Manage company clients, their plans and invoices"
                 breadcrumbs={['Home', 'Corporates']}
                 actions={

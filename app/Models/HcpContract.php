@@ -34,6 +34,7 @@ class HcpContract extends Model
         'submitted_at' => 'datetime',
         'approved_at' => 'datetime',
         'terminated_at' => 'datetime',
+        'signed_at'  => 'date',
     ];
 
     /**

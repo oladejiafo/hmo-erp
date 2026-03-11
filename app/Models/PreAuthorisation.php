@@ -175,7 +175,7 @@ class PreAuthorisation extends Model
 
     public function hcp(): BelongsTo
     {
-        return $this->belongsTo(HCP::class, 'hcp_id');
+        return $this->belongsTo(HealthCareProvider::class, 'hcp_id');
     }
 
     public function submittedBy(): BelongsTo

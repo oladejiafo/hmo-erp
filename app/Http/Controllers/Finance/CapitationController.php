@@ -159,6 +159,7 @@ class CapitationController extends Controller
                 $paymentModel = $rate->hcp->payment_model ?? 'capitation';
                 return $paymentModel !== 'fee_for_service';
             });
+            
 
         // $periodDate = Carbon::createFromDate($year, $month, 1)->endOfMonth();
         // $rates      = HcpCapitationRate::forBranch($branchId)

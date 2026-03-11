@@ -267,7 +267,7 @@ function LedgerTab() {
 
     if (error) return <ErrorAlert error={error} onRetry={refetch} />;
 
-    const entries = data?.data?.data ?? [];
+    const entries = data?.data?.data?.data ?? [];
     const summary = summaryData?.data?.data ?? summaryData?.data;
 
     return (
@@ -398,6 +398,7 @@ function HCPPaymentSummaryTab({ navigate }) {
 
     if (error) return <ErrorAlert error={error} onRetry={refetch} />;
 
+    console.log('HCP Payment Summary data:', data);
     const summary = data?.summary ?? {};
     const allRows = data?.data ?? [];
 

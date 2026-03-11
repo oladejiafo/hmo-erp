@@ -12,17 +12,13 @@ use App\Models\SystemSetting;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
-use Illuminate\Support\Facades\Log;
 
 class DependentController extends Controller
 {
-    /**
-     * Get all dependents for an enrollee
-     */
     public function index(Request $request, Enrollee $enrollee): JsonResponse
     {
         /** @disregard P1013 */
-        $this->authorize('enrollees.view');
+        abort_unless(Auth::user()->hasPermissionTo('enrollees.view'), 403);
 
         $dependents = $enrollee->dependents()
             ->when($request->status, fn ($q, $s) => $q->where('status', $s))
@@ -38,22 +34,12 @@ class DependentController extends Controller
         ]);
     }
 
-    /**
-     * Add a dependent to an enrollee.
-     *
-     * Enforces the max-dependents limit using (in priority order):
-     *   1. The plan's own max_dependents value (if the enrollee has a plan and the plan has a limit set)
-     *   2. The system-wide default from SystemSetting: financial.max_dependents (super-admin configurable)
-     *   3. Hard-coded fallback of 4 (used only if the settings table is not yet seeded)
-     */
     public function store(StoreDependentRequest $request, Enrollee $enrollee): JsonResponse
     {
         /** @disregard P1013 */
-        $this->authorize('enrollees.edit');
+        abort_unless(Auth::user()->hasPermissionTo('enrollees.edit'), 403);
 
-        // Resolve the effective limit:
-        // Plan-level limit takes precedence; fall back to the global system setting.
-        $planLimit   = $enrollee->plan?->max_dependents; // null if no plan or no plan limit
+        $planLimit   = $enrollee->plan?->max_dependents;
         $globalLimit = SystemSetting::get('financial.max_dependents', 4);
         $maxAllowed  = $planLimit ?? $globalLimit;
 
@@ -69,16 +55,16 @@ class DependentController extends Controller
         }
 
         $dependent = $enrollee->dependents()->create([
-            'first_name'   => $request->first_name,
-            'middle_name'  => $request->middle_name,
-            'last_name'    => $request->last_name,
-            'date_of_birth'=> $request->date_of_birth,
-            'gender'       => $request->gender,
-            'relationship' => $request->relationship,
-            'blood_group'  => $request->blood_group,
-            'genotype'     => $request->genotype,
-            'status'       => 'active',
-            'added_by'     => Auth::id(),
+            'first_name'    => $request->first_name,
+            'middle_name'   => $request->middle_name,
+            'last_name'     => $request->last_name,
+            'date_of_birth' => $request->date_of_birth,
+            'gender'        => $request->gender,
+            'relationship'  => $request->relationship,
+            'blood_group'   => $request->blood_group,
+            'genotype'      => $request->genotype,
+            'status'        => 'active',
+            'added_by'      => Auth::id(),
         ]);
 
         return response()->json([
@@ -87,13 +73,10 @@ class DependentController extends Controller
         ], 201);
     }
 
-    /**
-     * Get a specific dependent.
-     */
     public function show(Enrollee $enrollee, Dependent $dependent): JsonResponse
     {
         /** @disregard P1013 */
-        $this->authorize('enrollees.view');
+        abort_unless(Auth::user()->hasPermissionTo('enrollees.view'), 403);
 
         if ($dependent->enrollee_id !== $enrollee->id) {
             return response()->json(['message' => 'Dependent not found for this enrollee'], 404);
@@ -102,13 +85,10 @@ class DependentController extends Controller
         return response()->json(['data' => new DependentResource($dependent)]);
     }
 
-    /**
-     * Update a dependent.
-     */
     public function update(UpdateDependentRequest $request, Enrollee $enrollee, Dependent $dependent): JsonResponse
     {
         /** @disregard P1013 */
-        $this->authorize('enrollees.edit');
+        abort_unless(Auth::user()->hasPermissionTo('enrollees.edit'), 403);
 
         if ($dependent->enrollee_id !== $enrollee->id) {
             return response()->json(['message' => 'Dependent not found for this enrollee'], 404);
@@ -122,13 +102,10 @@ class DependentController extends Controller
         ]);
     }
 
-    /**
-     * Delete a dependent (hard delete; blocked if claims exist).
-     */
     public function destroy(Enrollee $enrollee, Dependent $dependent): JsonResponse
     {
         /** @disregard P1013 */
-        $this->authorize('enrollees.edit');
+        abort_unless(Auth::user()->hasPermissionTo('enrollees.edit'), 403);
 
         if ($dependent->enrollee_id !== $enrollee->id) {
             return response()->json(['message' => 'Dependent not found for this enrollee'], 404);

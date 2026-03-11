@@ -136,13 +136,21 @@ class ClaimController extends Controller
      */
     public function process(ProcessClaimRequest $request, Claim $claim): JsonResponse
     {
-        if (! in_array($claim->status->value, ['under_review', 'flagged', 'auto_validated'])) {
+        if (! in_array($claim->status->value, ['submitted', 'under_review', 'flagged', 'auto_validated', 'auto_validating'])) {
             return response()->json([
-                'message' => 'Only claims under review can be processed.',
+                'message' => 'Claim cannot be moved to review from its current state.',
             ], 422);
         }
 
         DB::transaction(function () use ($request, $claim) {
+            if (in_array($claim->status->value, ['submitted', 'auto_validated', 'auto_validating'])) {
+                $this->stateService->transition(
+                    $claim,
+                    \App\Enums\ClaimStatus::UNDER_REVIEW,
+                    $request->note ?? 'Moved to review',
+                    'user'
+                );
+            }
             foreach ($request->items ?? [] as $itemData) {
                 $claim->items()->where('id', $itemData['id'])->update([
                     'amount_approved'   => $itemData['amount_approved'],
@@ -221,7 +229,7 @@ class ClaimController extends Controller
                 'claim_id'        => $claim->id,
                 'assigned_to'     => $assignee->id,
                 'assigned_by'     => Auth::id(),
-                'assignment_type' => $request->priority ?? 'normal',
+                'assignment_type' => $request->priority ?? 'standard',
                 'is_active'       => true,
                 'assigned_at'     => now(),
                 'handover_note'   => $request->notes,

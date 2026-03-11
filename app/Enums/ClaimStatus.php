@@ -54,13 +54,14 @@ enum ClaimStatus: string
     public function allowedTransitions(): array
     {
         return match($this) {
-            self::SUBMITTED         => [self::AUTO_VALIDATING],
+            self::SUBMITTED         => [self::AUTO_VALIDATING, self::UNDER_REVIEW],  // ← add UNDER_REVIEW
             self::AUTO_VALIDATING   => [self::AUTO_VALIDATED, self::FLAGGED],
-            self::AUTO_VALIDATED    => [self::UNDER_REVIEW, self::FLAGGED],
+            // self::AUTO_VALIDATED    => [self::UNDER_REVIEW, self::FLAGGED],
+            self::AUTO_VALIDATED => [self::UNDER_REVIEW, self::FLAGGED, self::APPROVED],
             self::FLAGGED           => [self::SUPERVISOR_REVIEW, self::UNDER_REVIEW, self::REJECTED],
             self::UNDER_REVIEW      => [self::APPROVED, self::REJECTED, self::SUPERVISOR_REVIEW],
             self::SUPERVISOR_REVIEW => [self::APPROVED, self::REJECTED],
-            self::APPROVED          => [self::PAID],
+            self::APPROVED          => [self::PAID, self::REVERSED],                 // ← add REVERSED
             self::PAID              => [self::REVERSED],
             self::REJECTED          => [],
             self::REVERSED          => [],

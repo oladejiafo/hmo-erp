@@ -12,8 +12,12 @@ use Illuminate\Notifications\Notifiable;
 use Laravel\Sanctum\HasApiTokens;
 use Spatie\Permission\Traits\HasRoles;
 
-class User extends Authenticatable
+use OwenIt\Auditing\Auditable;
+use OwenIt\Auditing\Contracts\Auditable as AuditableContract;
+
+class User extends Authenticatable implements AuditableContract
 {
+    use Auditable;
     use HasApiTokens, HasFactory, Notifiable, SoftDeletes, HasAuditLog, HasRoles;
 
     protected $fillable = [

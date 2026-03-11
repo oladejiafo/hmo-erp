@@ -489,6 +489,7 @@ export default function AppRouter() {
 
                 {/* ── Pre-Authorisation ── */}
                 <Route path="pre-auth">
+                    
                     <Route
                         index
                         element={
@@ -500,9 +501,9 @@ export default function AppRouter() {
                     <Route
                         path="new"
                         element={
-                            <PermissionRoute permission="pa.request">
+                            // <PermissionRoute permission="pa.request">
                                 <PAFormPage />
-                            </PermissionRoute>
+                            // </PermissionRoute>
                         }
                     />
                     {/* tat-report must come BEFORE :id — otherwise 'tat-report' is treated as an id param */}

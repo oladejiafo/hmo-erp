@@ -101,7 +101,7 @@ export default function ReportsPage() {
     if (dashboardLoading) return <LoadingSpinner />;
     if (dashboardError) return <ErrorAlert message={dashboardError.message} onRetry={() => window.location.reload()} />;
 
-    const dashboardData = dashboard?.data || dashboard || {};
+    const dashboardData = dashboard?.data?.data || dashboard?.data || dashboard || {};
 
     // Tab configuration - includes both operational reports and NHIA reports
     const tabs = [
@@ -120,15 +120,15 @@ export default function ReportsPage() {
     const getCurrentReportData = () => {
         switch(tab) {
             case 'aging':
-                return agingD?.data || [];
+                return agingD?.data?.data || [];
             case 'by_hcp':
-                return hcpD?.data || [];
+                return hcpD?.data?.data || [];
             case 'by_corp':
-                return corpD?.data || [];
+                return corpD?.data?.data || [];
             case 'high':
-                return highD?.data || [];
+                return highD?.data?.data || [];
             case 'branch':
-                return branchD?.data || [];
+                return branchD?.data?.data || [];
             default:
                 return [];
         }
@@ -185,7 +185,7 @@ export default function ReportsPage() {
                 <div className="col-md-3">
                     <StatCard
                         title="Total Claims"
-                        value={dashboardData.total_claims?.toLocaleString() || '0'}
+                        value={dashboardData.claims_summary?.total?.toLocaleString() || '0'}
                         subtitle="All time claims"
                         icon={FileText}
                         color="primary"
@@ -194,8 +194,8 @@ export default function ReportsPage() {
                 </div>
                 <div className="col-md-3">
                     <StatCard
-                        title="Total Paid"
-                        value={formatCurrency(dashboardData.total_paid || 0)}
+                        title="Total Paid This Month"
+                        value={formatCurrency(dashboardData.finance_summary?.total_paid_this_month || 0)}
                         subtitle="Amount disbursed"
                         icon={DollarSign}
                         color="success"
@@ -205,7 +205,7 @@ export default function ReportsPage() {
                 <div className="col-md-3">
                     <StatCard
                         title="Pending Claims"
-                        value={dashboardData.pending_claims?.toLocaleString() || '0'}
+                        value={dashboardData.claims_summary?.pending?.toLocaleString() || '0'}
                         subtitle="Awaiting processing"
                         icon={FileText}
                         color="warning"
@@ -215,7 +215,7 @@ export default function ReportsPage() {
                 <div className="col-md-3">
                     <StatCard
                         title="Active HCPs"
-                        value={dashboardData.active_hcps?.toLocaleString() || '0'}
+                        value={dashboardData.hcp_summary?.active?.toLocaleString() || '0'}
                         subtitle="Healthcare providers"
                         icon={Building2}
                         color="info"
@@ -255,9 +255,10 @@ export default function ReportsPage() {
                             </div>
                             <ResponsiveContainer width="100%" height={260}>
                                 <BarChart data={(() => {
-                                    const agingData = Array.isArray(agingD?.data) ? agingD.data : 
-                                                      Array.isArray(agingD) ? agingD : 
-                                                      [];
+                                    // const agingData = Array.isArray(agingD?.data) ? agingD.data : 
+                                    //                   Array.isArray(agingD) ? agingD : 
+                                    //                   [];
+                                    const agingData = agingD?.data?.data ?? agingD?.data ?? [];
                                     return agingData;
                                 })()} margin={{ top: 5, right: 20, left: 10, bottom: 5 }}>
                                     <CartesianGrid strokeDasharray="3 3" stroke="#f0f0f0" />
@@ -273,9 +274,10 @@ export default function ReportsPage() {
                             <ReportTable
                                 cols={['Age Bucket','Count','Total Value','Avg Value','Oldest (days)']}
                                 rows={(() => {
-                                    const agingData = Array.isArray(agingD?.data) ? agingD.data : 
-                                                      Array.isArray(agingD) ? agingD : 
-                                                      [];
+                                    // const agingData = Array.isArray(agingD?.data) ? agingD.data : 
+                                    //                   Array.isArray(agingD) ? agingD : 
+                                    //                   [];
+                                    const agingData = agingD?.data?.data ?? agingD?.data ?? [];
                                     return agingData.map(r => [
                                         r.bucket,
                                         <strong>{r.count}</strong>,
@@ -296,18 +298,19 @@ export default function ReportsPage() {
                                 <h6 className="fw-bold mb-0">Claims by Health Care Provider</h6>
                                 <span className="text-muted" style={{ fontSize: 12 }}>
                                     Top {(() => {
-                                        const hcpData = Array.isArray(hcpD?.data) ? hcpD.data : 
-                                                       Array.isArray(hcpD) ? hcpD : 
-                                                       [];
+                                        // const hcpData = Array.isArray(hcpD?.data) ? hcpD.data : 
+                                        //                Array.isArray(hcpD) ? hcpD : 
+                                        //                [];
+                                        const hcpData    = hcpD?.data?.data    ?? hcpD?.data    ?? [];
                                         return Math.min(hcpData.length, 10);
                                     })()} providers by volume
                                 </span>
                             </div>
                             {(() => {
-                                const hcpData = Array.isArray(hcpD?.data) ? hcpD.data : 
-                                                Array.isArray(hcpD) ? hcpD : 
-                                                [];
-                                
+                                // const hcpData = Array.isArray(hcpD?.data) ? hcpD.data : 
+                                //                 Array.isArray(hcpD) ? hcpD : 
+                                //                 [];
+                                const hcpData    = hcpD?.data?.data    ?? hcpD?.data    ?? [];
                                 return hcpData.slice(0, 10).length > 0 && (
                                     <ResponsiveContainer width="100%" height={260}>
                                         <BarChart
@@ -333,9 +336,11 @@ export default function ReportsPage() {
                             <ReportTable
                                 cols={['HCP','Type','Claims','Claimed','Approved','Rejected','Avg Risk']}
                                 rows={(() => {
-                                    const hcpData = Array.isArray(hcpD?.data) ? hcpD.data : 
-                                                    Array.isArray(hcpD) ? hcpD : 
-                                                    [];
+                                    // const hcpData = Array.isArray(hcpD?.data) ? hcpD.data : 
+                                    //                 Array.isArray(hcpD) ? hcpD : 
+                                    //                 [];
+                                    const hcpData    = hcpD?.data?.data    ?? hcpD?.data    ?? [];
+
                                     return hcpData.map(r => [
                                         r.hcp_name,
                                         <span className="text-capitalize">{r.type}</span>,
@@ -361,9 +366,10 @@ export default function ReportsPage() {
                                         <PieChart width={280} height={200}>
                                             <Pie
                                                 data={(() => {
-                                                    const corpData = Array.isArray(corpD?.data) ? corpD.data : 
-                                                                    Array.isArray(corpD) ? corpD : 
-                                                                    [];
+                                                    // const corpData = Array.isArray(corpD?.data) ? corpD.data : 
+                                                    //                 Array.isArray(corpD) ? corpD : 
+                                                    //                 [];
+                                                    const corpData   = corpD?.data?.data   ?? corpD?.data   ?? [];
                                                     return corpData.slice(0, 6);
                                                 })()}
                                                 dataKey="total_claimed"
@@ -374,9 +380,10 @@ export default function ReportsPage() {
                                                 labelLine={false}
                                             >
                                                 {(() => {
-                                                    const corpData = Array.isArray(corpD?.data) ? corpD.data : 
-                                                                    Array.isArray(corpD) ? corpD : 
-                                                                    [];
+                                                    const corpData   = corpD?.data?.data   ?? corpD?.data   ?? [];
+                                                    // const corpData = Array.isArray(corpD?.data) ? corpD.data : 
+                                                    //                 Array.isArray(corpD) ? corpD : 
+                                                    //                 [];
                                                     return corpData.slice(0, 6).map((_, i) => (
                                                         <Cell key={i} fill={PALETTE[i % PALETTE.length]} />
                                                     ));
@@ -390,9 +397,10 @@ export default function ReportsPage() {
                                     <ReportTable
                                         cols={['Corporate','Claims','Enrollees Used','Claimed','Paid','Avg Claim']}
                                         rows={(() => {
-                                            const corpData = Array.isArray(corpD?.data) ? corpD.data : 
-                                                            Array.isArray(corpD) ? corpD : 
-                                                            [];
+                                            const corpData   = corpD?.data?.data   ?? corpD?.data   ?? [];
+                                            // const corpData = Array.isArray(corpD?.data) ? corpD.data : 
+                                            //                 Array.isArray(corpD) ? corpD : 
+                                            //                 [];
                                             return corpData.map(r => [
                                                 <><span className="fw-semibold">{r.corporate_name}</span>{' '}
                                                 <span className="font-monospace text-muted" style={{ fontSize: 10 }}>({r.corporate_code})</span></>,
@@ -417,17 +425,18 @@ export default function ReportsPage() {
                                  style={{ fontSize: 12 }}>
                                 <AlertTriangle size={14} />
                                 <span>
-                                    Threshold: <strong>{formatCurrency(highD?.threshold)}</strong> annual spend per member.
-                                    Year: <strong>{highD?.year}</strong>.
+                                    Threshold: <strong>{formatCurrency(highD?.data?.threshold ?? highD?.threshold)}</strong>
+                                    Year: <strong>{highD?.data?.year ?? highD?.year}</strong>.
                                     Members approaching or exceeding this limit require review.
                                 </span>
                             </div>
                             <ReportTable
                                 cols={['Member','Enrollee ID','Corporate','Plan','Claims','Total Claimed','Avg Risk']}
                                 rows={(() => {
-                                    const highData = Array.isArray(highD?.data) ? highD.data : 
-                                                     Array.isArray(highD) ? highD : 
-                                                     [];
+                                    const highData   = highD?.data?.data   ?? highD?.data   ?? [];
+                                    // const highData = Array.isArray(highD?.data) ? highD.data : 
+                                    //                  Array.isArray(highD) ? highD : 
+                                    //                  [];
                                     return highData.map(r => [
                                         r.enrollee_name,
                                         <span className="font-monospace" style={{ fontSize: 11 }}>{r.enrollee_id}</span>,
@@ -450,9 +459,10 @@ export default function ReportsPage() {
                                 <h6 className="fw-bold mb-0">Branch Performance ({branchD?.year})</h6>
                             </div>
                             {(() => {
-                                const branchData = Array.isArray(branchD?.data) ? branchD.data : 
-                                                  Array.isArray(branchD) ? branchD : 
-                                                  [];
+                                const branchData = branchD?.data?.data ?? branchD?.data ?? [];
+                                // const branchData = Array.isArray(branchD?.data) ? branchD.data : 
+                                //                   Array.isArray(branchD) ? branchD : 
+                                //                   [];
                                 return branchData.length > 0 && (
                                     <ResponsiveContainer width="100%" height={240}>
                                         <BarChart
@@ -477,9 +487,10 @@ export default function ReportsPage() {
                             <ReportTable
                                 cols={['Branch','Corporates','Enrollees','Claims','Total Claimed','Total Paid','Avg Risk']}
                                 rows={(() => {
-                                    const branchData = Array.isArray(branchD?.data) ? branchD.data : 
-                                                      Array.isArray(branchD) ? branchD : 
-                                                      [];
+                                    const branchData = branchD?.data?.data ?? branchD?.data ?? [];
+                                    // const branchData = Array.isArray(branchD?.data) ? branchD.data : 
+                                    //                   Array.isArray(branchD) ? branchD : 
+                                    //                   [];
                                     return branchData.map(r => [
                                         <><span className="fw-semibold">{r.name}</span>{' '}
                                         <span className="badge bg-secondary-subtle text-secondary font-monospace" style={{ fontSize: 10 }}>{r.code}</span></>,
@@ -705,7 +716,7 @@ function HistoryTab() {
         queryFn: () => client.get('/reports/generated', { params: { report_type: typeFilter||undefined, status: statusFilter||undefined } }),
         refetchInterval: 10_000,  // poll while any are generating
     });
-    console.log('History data:', data);
+
     // const reports = data?.data?.data ?? data?.data ?? [];
     const reports = data?.data?.data?.data ?? data?.data?.data ?? data?.data ?? [];
     if (error) return <ErrorAlert error={error} onRetry={refetch}/>;
@@ -945,16 +956,13 @@ function AISummaryModal({ reportType, reportData, onClose }) {
     useEffect(() => {
         const fetchSummary = async () => {
             try {
-                const response = await fetch('/api/ai/summarize-report', {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({ 
-                        report_type: reportType, 
-                        report_data: reportData 
-                    }),
+                const response = await client.post('/ai/summarize-report', {
+                    report_type: reportType,
+                    report_data: reportData,
                 });
-                const data = await response.json();
-                setSummary(data);
+                setSummary(response.data?.data ?? response.data);
+                // const data = await response.json();
+                // setSummary(data);
             } catch (error) {
                 console.error('Failed to get AI summary:', error);
                 setSummary({

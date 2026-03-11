@@ -81,7 +81,7 @@ const navItems = [
     //     group: 'master',
     // },
     {
-        label: "Corporates",
+        label: "Corporates/Clients",
         icon: Building2,
         path: "/corporates",
         permission: "corporates.view",
@@ -229,6 +229,7 @@ const groupOrder = ["core", "master", "financial", "system", "admin"];
 export default function Sidebar({ collapsed }) {
     const { hasPermission, user } = useAuth();
     const location = useLocation();
+    
 
     const isActive = (path, exact = false) => {
         if (exact) return location.pathname === path;
@@ -398,6 +399,8 @@ function SidebarItem({ item, active, collapsed }) {
                   queryFn: fetchNotificationCount,
                   refetchInterval: 30000,
                   staleTime: 15000,
+                //   enabled: !!user,
+                  retry: false,
               })
             : { data: null };
 

@@ -40,7 +40,7 @@ export default function RatesTab() {
     if (isLoading) return <div className="card border-0 shadow-sm" style={{ borderRadius: '0 8px 8px 8px' }}><div className="card-body py-5"><LoadingSpinner /></div></div>;
     if (isError)   return <div className="card border-0 shadow-sm" style={{ borderRadius: '0 8px 8px 8px' }}><div className="card-body"><ErrorAlert message="Failed to load rates." onRetry={refetch} /></div></div>;
 
-    const rates = data?.data?.data  ?? [];
+    const rates = data?.data  ?? [];
 
     return (
         <>

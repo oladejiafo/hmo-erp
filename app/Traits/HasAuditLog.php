@@ -55,6 +55,7 @@ trait HasAuditLog
                 'user_id'     => Auth::id(),
                 'branch_id'   => Auth::user()?->branch_id,
                 'action'      => $action,
+                
                 'model_type'  => get_class($model),
                 'model_id'    => $model->getKey(),
                 'old_values'  => empty($oldValues) ? null : $oldValues,

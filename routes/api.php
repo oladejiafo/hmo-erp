@@ -23,6 +23,7 @@ use App\Http\Controllers\Settings\RoleController;
 use App\Http\Controllers\Settings\UserController;
 use App\Http\Controllers\PreAuthController;
 use App\Http\Controllers\Finance\CapitationController;
+use App\Http\Controllers\Finance\FFSProvidersController;
 use Illuminate\Support\Facades\Route;
 use App\Http\Controllers\Compliance\ComplianceController;
 use App\Http\Controllers\NotificationController;
@@ -36,7 +37,7 @@ use App\Http\Controllers\Claims\ClaimImportController;
 use App\Http\Controllers\HelpArticleController;
 use App\Http\Controllers\Settings\SystemSettingController;
 use App\Http\Controllers\Settings\LicenseController;
-
+use App\Http\Controllers\ProfileController;
 /*
 |--------------------------------------------------------------------------
 | HMO ERP API Routes
@@ -80,8 +81,14 @@ Route::middleware('auth:sanctum')->prefix('auth')->group(function () {
     Route::post('2fa/setup', [AuthController::class, 'setup2FA']); // WRITE
     Route::post('2fa/confirm', [AuthController::class, 'confirm2FA']); // WRITE
     Route::post('2fa/disable', [AuthController::class, 'disable2FA']); // WRITE
+    
 });
 
+Route::middleware('auth:sanctum')->group(function () {
+    Route::get   ('profile',          [ProfileController::class, 'show']);
+    Route::patch ('profile',          [ProfileController::class, 'update']);
+    Route::post  ('profile/password', [ProfileController::class, 'changePassword']);
+});
 // ── License Status (special case - always accessible) ────────────────────
 Route::prefix('settings/license')
     ->middleware('auth:sanctum', 'license')
@@ -240,6 +247,14 @@ Route::middleware(['auth:sanctum', 'branch.isolation'])->group(function () {
                     Route::get('/{run}', [CapitationController::class, 'show']);
                 });
 
+            // In the finance READ group, add:
+            Route::middleware('permission:finance.ffs')
+                ->prefix('ffs')
+                ->group(function () {
+                    Route::get('/providers',    [FFSProvidersController::class, 'index']);
+                    Route::get('/spend-trend',  [FFSProvidersController::class, 'spendTrend']);
+                });
+
             // HCP Payment Summary - READ only
             Route::get('/hcp-payment-summary', [HCPPaymentSummaryController::class, 'index'])
                 ->middleware('permission:finance.view');
@@ -341,7 +356,7 @@ Route::middleware(['auth:sanctum', 'branch.isolation'])->group(function () {
         Route::get('/', [PreAuthController::class, 'index']);
         Route::get('/stats', [PreAuthController::class, 'stats']);
         Route::get('/{pa}', [PreAuthController::class, 'show']);
-        Route::get('/{pa}/download', [PreAuthController::class, 'downloadLetter']);
+        // Route::get('/{pa}/download', [PreAuthController::class, 'downloadLetter']);
     });
 
     // ── Help Centre - READ only ──────────────────────────────────────────
@@ -421,6 +436,12 @@ Route::middleware(['auth:sanctum', 'branch.isolation', 'license'])->group(functi
     Route::middleware('permission:hcps.accredit')->patch('hcps/{hcp}/accredit', [HCPController::class, 'accredit']);
     Route::middleware('permission:hcps.blacklist')->patch('hcps/{hcp}/blacklist', [HCPController::class, 'blacklist']);
 
+
+    Route::middleware('permission:hcps.blacklist')->patch('hcps/{hcp}/unblacklist', [HCPController::class, 'unblacklist']);
+    Route::middleware('permission:hcps.accredit') ->patch('hcps/{hcp}/approve',     [HCPController::class, 'approve']);
+    Route::middleware('permission:hcps.suspend')  ->patch('hcps/{hcp}/suspend',     [HCPController::class, 'suspend']);
+    Route::middleware('permission:hcps.suspend')  ->patch('hcps/{hcp}/reactivate',  [HCPController::class, 'reactivate']);
+    
     // Tariffs - WRITE operations
     Route::middleware('permission:hcps.tariffs')->post('hcps/{hcp}/tariffs', [TariffController::class, 'store']);
     Route::middleware('permission:hcps.tariffs')->post('hcps/{hcp}/tariffs/bulk', [TariffController::class, 'bulkUpload']);
@@ -478,6 +499,13 @@ Route::middleware(['auth:sanctum', 'branch.isolation', 'license'])->group(functi
                 Route::post('/generate', [CapitationController::class, 'generate']);
                 Route::post('/{run}/approve', [CapitationController::class, 'approve']);
                 Route::patch('/{run}/records/{record}', [CapitationController::class, 'adjustRecord']);
+            });
+
+        // FFS - WRITE                                        ← ADD THIS BLOCK
+        Route::middleware('permission:finance.ffs')
+            ->prefix('ffs')
+            ->group(function () {
+                Route::post('/batch', [FFSProvidersController::class, 'createBatch']);
             });
     });
 
@@ -546,12 +574,16 @@ Route::middleware(['auth:sanctum', 'branch.isolation', 'license'])->group(functi
     });
 
     // ── Pre-Auth - WRITE operations ──────────────────────────────────────
-    Route::prefix('pre-auth')->middleware(['branch.scope'])->group(function () {
+    Route::prefix('pre-auth')->middleware(['auth:sanctum','branch.scope'])->group(function () {
+
+        Route::get('/{pa}/download', [PreAuthController::class, 'downloadLetter']);
+    
         Route::post('/', [PreAuthController::class, 'store']);
         Route::post('/validate-code', [PreAuthController::class, 'validateCode']);
         Route::post('/{pa}/approve', [PreAuthController::class, 'approve']);
         Route::post('/{pa}/decline', [PreAuthController::class, 'decline']);
         Route::post('/{pa}/revoke', [PreAuthController::class, 'revoke']);
+    
     });
 
     // ── Help Centre - WRITE operations ───────────────────────────────────

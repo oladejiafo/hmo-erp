@@ -4,14 +4,14 @@ namespace App\Http\Controllers;
 
 use App\Models\PreAuthorisation;
 use App\Models\Enrollee;
-use App\Models\HCP;
+use App\Models\HealthCareProvider;
 use Illuminate\Http\Request;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Validation\Rule;
 use App\Models\SystemSetting;
-
+use Barryvdh\DomPDF\Facade\Pdf;
 use Illuminate\Support\Facades\Log;
 use Carbon\Carbon;
 
@@ -153,15 +153,15 @@ class PreAuthController extends Controller
 
         $enrollee = Enrollee::findOrFail($validated['enrollee_id']);
 
-        // if ($enrollee->status !== 'active') {
-        //     return response()->json([
-        //         'message' => 'Enrollee is not active and cannot receive a Pre-Authorisation.',
-        //     ], 422);
-        // }
+        if ($enrollee->status->value !== 'active')  { 
+            return response()->json([
+                'message' => 'Enrollee is not active and cannot receive a Pre-Authorisation.',
+            ], 422);
+        }
 
-        $hcp = HCP::findOrFail($validated['hcp_id']);
+        $hcp = HealthCareProvider::findOrFail($validated['hcp_id']);
 
-        if (! in_array($hcp->status, ['active', 'accredited'])) {
+        if (! in_array($hcp->status->value, ['active', 'accredited'])) {
             return response()->json([
                 'message' => 'Selected healthcare provider is not active/accredited.',
             ], 422);
@@ -183,6 +183,7 @@ class PreAuthController extends Controller
             : 'pending';
 
         $pa = DB::transaction(function () use ($validated, $user, $tier, $status, $duplicate) {
+
             $pa = PreAuthorisation::create([
                 ...$validated,
                 'pa_number'          => PreAuthorisation::generatePANumber(),
@@ -351,7 +352,7 @@ class PreAuthController extends Controller
         $pa->load([
             'enrollee',
             'enrollee.corporate:id,name',
-            'enrollee.activePlan',                      // assumes Enrollee has activePlan relation
+            // 'enrollee.activePlan',                      // assumes Enrollee has activePlan relation
             'dependent',
             'hcp',
             'submittedBy:id,name',
@@ -594,22 +595,33 @@ class PreAuthController extends Controller
 
     public function downloadLetter(PreAuthorisation $pa)
     {
-        $this->authorize('view', $pa);
-
-        if (! $pa->pa_code) {
+        if (!request()->user()->can('pa.view')) {
+            return response()->json(['message' => 'Unauthorized.'], 403);
+        }
+    
+        if (!$pa->pa_code) {
             return response()->json(['message' => 'PA code has not been issued yet.'], 422);
         }
-
-        $pa->load(['enrollee', 'enrollee.corporate', 'hcp', 'reviewedBy', 'deskApprovedBy']);
-
-        // Requires: composer require barryvdh/laravel-dompdf
-        $pdf = \Barryvdh\DomPDF\Facade\Pdf::loadView('pdf.pa-approval-letter', [
+    
+        $pa->load(['enrollee', 'hcp', 'reviewedBy', 'deskApprovedBy']);
+        
+        // Get HMO settings from database
+        $hmoName = SystemSetting::get('hmo_info.name', 'HMO Management System');
+        $hmoAddress = SystemSetting::get('hmo_info.address', '');
+        $hmoPhone = SystemSetting::get('hmo_info.phone', '');
+        $hmoEmail = SystemSetting::get('hmo_info.email', '');
+        $currencySymbol = SystemSetting::get('hmo_info.currency_symbol', '₦');
+    
+        $pdf = Pdf::loadView('pdf.pa-approval-letter', [
             'pa' => $pa,
+            'hmoName' => $hmoName,
+            'hmoAddress' => $hmoAddress,
+            'hmoPhone' => $hmoPhone,
+            'hmoEmail' => $hmoEmail,
+            'currencySymbol' => $currencySymbol
         ])->setPaper('a4', 'portrait');
-
-        $filename = "PA-Letter-{$pa->pa_code}.pdf";
-
-        return $pdf->download($filename);
+    
+        return $pdf->download("PA-Letter-{$pa->pa_code}.pdf");
     }
 
     // ─────────────────────────────────────────────────────────────────────

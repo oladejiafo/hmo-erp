@@ -38,7 +38,7 @@ export default function AppLayout() {
                 <Topbar
                     onToggleSidebar={() => setSidebarCollapsed(prev => !prev)}
                 />
-                <LicenseBanner /> 
+                {/* <LicenseBanner />  */}
                 <main
                     className="flex-grow-1 overflow-auto p-4"
                     id="main-content"

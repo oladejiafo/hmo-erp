@@ -58,22 +58,19 @@ export default function UserFormPage() {
             });
             // Extract role IDs
             if (user.roles) {
-                setSelectedRoles(user.roles.map(r => r.id));
+                // setSelectedRoles(user.roles.map(r => r.id));
+                setSelectedRoles(user.roles.map(r => r.name));
             }
         }
     }, [userData]);
 
-    const roles = rolesData?.data?.data || [];
-    const branches = branchesData?.data|| [];
-
+    const roles = rolesData?.data?.data ?? rolesData?.data ?? [];
+    // const roles = rolesData?.data?.data || [];
+    // const branches = branchesData?.data|| [];
+    const branches = branchesData?.data?.data ?? branchesData?.data ?? [];
     const createMutation = useMutation({
-        mutationFn: createUser,
-        onSuccess: (response) => {
-            const userId = response.data?.id;
-            // Assign roles after user creation
-            if (selectedRoles.length > 0 && userId) {
-                assignUserRoles(userId, { roles: selectedRoles });
-            }
+        mutationFn: (data) => createUser({ ...data, roles: selectedRoles }),
+        onSuccess: () => {
             toast.success('User created successfully');
             queryClient.invalidateQueries(['users']);
             navigate('/settings/users');
@@ -82,14 +79,10 @@ export default function UserFormPage() {
             toast.error(error.response?.data?.message || 'Failed to create user');
         },
     });
-
+    
     const updateMutation = useMutation({
-        mutationFn: (data) => updateUser(id, data),
+        mutationFn: (data) => updateUser(id, { ...data, roles: selectedRoles }),
         onSuccess: () => {
-            // Update roles
-            if (selectedRoles.length > 0) {
-                assignUserRoles(id, { roles: selectedRoles });
-            }
             toast.success('User updated successfully');
             queryClient.invalidateQueries(['users']);
             queryClient.invalidateQueries(['user', id]);
@@ -130,13 +123,14 @@ export default function UserFormPage() {
         setFormData(prev => ({ ...prev, [name]: value }));
     };
 
-    const toggleRole = (roleId) => {
-        setSelectedRoles(prev =>
-            prev.includes(roleId)
-                ? prev.filter(id => id !== roleId)
-                : [...prev, roleId]
-        );
-    };
+// In toggleRole:
+const toggleRole = (roleName) => {
+    setSelectedRoles(prev =>
+        prev.includes(roleName)
+            ? prev.filter(r => r !== roleName)
+            : [...prev, roleName]
+    );
+};
 
     if ((isEditMode && userLoading) || rolesLoading || branchesLoading) return <LoadingSpinner />;
 
@@ -291,8 +285,10 @@ export default function UserFormPage() {
                                             type="checkbox"
                                             className="form-check-input"
                                             id={`role-${role.id}`}
-                                            checked={selectedRoles.includes(role.id)}
-                                            onChange={() => toggleRole(role.id)}
+                                            // checked={selectedRoles.includes(role.id)}
+                                            // onChange={() => toggleRole(role.id)}
+                                            onChange={() => toggleRole(role.name)}
+                                            checked={selectedRoles.includes(role.name)}
                                         />
                                         <label className="form-check-label" htmlFor={`role-${role.id}`}>
                                             <strong>{role.display_name || role.name}</strong>

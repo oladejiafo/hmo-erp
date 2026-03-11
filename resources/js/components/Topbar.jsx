@@ -41,6 +41,8 @@ export default function Topbar({ onToggleSidebar }) {
         queryFn:         fetchNotificationCount,
         refetchInterval: 30000,
         staleTime:       15000,
+        // enabled:         !!user, 
+        retry:           false,
     });
     const unreadCount   = notifData?.data?.count ?? 0;
     const criticalCount = notifData?.data?.critical ?? 0;

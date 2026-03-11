@@ -64,7 +64,7 @@ export default function CorporateFormPage() {
     // Pre-fill form when editing and data arrives
     useEffect(() => {
         if (isEdit && existingData) {
-            const corporateData = existingData?.data || {};
+            const corporateData = existingData?.data?.data || {};
             reset({
                 name:                corporateData.name || '',
                 industry:            corporateData.industry || '',

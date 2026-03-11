@@ -28,11 +28,14 @@ class ClaimObserver
     public function updated(Claim $claim): void
     {
         if ($claim->isDirty('status')) {
+            $old = $claim->getOriginal('status');
+            $new = $claim->status;
+    
             Log::info(sprintf(
                 'Claim %s status changed: %s → %s',
                 $claim->claim_number,
-                $claim->getOriginal('status'),
-                $claim->status->value
+                $old instanceof \BackedEnum ? $old->value : (string) $old,  // ← fix
+                $new instanceof \BackedEnum ? $new->value : (string) $new,  // ← fix
             ));
         }
     }

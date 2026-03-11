@@ -23,6 +23,7 @@ class Dependent extends Model
         'phone',
         'photo_path',
         'status',
+        'blood_group', 'genotype', 'added_by',
     ];
 
     protected $casts = [
