@@ -15,7 +15,11 @@ import {
     fetchTariffs, createTariff as addTariff, updateTariff,
     fetchContracts, createContract,
     fetchHCPPerformance,
+    createBankDetail, updateBankDetail, deleteBankDetail,
+    fetchClaimsAnomaly, fetchProviderSummary 
 } from '../../api/index';
+
+import client from '../../api/client';
 import { PageHeader, StatusBadge, LoadingSpinner, ErrorAlert } from '../../components/ui/index';
 import { useAuth } from '../../contexts/AuthContext';
 import { formatCurrency, formatDate } from '../../utils/format';
@@ -38,7 +42,7 @@ const CATEGORIES = [
 export default function HCPDetailPage() {
     const { id } = useParams();
     const navigate = useNavigate();
-    const { hasPermission } = useAuth();
+    const { hasPermission, user } = useAuth();
     const qc = useQueryClient();
 
     const [tab, setTab] = useState('overview');
@@ -53,6 +57,13 @@ export default function HCPDetailPage() {
     const [tariffModal,      setTM] = useState(false);
     const [editingTariff,    setET] = useState(null);
     const [contractModal,    setCM] = useState(false);
+    const [bankModal,        setBankModal] = useState(false);
+    const [editingBank,      setEditingBank] = useState(null);
+
+    const [anomaly, setAnomaly] = useState(null);
+    const [providerSummary, setProviderSummary] = useState(null);
+    const [loadingAnomaly, setLoadingAnomaly] = useState(false);
+    const [loadingSummary, setLoadingSummary] = useState(false);
 
     // ── Queries ──────────────────────────────────────────────────────────────
     const { data: hcpData, isLoading, error } = useQuery({
@@ -75,6 +86,24 @@ export default function HCPDetailPage() {
         queryFn:  () => fetchHCPPerformance(id),
         enabled:  !!id,
     });
+
+    const loadClaimsAnomaly = async () => {
+        setLoadingAnomaly(true);
+        try {
+            const res = await fetchClaimsAnomaly(hcp.id, '2025-Q1');
+            if (res.success) setAnomaly(res);
+        } catch (err) { console.error(err); }
+        finally { setLoadingAnomaly(false); }
+    };
+
+    const loadProviderSummary = async () => {
+        setLoadingSummary(true);
+        try {
+            const res = await fetchProviderSummary(hcp.id, '2025-Q1');
+            if (res.success) setProviderSummary(res);
+        } catch (err) { console.error(err); }
+        finally { setLoadingSummary(false); }
+    };
 
     // ── Mutations ─────────────────────────────────────────────────────────────
     const inv = () => qc.invalidateQueries({ queryKey: ['hcp', id] });
@@ -109,12 +138,88 @@ export default function HCPDetailPage() {
         onError:   (e) => toast.error(e.response?.data?.message ?? 'Failed.'),
     });
 
+    // ── Bank Account Mutations ─────────────────────────────────────────────
+    const createBankDetailMutation = useMutation({
+        mutationFn: (data) => createBankDetail(id, data),
+        onSuccess: () => {
+            toast.success('Bank account added successfully.');
+            qc.invalidateQueries({ queryKey: ['hcp', id] });
+            setBankModal(false);
+            setEditingBank(null);
+        },
+        onError: (err) => {
+            toast.error(err.response?.data?.message || 'Failed to add bank account.');
+        },
+    });
+
+    const updateBankDetailMutation = useMutation({
+        mutationFn: ({ bankId, data }) => updateBankDetail(id, bankId, data),
+        onSuccess: () => {
+            toast.success('Bank account updated successfully.');
+            qc.invalidateQueries({ queryKey: ['hcp', id] });
+            setBankModal(false);
+            setEditingBank(null);
+        },
+        onError: (err) => {
+            toast.error(err.response?.data?.message || 'Failed to update bank account.');
+        },
+    });
+
+    const deleteBankDetailMutation = useMutation({
+        mutationFn: (bankId) => deleteBankDetail(id, bankId),
+        onSuccess: () => {
+            toast.success('Bank account deleted.');
+            qc.invalidateQueries({ queryKey: ['hcp', id] });
+        },
+        onError: (err) => {
+            toast.error(err.response?.data?.message || 'Failed to delete bank account.');
+        },
+    });
+
+    // ── Bank Detail Verification ─────────────────────────────────────────────
+    const verifyBankDetail = useMutation({
+        mutationFn: (bankDetailId) => 
+            client.patch(`/hcps/${id}/bank-details/${bankDetailId}/verify`),
+        onSuccess: () => {
+            toast.success('Bank account verified — now active for payments.');
+            qc.invalidateQueries({ queryKey: ['hcp', id] });
+        },
+        onError: (err) => {
+            if (err.response?.status === 403) {
+                toast.error(err.response.data?.message || 'Verification not permitted.');
+            } else {
+                toast.error('Verification failed. Please try again.');
+            }
+        },
+    });
+
+    // ── Handle Functions ─────────────────────────────────────────────────────
+    const handleVerifyBank = (bankDetailId) => {
+        if (!confirm('Confirm: you are verifying this bank account as the authorized checker. Payments to this HCP will use this account.')) return;
+        verifyBankDetail.mutate(bankDetailId);
+    };
+
+    const handleAddBank = () => {
+        setEditingBank(null);
+        setBankModal(true);
+    };
+
+    const handleEditBank = (bankDetail) => {
+        setEditingBank(bankDetail);
+        setBankModal(true);
+    };
+
+    const handleDeleteBank = (bankId) => {
+        if (confirm('Are you sure you want to delete this bank account?')) {
+            deleteBankDetailMutation.mutate(bankId);
+        }
+    };
+
     // ── Early returns ────────────────────────────────────────────────────────
     if (isLoading) return <div className="d-flex justify-content-center py-5"><LoadingSpinner /></div>;
     if (error)     return <ErrorAlert error={error} />;
 
     // ── Data extraction ──────────────────────────────────────────────────────
-    // fetchHCP now returns response.data (unwrapped), so shape is { data: {...} }
     const hcp = hcpData?.data?.data || hcpData?.data || hcpData || {};
     if (!hcp || Object.keys(hcp).length === 0) return <ErrorAlert message="HCP not found" />;
 
@@ -127,6 +232,7 @@ export default function HCPDetailPage() {
     const canSuspend = hasPermission('hcps.suspend');
     const canTariffs = hasPermission('hcps.tariffs');
     const canContracts = hasPermission('hcps.contracts');
+    const canVerifyBank = user?.permissions?.includes('hcps.bank_details_verify');
 
     // ── Derived display ──────────────────────────────────────────────────────
     const score       = parseFloat(hcp.performance_score ?? 0);
@@ -135,9 +241,7 @@ export default function HCPDetailPage() {
 
     const perfRows = (() => {
         if (!perfData) return [];
-        // Shape: { data: { data: { current_score, history: [...] } } }
         if (Array.isArray(perfData?.data?.data?.history)) return perfData.data.data.history;
-        // Fallbacks
         if (Array.isArray(perfData?.data?.data))          return perfData.data.data;
         if (Array.isArray(perfData?.data))                return perfData.data;
         if (Array.isArray(perfData))                      return perfData;
@@ -160,19 +264,16 @@ export default function HCPDetailPage() {
 
     const contracts = (() => {
         if (!contractData) return [];
-        // axios raw → { data: { data: [...] } }  (paginated)
         if (Array.isArray(contractData?.data?.data)) return contractData.data.data;
-        // axios raw → { data: [...] }  (plain array)
         if (Array.isArray(contractData?.data))       return contractData.data;
-        // already unwrapped → { data: [...] }
         if (Array.isArray(contractData?.data?.data)) return contractData.data.data;
-        // already array
         if (Array.isArray(contractData))             return contractData;
         return [];
     })();
 
     const tabs = [
         { key: 'overview',     label: 'Overview' },
+        { key: 'bank-details', label: 'Bank Details' },
         canTariffs  && { key: 'tariffs',     label: 'Tariffs' },
         canContracts && { key: 'contracts',  label: 'Contracts' },
         { key: 'performance',  label: 'Performance' },
@@ -204,8 +305,6 @@ export default function HCPDetailPage() {
 
                 {/* ── Action buttons — context-aware by status ── */}
                 <div className="d-flex gap-2 flex-wrap flex-shrink-0">
-
-                    {/* Edit — always visible if permitted */}
                     {canEdit && (
                         <button className="btn btn-outline-secondary btn-sm d-flex align-items-center gap-1"
                             onClick={() => navigate(`/hcps/${id}/edit`)}>
@@ -213,7 +312,6 @@ export default function HCPDetailPage() {
                         </button>
                     )}
 
-                    {/* PENDING → Accredit (approve) */}
                     {canAccredit && status === 'pending' && (
                         <button className="btn btn-success btn-sm d-flex align-items-center gap-1"
                             onClick={() => accreditM.mutate()} disabled={accreditM.isPending}>
@@ -222,7 +320,6 @@ export default function HCPDetailPage() {
                         </button>
                     )}
 
-                    {/* ACTIVE → Suspend */}
                     {canSuspend && status === 'active' && (
                         <button className="btn btn-warning btn-sm d-flex align-items-center gap-1"
                             onClick={() => setSM(true)}>
@@ -230,7 +327,6 @@ export default function HCPDetailPage() {
                         </button>
                     )}
 
-                    {/* SUSPENDED → Reactivate */}
                     {canSuspend && status === 'suspended' && (
                         <button className="btn btn-outline-success btn-sm d-flex align-items-center gap-1"
                             onClick={() => reactivateM.mutate()} disabled={reactivateM.isPending}>
@@ -239,7 +335,6 @@ export default function HCPDetailPage() {
                         </button>
                     )}
 
-                    {/* NOT blacklisted/terminated → Blacklist */}
                     {canBlacklist && !['blacklisted', 'terminated'].includes(status) && (
                         <button className="btn btn-danger btn-sm d-flex align-items-center gap-1"
                             onClick={() => setBM(true)}>
@@ -247,7 +342,6 @@ export default function HCPDetailPage() {
                         </button>
                     )}
 
-                    {/* BLACKLISTED → Reverse blacklist */}
                     {canBlacklist && status === 'blacklisted' && (
                         <button className="btn btn-outline-warning btn-sm d-flex align-items-center gap-1"
                             onClick={() => setUBM(true)}>
@@ -288,6 +382,42 @@ export default function HCPDetailPage() {
                     </div>
                 </div>
             </div>
+
+            <div className="d-flex gap-2 mb-4">
+                <button className="btn btn-outline-info btn-sm d-flex align-items-center gap-1" 
+                    onClick={loadClaimsAnomaly} disabled={loadingAnomaly}>
+                    {loadingAnomaly ? 'Loading...' : '🔍 Analyse Claims Pattern'}
+                </button>
+                <button className="btn btn-outline-info btn-sm d-flex align-items-center gap-1" 
+                    onClick={loadProviderSummary} disabled={loadingSummary}>
+                    {loadingSummary ? 'Loading...' : '📊 Provider Summary'}
+                </button>
+            </div>
+
+            {anomaly && (
+                <div className="card mb-4 border-warning">
+                    <div className="card-body">
+                        <h6 className="fw-semibold mb-2">Claims Analysis</h6>
+                        <p>{anomaly.summary}</p>
+                        {anomaly.insights?.length > 0 && (
+                            <ul className="mb-0">
+                                {anomaly.insights.map((insight, i) => (
+                                    <li key={i} className="text-muted small">{insight}</li>
+                                ))}
+                            </ul>
+                        )}
+                    </div>
+                </div>
+            )}
+
+            {providerSummary && (
+                <div className="card mb-4 border-success">
+                    <div className="card-body">
+                        <h6 className="fw-semibold mb-2">Provider Performance</h6>
+                        <p className="mb-0">{providerSummary.summary}</p>
+                    </div>
+                </div>
+            )}
 
             {/* ── FFS Contract Banner ───────────────────────────────────────── */}
             {['fee_for_service', 'hybrid'].includes(hcp.payment_model) && (
@@ -386,6 +516,120 @@ export default function HCPDetailPage() {
                             </div>
                         </div>
                     )}
+                </div>
+            )}
+
+            {/* ── Bank Details Tab ─────────────────────────────────────────────── */}
+            {tab === 'bank-details' && (
+                <div>
+                    <div className="d-flex justify-content-between align-items-center mb-3">
+                        <span className="text-muted" style={{ fontSize: 13 }}>
+                            {hcp.bank_details?.length || 0} bank accounts
+                        </span>
+                        {hasPermission('hcps.bank_details.add') && (
+                            <button className="btn btn-primary btn-sm d-flex align-items-center gap-1"
+                                onClick={handleAddBank}>
+                                <Plus size={14} /> Add Bank Account
+                            </button>
+                        )}
+                    </div>
+
+                    <div className="vstack gap-3">
+                        {hcp.bank_details?.length === 0 ? (
+                            <div className="card border-0 shadow-sm">
+                                <div className="card-body text-center py-5 text-muted">
+                                    <Building2 size={36} className="mb-2 opacity-25" />
+                                    <p className="mb-0">No bank accounts added yet.</p>
+                                </div>
+                            </div>
+                        ) : (
+                            hcp.bank_details?.map(detail => (
+                                <div key={detail.id} className="card border-0 shadow-sm">
+                                    <div className="card-body">
+                                        <div className="d-flex align-items-start justify-content-between">
+                                            {/* Bank info */}
+                                            <div>
+                                                <div className="d-flex align-items-center gap-2 mb-1">
+                                                    <span className="fw-semibold">{detail.account_name}</span>
+                                                    {detail.is_verified ? (
+                                                        <span className="badge bg-success-subtle text-success">
+                                                            ✓ Verified
+                                                        </span>
+                                                    ) : (
+                                                        <span className="badge bg-warning-subtle text-warning">
+                                                            ⏳ Pending Verification
+                                                        </span>
+                                                    )}
+                                                </div>
+                                                <p className="text-muted mb-1" style={{ fontSize: 13 }}>
+                                                    {detail.bank_name} · {detail.bank_code} · 
+                                                    ****{detail.account_number?.slice(-4)} · {detail.account_type}
+                                                </p>
+                                                <p className="text-muted mb-0" style={{ fontSize: 11 }}>
+                                                    Added by {detail.added_by?.name || 'Unknown'} · {formatDate(detail.created_at)}
+                                                </p>
+                                                {detail.verified_by && (
+                                                    <p className="text-success mt-1" style={{ fontSize: 11 }}>
+                                                        Verified by {detail.verified_by.name} · {formatDate(detail.verified_at)}
+                                                    </p>
+                                                )}
+                                            </div>
+
+                                            {/* Actions */}
+                                            <div className="d-flex align-items-center gap-2">
+                                                {/* Verify button - only for unverified records where user has permission AND didn't add it */}
+                                                {canVerifyBank && !detail.is_verified && detail.added_by?.id !== user?.id && (
+                                                    <button
+                                                        onClick={() => handleVerifyBank(detail.id)}
+                                                        className="btn btn-outline-success btn-sm"
+                                                    >
+                                                        Verify Account
+                                                    </button>
+                                                )}
+
+                                                {/* Message when user added their own record */}
+                                                {canVerifyBank && !detail.is_verified && detail.added_by?.id === user?.id && (
+                                                    <span className="text-muted fst-italic" style={{ fontSize: 12 }}>
+                                                        You added this — another user must verify
+                                                    </span>
+                                                )}
+
+                                                {/* Edit button - show if user has edit permission */}
+                                                {hasPermission('hcps.bank_details.edit') && (
+                                                    <button
+                                                        onClick={() => handleEditBank(detail)}
+                                                        className="btn btn-outline-secondary btn-sm"
+                                                    >
+                                                        <Edit2 size={14} />
+                                                    </button>
+                                                )}
+
+                                                {/* Delete button - show if user has delete permission */}
+                                                {hasPermission('hcps.bank_details.delete') && (
+                                                    <button
+                                                        onClick={() => handleDeleteBank(detail.id)}
+                                                        className="btn btn-outline-danger btn-sm"
+                                                    >
+                                                        <XCircle size={14} />
+                                                    </button>
+                                                )}
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                            ))
+                        )}
+
+                        {/* Warning banner when no verified account exists */}
+                        {hcp.bank_details?.length > 0 && !hcp.bank_details.some(d => d.is_verified) && (
+                            <div className="alert alert-warning d-flex align-items-center gap-2 mt-3">
+                                <AlertTriangle size={16} />
+                                <span style={{ fontSize: 13 }}>
+                                    ⚠️ No verified bank account — this HCP will be skipped in payment batches until a bank account is verified.
+                                </span>
+                            </div>
+                        )}
+                    </div>
                 </div>
             )}
 
@@ -734,6 +978,23 @@ export default function HCPDetailPage() {
                     </div>
                 </>
             )}
+
+            {/* ── Bank Account Modal ─────────────────────────────────────────────── */}
+            {bankModal && (
+                <BankAccountModal
+                    hcpId={id}
+                    existing={editingBank}
+                    onClose={() => {
+                        setBankModal(false);
+                        setEditingBank(null);
+                    }}
+                    onSaved={() => {
+                        setBankModal(false);
+                        setEditingBank(null);
+                        qc.invalidateQueries({ queryKey: ['hcp', id] });
+                    }}
+                />
+            )}
         </div>
     );
 }
@@ -921,6 +1182,101 @@ function ContractModal({ hcpId, onClose, onSaved }) {
                             <button className="btn btn-primary" onClick={save}
                                 disabled={saving || !f.contract_number}>
                                 {saving ? 'Saving…' : 'Create Contract'}
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </>
+    );
+}
+
+// ── BankAccountModal ─────────────────────────────────────────────────────────
+function BankAccountModal({ hcpId, existing, onClose, onSaved }) {
+    const [f, setF] = useState({
+        bank_name: existing?.bank_name ?? '',
+        bank_code: existing?.bank_code ?? '',
+        account_name: existing?.account_name ?? '',
+        account_number: existing?.account_number ?? '',
+        account_type: existing?.account_type ?? 'savings',
+        sort_code: existing?.sort_code ?? '',
+    });
+    const [saving, setSaving] = useState(false);
+
+    const save = async () => {
+        try {
+            setSaving(true);
+            if (existing) {
+                await updateBankDetail(hcpId, existing.id, f);
+            } else {
+                await createBankDetail(hcpId, f);
+            }
+            toast.success(existing ? 'Bank account updated.' : 'Bank account added.');
+            onSaved();
+        } catch (e) {
+            toast.error(e.response?.data?.message ?? 'Save failed.');
+        } finally {
+            setSaving(false);
+        }
+    };
+
+    return (
+        <>
+            <div className="modal-backdrop fade show" />
+            <div className="modal d-block">
+                <div className="modal-dialog modal-lg modal-dialog-centered">
+                    <div className="modal-content">
+                        <div className="modal-header">
+                            <h6 className="modal-title">{existing ? 'Edit' : 'Add'} Bank Account</h6>
+                            <button className="btn-close" onClick={onClose} />
+                        </div>
+                        <div className="modal-body">
+                            <div className="row g-3">
+                                <div className="col-md-6">
+                                    <label className="form-label fw-semibold" style={{ fontSize: 13 }}>Bank Name *</label>
+                                    <input className="form-control" value={f.bank_name}
+                                        onChange={e => setF(p => ({ ...p, bank_name: e.target.value }))}
+                                        placeholder="e.g. First Bank" />
+                                </div>
+                                <div className="col-md-6">
+                                    <label className="form-label fw-semibold" style={{ fontSize: 13 }}>Bank Code</label>
+                                    <input className="form-control" value={f.bank_code}
+                                        onChange={e => setF(p => ({ ...p, bank_code: e.target.value }))}
+                                        placeholder="e.g. 011" />
+                                </div>
+                                <div className="col-md-6">
+                                    <label className="form-label fw-semibold" style={{ fontSize: 13 }}>Account Name *</label>
+                                    <input className="form-control" value={f.account_name}
+                                        onChange={e => setF(p => ({ ...p, account_name: e.target.value }))} />
+                                </div>
+                                <div className="col-md-6">
+                                    <label className="form-label fw-semibold" style={{ fontSize: 13 }}>Account Number *</label>
+                                    <input className="form-control" value={f.account_number}
+                                        onChange={e => setF(p => ({ ...p, account_number: e.target.value }))}
+                                        maxLength="10" />
+                                </div>
+                                <div className="col-md-4">
+                                    <label className="form-label fw-semibold" style={{ fontSize: 13 }}>Account Type</label>
+                                    <select className="form-select" value={f.account_type}
+                                        onChange={e => setF(p => ({ ...p, account_type: e.target.value }))}>
+                                        <option value="savings">Savings</option>
+                                        <option value="current">Current</option>
+                                        <option value="domiciliary">Domiciliary</option>
+                                    </select>
+                                </div>
+                                <div className="col-md-4">
+                                    <label className="form-label fw-semibold" style={{ fontSize: 13 }}>Sort Code</label>
+                                    <input className="form-control" value={f.sort_code}
+                                        onChange={e => setF(p => ({ ...p, sort_code: e.target.value }))}
+                                        placeholder="e.g. 01-02-03" />
+                                </div>
+                            </div>
+                        </div>
+                        <div className="modal-footer">
+                            <button className="btn btn-light" onClick={onClose}>Cancel</button>
+                            <button className="btn btn-primary" onClick={save}
+                                disabled={saving || !f.bank_name || !f.account_name || !f.account_number}>
+                                {saving ? 'Saving…' : (existing ? 'Update' : 'Add')} Bank Account
                             </button>
                         </div>
                     </div>

@@ -14,7 +14,7 @@ return [
     */
 
     'name' => env('APP_NAME', 'Laravel'),
-
+    'hmo_name' => env('APP_HMO_NAME', 'G8 Nexum Health'),
     /*
     |--------------------------------------------------------------------------
     | Application Environment

@@ -1,9 +1,17 @@
 <?php
+/**
+ * PATCH NOTE: this is your existing app/Models/Claim.php with Phase 1 additions.
+ * Everything from your original file is preserved as-is. New lines are marked
+ * with "// [PHASE 1]" comments so a diff against your real file is easy.
+ * Do not just overwrite blindly if your live file has moved on since you sent
+ * this — diff it first.
+ */
 
 namespace App\Models;
 
 use App\Enums\ClaimStatus;
 use App\Enums\ClaimType;
+use App\Enums\ClaimConfirmationStatus; // [PHASE 1]
 use App\Traits\BelongsToBranch;
 use App\Traits\GeneratesUniqueId;
 use App\Traits\HasAuditLog;
@@ -30,6 +38,12 @@ class Claim extends Model
         'source',            // 'manual' | 'bulk_import'
         'import_batch_id',   // FK to claim_import_batches
         'hcp_invoice_ref',
+
+        // [PHASE 1] — utilization confirmation
+        'enrollee_confirmation_status',
+        'enrollee_confirmed_at',
+        'enrollee_disputed_at',
+        'enrollee_dispute_reason',
     ];
 
     protected $casts = [
@@ -49,6 +63,11 @@ class Claim extends Model
         'approved_at'         => 'datetime',
         'rejected_at'         => 'datetime',
         'paid_at'             => 'datetime',
+
+        // [PHASE 1]
+        'enrollee_confirmation_status' => ClaimConfirmationStatus::class,
+        'enrollee_confirmed_at'        => 'datetime',
+        'enrollee_disputed_at'         => 'datetime',
     ];
 
     // ─── Helpers ──────────────────────────────────────────────────────────────
@@ -76,6 +95,13 @@ class Claim extends Model
     public function getDiscrepancyAttribute(): float
     {
         return $this->total_amount_claimed - $this->total_amount_approved;
+    }
+
+    // [PHASE 1] — can the enrollee still act on this claim's confirmation?
+    public function canBeConfirmedByEnrollee(): bool
+    {
+        return $this->enrollee_confirmation_status === ClaimConfirmationStatus::PENDING
+            && ! in_array($this->status, [ClaimStatus::PAID, ClaimStatus::REJECTED, ClaimStatus::REVERSED], true);
     }
 
     // ─── Scopes ───────────────────────────────────────────────────────────────
@@ -108,6 +134,17 @@ class Claim extends Model
     public function scopeForEnrollee($query, int $enrolleeId)
     {
         return $query->where('enrollee_id', $enrolleeId);
+    }
+
+    // [PHASE 1]
+    public function scopeAwaitingEnrolleeConfirmation($query)
+    {
+        return $query->where('enrollee_confirmation_status', ClaimConfirmationStatus::PENDING->value);
+    }
+
+    public function scopeDisputed($query)
+    {
+        return $query->where('enrollee_confirmation_status', ClaimConfirmationStatus::DISPUTED->value);
     }
 
     // ─── Relationships ────────────────────────────────────────────────────────
@@ -165,5 +202,11 @@ class Claim extends Model
     public function payment(): HasOne
     {
         return $this->hasOne(ProviderPayment::class);
+    }
+
+    // [PHASE 1]
+    public function reimbursementRequests(): HasMany
+    {
+        return $this->hasMany(ReimbursementRequest::class);
     }
 }

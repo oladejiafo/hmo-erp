@@ -45,6 +45,9 @@ class RolePermissionSeeder extends Seeder
         // ── Finance ───────────────────────────────────────────────────────────
         'finance.view', 'finance.batch_create', 'finance.batch_approve',
         'finance.ledger_view', 'finance.remittance', 'finance.capitation',
+        // ── Reimbursements ────────────────────────────────────────────────────
+        'reimbursements.view',     // See reimbursement request queue
+        'reimbursements.review',   // Approve/reject/mark-paid
 
         // ── Reports ───────────────────────────────────────────────────────────
         'reports.branch', 'reports.all_branches', 'reports.audit_logs',
@@ -61,6 +64,12 @@ class RolePermissionSeeder extends Seeder
         // ── Compliance Calendar — Phase 4 ─────────────────────────────────────
         'compliance.view',       // See filings, calendar
         'compliance.manage',     // Create/update filings, mark complete, upload docs
+
+        // ── Portal Self-Service Access ─────────────────────────────────────────
+        'portal.enrollee.access',
+        'portal.corporate.access',
+        'portal.provider.access', 
+
     ];
 
     /**
@@ -85,7 +94,7 @@ class RolePermissionSeeder extends Seeder
                 'claims.view', 'claims.process', 'claims.approve', 'claims.reject',
                 'claims.assign', 'claims.fraud_view', 'claims.fraud_review',
                 'finance.view', 'finance.batch_create', 'finance.batch_approve',
-                'finance.ledger_view', 'finance.remittance', 'finance.capitation',
+                'finance.ledger_view', 'finance.remittance', 'finance.capitation', 'reimbursements.view', 'reimbursements.review',  
                 'reports.branch', 'reports.all_branches', 'reports.export', 'reports.fraud_heatmap',
             ],
         ],
@@ -97,7 +106,7 @@ class RolePermissionSeeder extends Seeder
                 'enrollees.view', 'enrollees.create', 'enrollees.edit',
                 'hcps.view', 'hcps.create', 'hcps.edit', 'hcps.tariffs',
                 'claims.view', 'claims.process', 'claims.assign', 'claims.fraud_view',
-                'finance.view', 'finance.ledger_view',
+                'finance.view', 'finance.ledger_view',  'reimbursements.view', 'reimbursements.review',  
                 'reports.branch', 'reports.export',
 
                 // PA
@@ -112,7 +121,7 @@ class RolePermissionSeeder extends Seeder
                 'hcps.view', 'hcps.tariffs',
                 'claims.view', 'claims.process', 'claims.approve', 'claims.reject',
                 'claims.assign', 'claims.fraud_view', 'claims.fraud_review',
-                'finance.view',
+                'finance.view', 'reimbursements.view', 
                 'reports.branch', 'reports.fraud_heatmap',
                 'pa.view', 'pa.approve_standard', 'pa.decline',
             ],
@@ -132,7 +141,7 @@ class RolePermissionSeeder extends Seeder
                 'hcps.view', 'hcps.bank_details',
                 'claims.view',
                 'finance.view', 'finance.batch_create', 'finance.batch_approve',
-                'finance.ledger_view', 'finance.remittance', 'finance.capitation',
+                'finance.ledger_view', 'finance.remittance', 'finance.capitation', 'reimbursements.view', 'reimbursements.review', 
                 'reports.branch', 'reports.export',
                 'pa.view',
             ],
@@ -158,7 +167,7 @@ class RolePermissionSeeder extends Seeder
                 'finance.view', 'finance.ledger_view',
                 'reports.branch', 'reports.all_branches',
                 'reports.audit_logs', 'reports.export', 'reports.fraud_heatmap',
-                'pa.view', 'compliance.view',
+                'pa.view', 'compliance.view', 'reimbursements.view',
             ],
         ],
         'medical_director' => [
@@ -183,6 +192,21 @@ class RolePermissionSeeder extends Seeder
                 // PA — CEO final approval tier only
                 'pa.view', 'pa.approve_critical', 'pa.decline',
             ],
+        ],
+        'enrollee_user' => [
+            'permissions' => ['portal.enrollee.access'],
+            'guard_name'  => 'sanctum',
+            'description' => 'Self-service portal access for enrollees.',
+        ],
+        'corporate_user' => [
+            'permissions' => ['portal.corporate.access'],
+            'guard_name'  => 'sanctum',
+            'description' => 'Self-service portal access for corporate HR contacts.',
+        ],
+        'hcp_user' => [   // [PHASE 2]
+            'permissions' => ['portal.provider.access'],
+            'guard_name'  => 'sanctum',
+            'description' => 'Self-service portal access for healthcare providers.',
         ],
     ];
 

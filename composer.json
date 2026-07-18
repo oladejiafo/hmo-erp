@@ -19,6 +19,7 @@
         "phpoffice/phpspreadsheet": "^1.30",
         "pragmarx/google2fa-laravel": "^2.3",
         "predis/predis": "^3.4",
+        "sentry/sentry-laravel": "^4.23",
         "simplesoftwareio/simple-qrcode": "^4.2",
         "spatie/laravel-medialibrary": "^11.20",
         "spatie/laravel-permission": "^7.1",

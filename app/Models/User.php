@@ -1,4 +1,9 @@
 <?php
+/**
+ * PATCH NOTE: your real app/Models/User.php (113 lines, verified from repo)
+ * plus two additions for Provider Portal, marked [PHASE 2]. Everything else
+ * is byte-for-byte your original.
+ */
 
 namespace App\Models;
 
@@ -34,7 +39,8 @@ class User extends Authenticatable implements AuditableContract
         'password_changed_at',
         'user_type',
         'corporate_id',
-        'enrollee_id'
+        'enrollee_id',
+        'hcp_id', // [PHASE 2]
     ];
 
     protected $hidden = [
@@ -73,6 +79,12 @@ class User extends Authenticatable implements AuditableContract
         return $this->belongsTo(Enrollee::class, 'enrollee_id');
     }
 
+    // [PHASE 2]
+    public function hcp(): BelongsTo
+    {
+        return $this->belongsTo(HealthCareProvider::class, 'hcp_id');
+    }
+
     public function auditLogs(): HasMany
     {
         return $this->hasMany(AuditLog::class);
@@ -98,6 +110,12 @@ class User extends Authenticatable implements AuditableContract
     public function isActive(): bool
     {
         return $this->status === 'active';
+    }
+
+    // [PHASE 2]
+    public function isProviderUser(): bool
+    {
+        return $this->user_type === 'hcp_user';
     }
 
     // ─── Scopes ───────────────────────────────────────────────────────────────

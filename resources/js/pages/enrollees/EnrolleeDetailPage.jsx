@@ -1,8 +1,8 @@
-import React from 'react';
+import React,{ useState, useEffect, useMemo } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { ArrowLeft, Edit, User, Calendar, Phone, Mail, MapPin, Users, FileText, PauseCircle, PlayCircle } from 'lucide-react';
-import { fetchEnrollee, suspendEnrollee } from '../../api/index';
+import { fetchEnrollee, suspendEnrollee, draftEnrolleeResponse } from '../../api/index';
 import { PageHeader, StatusBadge, LoadingSpinner, ErrorAlert } from '../../components/ui/index';
 import { formatDate } from '../../utils/format';
 import { toast } from 'react-toastify';
@@ -11,6 +11,11 @@ export default function EnrolleeDetailPage() {
     const { id } = useParams();
     const navigate = useNavigate();
     const queryClient = useQueryClient();
+
+    const [inquiryText, setInquiryText] = useState('');
+    const [draftedResponse, setDraftedResponse] = useState(null);
+    const [loadingResponse, setLoadingResponse] = useState(false);
+
 
     const { data, isLoading, error } = useQuery({
         queryKey: ['enrollee', id],
@@ -25,6 +30,22 @@ export default function EnrolleeDetailPage() {
         },
         onError: (err) => toast.error(err.response?.data?.message ?? 'Action failed.'),
     });
+
+    const handleDraftResponse = async () => {
+        if (!inquiryText.trim()) {
+            toast.warning('Please enter the enquiry first');
+            return;
+        }
+        setLoadingResponse(true);
+        try {
+            const res = await draftEnrolleeResponse(enrollee.id, inquiryText);
+            if (res.success) setDraftedResponse(res.response);
+        } catch (err) {
+            toast.error('Failed to generate response');
+        } finally {
+            setLoadingResponse(false);
+        }
+    };
 
     // ── Early returns FIRST — before any data access ──
     if (isLoading) return <LoadingSpinner />;
@@ -131,6 +152,46 @@ export default function EnrolleeDetailPage() {
                                     </strong>
                                 </div>
                             </div>
+                        </div>
+                    </div>
+
+                    <div className="card mb-4">
+                        <div className="card-header">
+                            <h5 className="mb-0">✉️ AI Response Drafter</h5>
+                        </div>
+                        <div className="card-body">
+                            <textarea 
+                                className="form-control mb-3"
+                                rows={3}
+                                value={inquiryText}
+                                onChange={e => setInquiryText(e.target.value)}
+                                placeholder="Paste enrollee's enquiry here..."
+                            />
+                            <button 
+                                className="btn btn-outline-primary" 
+                                onClick={handleDraftResponse} 
+                                disabled={loadingResponse}
+                            >
+                                {loadingResponse ? 'Drafting...' : '✉️ Draft Response'}
+                            </button>
+                            
+                            {draftedResponse && (
+                                <div className="mt-3">
+                                    <label className="form-label fw-semibold">Drafted Response</label>
+                                    <textarea 
+                                        className="form-control font-monospace small"
+                                        rows={8}
+                                        value={draftedResponse}
+                                        onChange={e => setDraftedResponse(e.target.value)}
+                                    />
+                                    <button 
+                                        className="btn btn-sm btn-outline-secondary mt-2"
+                                        onClick={() => navigator.clipboard.writeText(draftedResponse)}
+                                    >
+                                        Copy to Clipboard
+                                    </button>
+                                </div>
+                            )}
                         </div>
                     </div>
 

@@ -7,7 +7,8 @@ import {
 } from 'lucide-react';
 import {
     fetchClaim, reverseClaim, approveClaim, rejectClaim, processClaim,
-    assignClaim, fetchUsers, fetchClaimTimeline, fetchFraudFlags
+    assignClaim, fetchUsers, fetchClaimTimeline, fetchFraudFlags,
+    fetchClaimRisk
 } from '../../api/index';
 import { PageHeader, StatusBadge, LoadingSpinner, ErrorAlert } from '../../components/ui/index';
 import { formatCurrency, formatDate, formatDateTime } from '../../utils/format';
@@ -40,6 +41,9 @@ export default function ClaimDetailPage() {
     const [assignUserId, setAssignUserId] = useState('');
     const [assignNote, setAssignNote] = useState('');
     const [processNote, setProcessNote] = useState('');
+
+    const [claimRisk, setClaimRisk] = useState(null);
+    const [loadingRisk, setLoadingRisk] = useState(false);
 
     // ── useQuery hooks (keep these here) ─────────────────────────────────
     const { data, isLoading, error } = useQuery({
@@ -75,6 +79,15 @@ export default function ClaimDetailPage() {
         if (Array.isArray(usersData)) return usersData;
         return [];
     }, [usersData]);
+
+    const loadClaimRisk = async () => {
+        setLoadingRisk(true);
+        try {
+            const res = await fetchClaimRisk(id);
+            if (res.success) setClaimRisk(res);
+        } catch (err) { console.error(err); }
+        finally { setLoadingRisk(false); }
+    };
 
     // REPLACE WITH (data only):
     useEffect(() => {
@@ -239,6 +252,21 @@ export default function ClaimDetailPage() {
                                 <AlertTriangle size={12} /> High Risk ({claim.risk_score}/100)
                             </span>
                         )}
+
+                        {claim.risk_score !== undefined && (
+                            <div className="d-flex align-items-center gap-2 ms-3">
+                                <span className="badge bg-secondary">Local Risk: {claim.risk_score}/100</span>
+                                <button className="btn btn-sm btn-outline-warning" onClick={loadClaimRisk} disabled={loadingRisk}>
+                                    {loadingRisk ? '...' : '⚡ AI Risk'}
+                                </button>
+                                {claimRisk && (
+                                    <span className={`badge ${claimRisk.label === 'high' ? 'bg-danger' : 'bg-warning'}`}>
+                                        AI: {claimRisk.score}/100 ({claimRisk.label})
+                                    </span>
+                                )}
+                            </div>
+                        )}
+
                     </span>
                 }
                 actions={

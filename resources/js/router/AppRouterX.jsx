@@ -1,3 +1,10 @@
+/**
+ * FILE LOCATION: resources/js/router/AppRouterX.jsx
+ * PATCH NOTE: your real file (69 lines, verified from repo) with Provider
+ * Portal wired in, marked [PHASE 2]. This file is short enough to give you
+ * the full replacement rather than a fragment patch — safer than a partial
+ * diff on a file this size.
+ */
 import React, { useEffect } from 'react';
 import { Routes, Route, Navigate, useNavigate } from 'react-router-dom';
 import { useAuth } from '../contexts/AuthContext';
@@ -15,6 +22,7 @@ import SupportPage from '../pages/legal/SupportPage';
 import HMOPortal from '../portals/hmo';
 import CorporatePortal from '../portals/corporate';
 import EnrolleePortal from '../portals/enrollee';
+import ProviderPortal from '../portals/provider'; // [PHASE 2]
 
 export default function AppRouter() {
     const { user, loading, portalType } = useAuth();
@@ -30,6 +38,7 @@ export default function AppRouter() {
         if (currentPath === '/login') {
             if (portal === 'enrollee') navigate('/enrollee', { replace: true });
             else if (portal === 'corporate') navigate('/corporate', { replace: true });
+            else if (portal === 'provider') navigate('/provider', { replace: true }); // [PHASE 2]
             else navigate('/', { replace: true });
         }
     }, [user, loading, portalType, navigate]);
@@ -68,6 +77,10 @@ export default function AppRouter() {
     
     if (portal === 'corporate') {
         return <CorporatePortal />;
+    }
+
+    if (portal === 'provider') {   // [PHASE 2]
+        return <ProviderPortal />;
     }
     
     // Default: HMO portal

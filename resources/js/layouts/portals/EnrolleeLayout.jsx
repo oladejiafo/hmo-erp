@@ -14,15 +14,17 @@ import { Outlet, NavLink, useNavigate } from 'react-router-dom';
 import {
     LayoutDashboard, CreditCard, Activity, FileText,
     MapPin, MessageSquare, LogOut, Menu, X, Bell,
+    Receipt, // [PHASE 1] NEW
 } from 'lucide-react';
 import { useAuth } from '../../contexts/AuthContext';
 
 const navItems = [
     { path: '/enrollee',            label: 'Home',          icon: LayoutDashboard, exact: true },
-    { path: '/enrollee/id-card',    label: 'My ID Card',    icon: CreditCard },
+    { path: '/enrollee/id-card',    label: 'ID Card',       icon: CreditCard },
     { path: '/enrollee/benefits',   label: 'Benefits',      icon: Activity },
-    { path: '/enrollee/claims',     label: 'My Claims',     icon: FileText },
-    { path: '/enrollee/find-hcp',   label: 'Find Hospital', icon: MapPin },
+    { path: '/enrollee/claims',     label: 'Claims',        icon: FileText },
+    { path: '/enrollee/reimbursements', label: 'Reimburse', icon: Receipt }, // Shortened
+    { path: '/enrollee/find-hcp',   label: 'Hospitals',     icon: MapPin },
     { path: '/enrollee/complaints', label: 'Complaints',    icon: MessageSquare },
 ];
 
@@ -56,7 +58,7 @@ export default function EnrolleeLayout() {
                 top:          0,
                 zIndex:       200,
             }}>
-                <div style={{ maxWidth: 1100, margin: '0 auto', padding: '0 20px' }}>
+                <div style={{ maxWidth: 1200, margin: '0 auto', padding: '0 20px' }}>
                     <div style={{ display: 'flex', alignItems: 'center', height: 60, gap: 20 }}>
 
                         {/* Logo */}

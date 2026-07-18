@@ -55,7 +55,7 @@ export default function AIChatSidebar({ isOpen, onClose }) {
             <div className="d-flex align-items-center justify-content-between p-3 border-bottom">
                 <div className="d-flex align-items-center gap-2">
                     <Bot size={20} className="text-primary" />
-                    <h6 className="mb-0 fw-bold">AI Assistant</h6>
+                    <h6 className="mb-0 fw-bold">G8.AI Assistant</h6>
                 </div>
                 <button className="btn btn-sm btn-light" onClick={onClose}>
                     <X size={16} />

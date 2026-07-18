@@ -192,6 +192,9 @@ export const verifyBankDetail = (hcpId, bankDetailId) =>
 export const deleteBankDetail = (hcpId, bankDetailId) => 
     apiClient.delete(`/hcps/${hcpId}/bank-details/${bankDetailId}`);
 
+export const updateBankDetail = (hcpId, bankId, data) => 
+    client.put(`/hcps/${hcpId}/bank-details/${bankId}`, data);
+
 // ============= CLAIMS =============
 export const fetchClaims = (params) => apiClient.get('/claims', { params });
 export const fetchClaim = (id) => apiClient.get(`/claims/${id}`);
@@ -208,6 +211,13 @@ export const reviewFraudFlag = (id, flagId, data) =>
 
 // ✅ Add these missing exports
 export const fetchFraudFlags = (id) => apiClient.get(`/claims/${id}/fraud-flags`);
+
+export const fetchDashboardDigest = () => apiClient.get('/ai/dashboard-digest').then(r => r.data);
+export const fetchClaimsAnomaly = (hcpId, period) => apiClient.get(`/ai/claims-anomaly/${hcpId}`, { params: { period } }).then(r => r.data);
+export const fetchProviderSummary = (hcpId, period) => apiClient.get(`/ai/provider-summary/${hcpId}`, { params: { period } }).then(r => r.data);
+export const fetchClaimRisk = (claimId) => apiClient.get(`/ai/claim-risk/${claimId}`).then(r => r.data);
+export const draftEnrolleeResponse = (enrolleeId, inquiryText) => apiClient.post('/ai/enrollee-response', { enrollee_id: enrolleeId, inquiry_text: inquiryText }).then(r => r.data);
+
 
 export const fetchImportBatches = (params) => 
     apiClient.get('/claims/imports', { params });
@@ -386,6 +396,65 @@ export const submitEnrolleeComplaint = (d) => apiClient.post('/portal/enrollee/c
 export const fetchEnrolleePortalProfile = () => apiClient.get('/portal/enrollee/profile').then(r => r.data);
 export const updateEnrolleePortalProfile = (d) => apiClient.put('/portal/enrollee/profile', d);
 
+export const confirmEnrolleeClaimUtilization = (claimId) =>
+    apiClient.post(`/portal/enrollee/claims/${claimId}/confirm-utilization`).then(r => r.data);
+export const disputeEnrolleeClaimUtilization = (claimId, reason) =>
+    apiClient.post(`/portal/enrollee/claims/${claimId}/dispute-utilization`, { reason }).then(r => r.data);
+export const fetchEnrolleePortalReimbursements = () =>
+    apiClient.get('/portal/enrollee/reimbursements').then(r => r.data);
+export const submitEnrolleePortalReimbursement = (formData) =>
+    apiClient.post('/portal/enrollee/reimbursements', formData, {
+        headers: { 'Content-Type': 'multipart/form-data' }
+    }).then(r => r.data);
+
+
+// // ========== PROVIDER SELF-SERVICE PORTAL =============
+// export const fetchProviderDashboard = () =>
+//     apiClient.get('/portal/provider/dashboard').then(r => r.data);
+// export const verifyProviderEnrollee = (memberNumber) =>
+//     apiClient.post('/portal/provider/verify-enrollee', { member_number: memberNumber }).then(r => r.data);
+// export const fetchProviderClaims = (params) =>
+//     apiClient.get('/portal/provider/claims', { params }).then(r => r.data);
+// export const fetchProviderClaim = (id) =>
+//     apiClient.get(`/portal/provider/claims/${id}`).then(r => r.data);
+// export const submitProviderClaim = (data) =>
+//     apiClient.post('/portal/provider/claims', data).then(r => r.data);
+// export const fetchProviderPreAuths = (params) =>
+//     apiClient.get('/portal/provider/pre-auths', { params }).then(r => r.data);
+// export const submitProviderPreAuth = (data) =>
+//     apiClient.post('/portal/provider/pre-auths', data).then(r => r.data);
+
+
+// ========== PROVIDER SELF-SERVICE PORTAL =============
+export const fetchProviderDashboard = () =>
+    apiClient.get('/portal/provider/dashboard').then(r => r.data);
+export const fetchProviderCheckins = () =>
+    apiClient.get('/portal/provider/check-ins').then(r => r.data);
+// Add these missing functions
+// export const fetchProviderCheckins = () =>
+//     apiClient.get('/portal/provider/checkins').then(r => r.data);
+
+export const acknowledgeProviderCheckin = (checkinId) =>
+    apiClient.post(`/portal/provider/checkins/${checkinId}/acknowledge`).then(r => r.data);
+
+export const verifyProviderEnrollee = (memberNumber) =>
+    apiClient.post('/portal/provider/verify-enrollee', { member_number: memberNumber }).then(r => r.data);
+
+export const fetchProviderClaims = (params) =>
+    apiClient.get('/portal/provider/claims', { params }).then(r => r.data);
+
+export const fetchProviderClaim = (id) =>
+    apiClient.get(`/portal/provider/claims/${id}`).then(r => r.data);
+
+export const submitProviderClaim = (data) =>
+    apiClient.post('/portal/provider/claims', data).then(r => r.data);
+
+export const fetchProviderPreAuths = (params) =>
+    apiClient.get('/portal/provider/pre-auths', { params }).then(r => r.data);
+
+export const submitProviderPreAuth = (data) =>
+    apiClient.post('/portal/provider/pre-auths', data).then(r => r.data);
+
 // ============= USERS =============
 export const fetchUsers = (params) => apiClient.get('/users', { params });
 // export const fetchUser = (id) => apiClient.get(`/users/${id}`);
@@ -508,7 +577,14 @@ export default {
     fetchEnrolleePortalDashboard, fetchEnrolleePortalIDCard, fetchEnrolleePortalBenefits,
     fetchEnrolleePortalClaims, fetchEnrolleePortalHCPs, fetchEnrolleePortalComplaints,
     submitEnrolleeComplaint, fetchEnrolleePortalProfile, updateEnrolleePortalProfile,
+    confirmEnrolleeClaimUtilization, disputeEnrolleeClaimUtilization,
+    fetchEnrolleePortalReimbursements, submitEnrolleePortalReimbursement,
     
+    // 🆕 Provider Portal
+    fetchProviderDashboard, verifyProviderEnrollee, fetchProviderClaims,
+    fetchProviderClaim, submitProviderClaim, fetchProviderPreAuths,
+    submitProviderPreAuth,
+  
     // Users
     fetchUsers, fetchUser,fetchUserById, createUser, updateUser, deleteUser,
     toggleUserStatus, assignUserRoles,

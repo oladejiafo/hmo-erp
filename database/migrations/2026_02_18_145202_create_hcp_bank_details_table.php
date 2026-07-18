@@ -16,19 +16,38 @@ return new class extends Migration
             $table->foreignId('hcp_id')
                   ->constrained('health_care_providers')
                   ->cascadeOnDelete();
+            
+            // NEW: Who added this record (maker)
+            $table->foreignId('added_by')
+                  ->nullable()
+                  ->constrained('users')
+                  ->nullOnDelete();
+            
             $table->string('bank_name', 100);
+            
+            // NEW: Bank code (for payment processing)
+            $table->string('bank_code', 20)->nullable();
+            
             $table->string('account_name', 150);
             $table->string('account_number', 20);
+            
+            // NEW: Account type (savings/current/etc)
+            $table->string('account_type', 20)->nullable()->default('savings');
+            
             $table->string('sort_code', 10)->nullable();
-            $table->boolean('is_active')->default(true);
+            
+            // CHANGED: Renamed from is_active to is_verified, default false
+            $table->boolean('is_verified')->default(false);
+            
             $table->foreignId('verified_by')
                   ->nullable()
                   ->constrained('users')
                   ->nullOnDelete();
             $table->timestamp('verified_at')->nullable();
             $table->timestamps();
-
-            $table->index(['hcp_id', 'is_active']);
+    
+            // UPDATED: Index on hcp_id and is_verified instead of is_active
+            $table->index(['hcp_id', 'is_verified']);
         });
     }
 

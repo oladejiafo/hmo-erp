@@ -34,6 +34,7 @@ import AppLayout from "../layouts/AppLayout";
 import AuthLayout from "../layouts/AuthLayout";
 import CorporateLayout from "../layouts/portals/CorporateLayout";
 import EnrolleeLayout from "../layouts/portals/EnrolleeLayout";
+import ProviderLayout from "../layouts/portals/ProviderLayout";
 
 // ── Auth pages ─────────────────────────────────────────────────────────────
 import LoginPage from "../pages/auth/LoginPage";
@@ -110,8 +111,15 @@ import EnrolleeDashboardPage from "../pages/portals/enrollee/EnrolleeDashboardPa
 import MyIDCardPage from "../pages/portals/enrollee/MyIDCardPage";
 import MyBenefitsPage from "../pages/portals/enrollee/MyBenefitsPage";
 import MyClaimsPage from "../pages/portals/enrollee/MyClaimsPage";
+import MyReimbursementsPage from "../pages/portals/enrollee/MyReimbursementsPage";
 import FindHCPPage from "../pages/portals/enrollee/FindHCPPage";
 import MyComplaintsPage from "../pages/portals/enrollee/MyComplaintsPage";
+
+// ── Provider Portal pages ──────────────────────────────────────────────────
+import ProviderDashboardPage from "../pages/portals/provider/ProviderDashboardPage";
+import ProviderClaimsPage from "../pages/portals/provider/ProviderClaimsPage";
+import ProviderPreAuthPage from "../pages/portals/provider/ProviderPreAuthPage";
+import ProviderClaimSubmitPage from "../pages/portals/provider/ProviderClaimSubmitPage";
 
 // Add these new page imports
 import SLADashboardPage from "../pages/reports/SLADashboardPage";
@@ -157,14 +165,14 @@ export default function AppRouter() {
     useEffect(() => {
         if (loading || !user) return;
 
-        const portal = portalType(); // 'hmo' | 'corporate' | 'enrollee'
+        const portal = portalType(); // 'hmo' | 'corporate' | 'enrollee' | 'provider'
         const currentPath = location.pathname;
 
         // ── Redirect from /login if already authenticated ─────────────────
         if (currentPath === "/login") {
             if (portal === "enrollee") navigate("/enrollee", { replace: true });
-            else if (portal === "corporate")
-                navigate("/corporate", { replace: true });
+            else if (portal === "corporate") navigate("/corporate", { replace: true });
+            else if (portal === "provider") navigate("/provider", { replace: true }); // [PHASE 2]
             else navigate("/", { replace: true });
             return;
         }
@@ -189,18 +197,27 @@ export default function AppRouter() {
             return;
         }
 
+        // ── [PHASE 2] Provider user on wrong path ────────────────────────
+        if (
+            portal === "provider" &&
+            !isPortalPath(currentPath, "/provider") &&
+            currentPath !== "/set-password"
+        ) {
+            navigate("/provider", { replace: true });
+            return;
+        }
+
         // ── HMO staff accidentally on a portal path ───────────────────────
-        // Note: isPortalPath('/enrollees', '/enrollee') → false ✓
-        //       isPortalPath('/corporates', '/corporate') → false ✓
         if (
             portal === "hmo" &&
             (isPortalPath(currentPath, "/enrollee") ||
-                isPortalPath(currentPath, "/corporate"))
+            isPortalPath(currentPath, "/corporate") ||
+            isPortalPath(currentPath, "/provider")) // [PHASE 2]
         ) {
             navigate("/", { replace: true });
             return;
         }
-    }, [user, loading, location.pathname]); // eslint-disable-line react-hooks/exhaustive-deps
+    }, [user, loading, location.pathname]);
 
     // ── Loading spinner ───────────────────────────────────────────────────
     if (loading) {
@@ -777,12 +794,33 @@ export default function AppRouter() {
                 <Route path="/enrollee/id-card" element={<MyIDCardPage />} />
                 <Route path="/enrollee/benefits" element={<MyBenefitsPage />} />
                 <Route path="/enrollee/claims" element={<MyClaimsPage />} />
+                <Route path="/enrollee/reimbursements" element={<MyReimbursementsPage />} />
                 <Route path="/enrollee/find-hcp" element={<FindHCPPage />} />
                 <Route
                     path="/enrollee/complaints"
                     element={<MyComplaintsPage />}
                 />
             </Route>
+
+            {/* ══════════════════════════════════════════════════════════════
+                PROVIDER PORTAL — /provider/*
+            ══════════════════════════════════════════════════════════════ */}
+            <Route
+                element={
+                    <ProtectedRoute>
+                        <ProviderLayout />
+                    </ProtectedRoute>
+                }
+            >
+                <Route path="/provider" element={<ProviderDashboardPage />} />
+                <Route path="/provider/claims" element={<ProviderClaimsPage />} />
+                <Route path="/provider/claims/new" element={<ProviderClaimSubmitPage />} />
+                {/* <Route path="/provider/claims/:id" element={<ProviderClaimDetailPage />} /> */}
+                <Route path="/provider/pre-auths" element={<ProviderPreAuthPage />} />
+                {/* <Route path="/provider/pre-auths/:id" element={<ProviderPreAuthDetailPage />} /> */}
+                {/* <Route path="/provider/verify" element={<ProviderVerifyPage />} /> */}
+            </Route>
+
             <Route
                 path="*"
                 element={

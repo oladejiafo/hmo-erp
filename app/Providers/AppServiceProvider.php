@@ -15,6 +15,7 @@ use Illuminate\Support\Facades\RateLimiter;
 use Illuminate\Support\ServiceProvider;
 use App\Services\ClaimImportService;
 use App\Services\NhiaReportService;
+use App\Services\G8InternalAiService;
 
 class AppServiceProvider extends ServiceProvider
 {
@@ -23,6 +24,7 @@ class AppServiceProvider extends ServiceProvider
         $this->app->singleton(\App\Services\AIService::class, function ($app) {
             return new \App\Services\AIService();
         });
+        $this->app->singleton(G8InternalAiService::class);
     }
 
     public function boot(): void

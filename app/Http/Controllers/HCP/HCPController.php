@@ -11,6 +11,13 @@ use App\Models\HealthCareProvider;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 
+
+use App\Models\User;
+use Illuminate\Support\Facades\Hash;
+use Illuminate\Support\Facades\Mail;
+use Illuminate\Support\Str;
+
+
 class HCPController extends Controller
 {
     public function index(Request $request): JsonResponse
@@ -102,6 +109,33 @@ class HCPController extends Controller
             'notes'         => $request->reason,
         ]);
 
+        // [PHASE 2] Auto-create portal login the first time an HCP goes active.
+        // Guarded so repeat status changes never create a duplicate account.
+        if (!User::where('hcp_id', $hcp->id)->exists()) {
+            $tempPassword = Str::random(10);
+
+            $user = User::create([
+                'name' => $hcp->name,
+                'email' => $hcp->email,
+                'password' => Hash::make($tempPassword),
+                'branch_id' => $hcp->branch_id,
+                'user_type' => 'hcp_user',
+                'hcp_id' => $hcp->id,
+                'status' => 'active',
+                'password_changed_at' => null,
+            ]);
+
+            $user->assignRole('hcp_user');
+            $user->givePermissionTo('portal.provider.access');
+
+            try {
+                Mail::to($hcp->email)
+                    ->send(new \App\Mail\ProviderWelcomeMail($hcp, $tempPassword));
+            } catch (\Exception $e) {
+                \Illuminate\Support\Facades\Log::error('Failed to send provider welcome email: ' . $e->getMessage());
+            }
+        }
+
         return response()->json([
             'message' => "HCP [{$hcp->name}] accredited and set to active.",
             'data'    => new HcpResource($hcp->fresh()),
@@ -123,6 +157,33 @@ class HCPController extends Controller
             'accredited_at' => $request->effective_date ?? now()->toDateString(),
             'notes'         => $request->reason,
         ]);
+
+        // [PHASE 2] Auto-create portal login the first time an HCP goes active.
+        // Guarded so repeat status changes never create a duplicate account.
+        if (!User::where('hcp_id', $hcp->id)->exists()) {
+            $tempPassword = Str::random(10);
+
+            $user = User::create([
+                'name' => $hcp->name,
+                'email' => $hcp->email,
+                'password' => Hash::make($tempPassword),
+                'branch_id' => $hcp->branch_id,
+                'user_type' => 'hcp_user',
+                'hcp_id' => $hcp->id,
+                'status' => 'active',
+                'password_changed_at' => null,
+            ]);
+
+            $user->assignRole('hcp_user');
+            $user->givePermissionTo('portal.provider.access');
+
+            try {
+                Mail::to($hcp->email)
+                    ->send(new \App\Mail\ProviderWelcomeMail($hcp, $tempPassword));
+            } catch (\Exception $e) {
+                \Illuminate\Support\Facades\Log::error('Failed to send provider welcome email: ' . $e->getMessage());
+            }
+        }
 
         return response()->json([
             'message' => "HCP [{$hcp->name}] approved and set to active.",

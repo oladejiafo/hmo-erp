@@ -143,7 +143,7 @@ class HealthCareProvider extends Model
 
     public function activeBankDetail(): HasOne
     {
-        return $this->hasOne(HcpBankDetail::class, 'hcp_id')->where('is_active', true);
+        return $this->hasOne(HcpBankDetail::class, 'hcp_id')->where('is_verified', true);
     }
 
     public function performanceScores(): HasMany

@@ -14,7 +14,7 @@
  *   - EnsureFrontendRequestsAreStateful is intentionally REMOVED
  *     It causes redirects to /register for token-based API calls
  *   - All auth is via Authorization: Bearer <token> header
- *   - Tokens are stored in localStorage under 'hmo_token'
+ *   - Tokens are stored in localStorage under 'auth_token'
  *
  * MIDDLEWARE ORDER (API group):
  *   1. ForceJsonResponse   → always JSON, never HTML error pages

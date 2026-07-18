@@ -262,10 +262,12 @@ export const AuthProvider = ({ children }) => {
 
         if (user.user_type === 'corporate_user') return 'corporate';
         if (user.user_type === 'enrollee_user')  return 'enrollee';
+        if (user.user_type === 'hcp_user')       return 'provider';   // [PHASE 2]
 
         const roles = user.roles ?? [];
         if (roles.some(r => ['corporate_user', 'corporate_admin', 'corporate_hr'].includes(r))) return 'corporate';
         if (roles.some(r => ['enrollee_user', 'enrollee_self_service'].includes(r)))             return 'enrollee';
+        if (roles.some(r => ['hcp_user'].includes(r)))                                            return 'provider'; // [PHASE 2]
 
         return 'hmo';
     }, [user]);

@@ -7,6 +7,7 @@ use App\Http\Controllers\Controller;
 use App\Models\Claim;
 use App\Models\HealthCareProvider;
 use App\Models\Complaint;
+use App\Models\HcpCheckin;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Barryvdh\DomPDF\Facade\Pdf;
@@ -66,8 +67,6 @@ class EnrolleePortalController extends Controller
     /**
      * Download ID card as PDF
      */
-
-
     public function downloadIdCard(Request $request)
     {
         Log::info('Download ID card requested', [
@@ -189,7 +188,7 @@ class EnrolleePortalController extends Controller
     }
 
     /**
-     * Get enrollee benefits summary
+     * Get enrollee benefits summary mapped for mobile frontend layouts
      */
     public function benefits(Request $request): JsonResponse
     {
@@ -201,6 +200,11 @@ class EnrolleePortalController extends Controller
         }
 
         $enrollee->load('plan');
+        $plan = $enrollee->plan;
+
+        if (!$plan) {
+            return response()->json(['data' => null], 404);
+        }
 
         // Calculate benefit used from claims
         $benefitUsed = Claim::where('enrollee_id', $enrollee->id)
@@ -208,17 +212,54 @@ class EnrolleePortalController extends Controller
             ->whereIn('status', ['approved', 'paid'])
             ->sum('total_amount_approved');
 
-        $maxBenefit = $enrollee->plan->max_benefit_value ?? 0;
+        $maxBenefit = $plan->max_benefit_value ?? 0;
+
+        // Map database coverage booleans into a raw string array for frontend checkmarks
+        $features = [];
+        if ($plan->dental_covered)        $features[] = 'Dental Care Coverage';
+        if ($plan->optical_covered)       $features[] = 'Optical Care & Lenses';
+        if ($plan->maternity_covered)     $features[] = 'Maternity & Delivery Coverage';
+        if ($plan->surgery_covered)       $features[] = 'Surgical Procedures Care';
+        if ($plan->physiotherapy_covered) $features[] = 'Physiotherapy Sessions';
+        if ($plan->mental_health_covered)  $features[] = 'Mental Health Support';
+        
+        if (empty($features)) {
+            $features = ['General Consultations', 'Primary Care Services', 'Basic Pharmaceutical Access'];
+        }
+
+        // Object map for Object.entries() evaluation on mobile UI
+        $limits = [
+            'Inpatient Limit'  => (int) ($plan->inpatient_limit ?? 0),
+            'Outpatient Limit' => (int) ($plan->outpatient_limit ?? 0),
+            'Dental Limit'     => (int) ($plan->dental_limit ?? 0),
+            'Optical Limit'    => (int) ($plan->optical_limit ?? 0),
+            'Maternity Limit'  => (int) ($plan->maternity_limit ?? 0),
+        ];
+
+        // Assign frontend UI accent theme color dots based on plan tier values
+        $uiColor = match(strtolower($plan->tier ?? '')) {
+            'bronze'   => '#cd7f32',
+            'silver'   => '#9e9e9e',
+            'gold'     => '#ffb300',
+            'platinum' => '#335eea',
+            default    => '#4caf50',
+        };
 
         return response()->json([
             'data' => [
-                'plan_name' => $enrollee->plan->plan_name ?? 'N/A',
-                'plan_tier' => $enrollee->plan->tier ?? 'basic',
-                'max_benefit' => $maxBenefit,
-                'benefit_used' => $benefitUsed,
+                'plan_id'         => $plan->id,
+                'name'            => $plan->plan_name ?? 'N/A',
+                'plan_tier'       => $plan->tier ?? 'basic',
+                'tagline'         => $plan->description ?? "Comprehensive package under tier: " . ucfirst($plan->tier ?? 'basic'),
+                'color'           => $uiColor,
+                'max_benefit'     => $maxBenefit,
+                'benefit_used'    => $benefitUsed,
                 'benefit_balance' => $maxBenefit - $benefitUsed,
-                'coverage_end' => $enrollee->expiry_date?->format('Y-m-d'),
-                'ward_class' => $enrollee->plan->ward_class ?? 'Standard',
+                'price_monthly'   => $plan->copay_amount > 0 ? (int)$plan->copay_amount : 12500,
+                'coverage_end'    => $enrollee->expiry_date?->format('Y-m-d'),
+                'ward_class'      => $plan->ward_class ?? 'Standard',
+                'features'        => $features,
+                'limits'          => $limits,
             ]
         ]);
     }
@@ -404,6 +445,48 @@ class EnrolleePortalController extends Controller
                 'ticket_number' => $complaint->ticket_number,
                 'status' => $complaint->status,
             ],
+        ], 201);
+    }
+
+    /**
+     * [PHASE 2b] — Enrollee taps "I'm here" on arrival at a facility.
+     * Creates a check-in row the provider's dashboard polls for.
+     */
+    public function checkIn(Request $request): JsonResponse
+    {
+        $request->validate([
+            'hcp_id' => 'required|integer|exists:health_care_providers,id',
+            'dependent_id' => 'nullable|integer|exists:dependents,id',
+        ]);
+
+        $user = $request->user();
+        $enrollee = $user->enrollee;
+
+        if (!$enrollee) {
+            return response()->json(['message' => 'Enrollee not found'], 404);
+        }
+
+        if (!$enrollee->canMakeClaim()) {
+            // Reuses the same eligibility check claims already rely on
+            // (active status, plan not expired, benefit balance > 0) —
+            // no point alerting a front desk for a member who can't
+            // actually be seen under their plan right now.
+            return response()->json([
+                'message' => 'Your plan is not currently active for check-in. Contact your HMO if this seems wrong.',
+            ], 422);
+        }
+
+        $checkin = HcpCheckin::create([
+            'branch_id' => $enrollee->branch_id,
+            'hcp_id' => $request->hcp_id,
+            'enrollee_id' => $enrollee->id,
+            'dependent_id' => $request->dependent_id,
+            'status' => 'pending',
+        ]);
+
+        return response()->json([
+            'message' => 'Checked in. Front desk has been notified.',
+            'data' => ['id' => $checkin->id, 'status' => $checkin->status],
         ], 201);
     }
 }

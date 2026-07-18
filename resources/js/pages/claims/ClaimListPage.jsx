@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import { useNavigate, useSearchParams } from 'react-router-dom';
 import { useQuery } from '@tanstack/react-query';
 import { FileText,Plus, Search, Filter, AlertTriangle } from 'lucide-react';
@@ -7,6 +7,8 @@ import { PageHeader, StatusBadge, Pagination, LoadingSpinner, ErrorAlert, EmptyS
 
 import { useAuth } from '../../contexts/AuthContext';
 import { formatCurrency, formatDate } from '../../utils/format';
+import { fetchDashboardDigest } from '../../api/index';
+
 
 const STATUS_TABS = [
     { key: '',                  label: 'All' },
@@ -42,11 +44,21 @@ export default function ClaimListPage() {
     const [page, setPage]       = useState(1);
     const statusFilter          = searchParams.get('status') ?? '';
 
+    const [digest, setDigest] = useState(null);
+
     const { data, isLoading, error, refetch } = useQuery({
         queryKey: ['claims', { status: statusFilter, search, page }],
         queryFn:  () => fetchClaims({ status: statusFilter || undefined, search: search || undefined, page }),
         keepPreviousData: true,
     });
+
+    useEffect(() => {
+        fetchDashboardDigest()
+            .then(res => {
+                if (res.success) setDigest(res.digest);
+            })
+            .catch(console.error);
+    }, []);
 
     // const claims = data?.data ?? [];
     const claims = data?.data?.data ?? [];
@@ -68,6 +80,18 @@ export default function ClaimListPage() {
                     )
                 }
             />
+
+            {digest && (
+                <div className="card mb-4 border-purple-200" style={{ background: 'linear-gradient(135deg, #f5f0ff 0%, #e8eef9 100%)' }}>
+                    <div className="card-body py-3">
+                        <div className="d-flex align-items-center gap-2 mb-2">
+                            <span className="fs-5">🤖</span>
+                            <h6 className="mb-0 fw-semibold text-purple-700">AI Claims Digest</h6>
+                        </div>
+                        <p className="mb-0 text-gray-700">{digest}</p>
+                    </div>
+                </div>
+            )}
 
             {/* Status tabs */}
             <div className="card border-0 shadow-sm mb-4">

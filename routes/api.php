@@ -29,7 +29,9 @@ use App\Http\Controllers\Compliance\ComplianceController;
 use App\Http\Controllers\NotificationController;
 use App\Http\Controllers\Reports\SLAController;
 use App\Http\Controllers\Portal\EnrolleePortalController;
+use App\Http\Controllers\Portal\ProviderPortalController; //added
 use App\Http\Controllers\AI\AIController;
+use App\Http\Controllers\AI\NexumAiController;
 use App\Http\Controllers\ImportController;
 use App\Http\Controllers\ExportController;
 use App\Http\Controllers\Finance\HCPPaymentSummaryController;
@@ -38,6 +40,7 @@ use App\Http\Controllers\HelpArticleController;
 use App\Http\Controllers\Settings\SystemSettingController;
 use App\Http\Controllers\Settings\LicenseController;
 use App\Http\Controllers\ProfileController;
+use App\Http\Controllers\Finance\ReimbursementController;
 /*
 |--------------------------------------------------------------------------
 | HMO ERP API Routes
@@ -53,7 +56,8 @@ use App\Http\Controllers\ProfileController;
 // ── Public Routes (no auth required) ─────────────────────────────────────
 Route::get('settings/system/public', [SystemSettingController::class, 'public']);
 
-Route::prefix('auth')->group(function () {
+Route::prefix('auth')->middleware('throttle:5,1')->group(function () {
+// Route::prefix('auth')->group(function () {
     Route::post('login', [AuthController::class, 'login']);
     Route::post('forgot-password', [AuthController::class, 'forgotPassword']);
     Route::post('reset-password', [AuthController::class, 'resetPassword']);
@@ -97,6 +101,7 @@ Route::prefix('settings/license')
         Route::post('/emergency', [LicenseController::class, 'applyEmergency']); // WRITE (super_admin only)
         Route::post('/check-in', [LicenseController::class, 'forceCheckin']); // WRITE (super_admin only)
     });
+
 
 // ─────────────────────────────────────────────────────────────────────────
 // READ-ONLY ROUTES (GET only, no license check, with branch isolation)
@@ -255,6 +260,13 @@ Route::middleware(['auth:sanctum', 'branch.isolation'])->group(function () {
                     Route::get('/spend-trend',  [FFSProvidersController::class, 'spendTrend']);
                 });
 
+            Route::middleware('permission:reimbursements.view')
+                ->prefix('reimbursements')
+                ->group(function () {
+                    Route::get('/', [ReimbursementController::class, 'index']);
+                    Route::get('/{reimbursement}', [ReimbursementController::class, 'show']);
+            });
+
             // HCP Payment Summary - READ only
             Route::get('/hcp-payment-summary', [HCPPaymentSummaryController::class, 'index'])
                 ->middleware('permission:finance.view');
@@ -304,7 +316,15 @@ Route::middleware(['auth:sanctum', 'branch.isolation'])->group(function () {
     Route::middleware('permission:ai.tools')
         ->prefix('ai')
         ->group(function () {
+            // ── Existing (keep as-is) ────────────────────────────────────────
             Route::get('fraud-clusters', [AIController::class, 'fraudClusters']);
+    
+            // ── New G8.AI features ───────────────────────────────────────────
+            Route::get('claims-anomaly/{hcp}',  [NexumAiController::class, 'claimsAnomaly']);
+            Route::get('provider-summary/{hcp}',[NexumAiController::class, 'providerSummary']);
+            Route::get('dashboard-digest',      [NexumAiController::class, 'dashboardDigest']);
+            Route::get('claim-risk/{claim}',    [NexumAiController::class, 'claimRisk']);
+            
         });
 
     // ── Export - READ only ───────────────────────────────────────────────
@@ -339,6 +359,7 @@ Route::middleware(['auth:sanctum', 'branch.isolation'])->group(function () {
             Route::get('/claims', [App\Http\Controllers\Portal\EnrolleePortalController::class, 'claims']);
             Route::get('/find-hcp', [App\Http\Controllers\Portal\EnrolleePortalController::class, 'findHcp']);
             Route::get('/complaints', [App\Http\Controllers\Portal\EnrolleePortalController::class, 'complaints']);
+            Route::get('/reimbursements', [App\Http\Controllers\Portal\EnrolleePortalController::class, 'reimbursements']);
         });
 
         // Corporate Portal - READ only
@@ -349,6 +370,16 @@ Route::middleware(['auth:sanctum', 'branch.isolation'])->group(function () {
             Route::get('/invoices', [App\Http\Controllers\Portal\CorporatePortalController::class, 'invoices']);
             Route::get('/profile', [App\Http\Controllers\Portal\CorporatePortalController::class, 'profile']);
         });
+
+        // Provider Portal - READ only
+        Route::prefix('provider')->group(function () {
+            Route::get('/dashboard', [App\Http\Controllers\Portal\ProviderPortalController::class, 'dashboard']);
+            Route::get('/claims', [App\Http\Controllers\Portal\ProviderPortalController::class, 'claims']);
+            Route::get('/claims/{claim}', [App\Http\Controllers\Portal\ProviderPortalController::class, 'claimShow']);
+            Route::get('/pre-auths', [App\Http\Controllers\Portal\ProviderPortalController::class, 'preAuths']);
+            Route::get('/check-ins', [App\Http\Controllers\Portal\ProviderPortalController::class, 'checkins']);
+        });
+
     });
 
     // ── Pre-Auth - READ only ─────────────────────────────────────────────
@@ -453,7 +484,11 @@ Route::middleware(['auth:sanctum', 'branch.isolation', 'license'])->group(functi
 
     // Bank Details - WRITE operations
     Route::middleware('permission:hcps.bank_details')->post('hcps/{hcp}/bank-details', [HcpBankDetailController::class, 'store']);
-    Route::middleware('permission:hcps.bank_details')->patch('hcps/{hcp}/bank-details/{bankDetail}/verify', [HcpBankDetailController::class, 'verify']);
+    Route::patch('{hcp}/bank-details/{bankDetail}', [HcpBankDetailController::class, 'update'])
+    ->middleware('permission:hcps.bank_details.edit');
+    // Route::middleware('permission:hcps.bank_details')->patch('hcps/{hcp}/bank-details/{bankDetail}/verify', [HcpBankDetailController::class, 'verify']);
+    Route::middleware('permission:hcps.bank_details_verify')->patch('{hcp}/bank-details/{bankDetail}/verify', [HcpBankDetailController::class, 'verify']);  
+
     Route::middleware('permission:hcps.bank_details')->delete('hcps/{hcp}/bank-details/{bankDetail}', [HcpBankDetailController::class, 'destroy']);
 
     // ── Claims - WRITE operations ────────────────────────────────────────
@@ -490,6 +525,15 @@ Route::middleware(['auth:sanctum', 'branch.isolation', 'license'])->group(functi
 
         // Remittance - WRITE
         Route::middleware('permission:finance.remittance')->post('remittance/{payment}', [RemittanceController::class, 'generate']);
+
+        // Reimbursements - WRITE
+        Route::middleware('permission:reimbursements.review')
+            ->prefix('reimbursements')
+            ->group(function () {
+                Route::post('/{reimbursement}/approve', [ReimbursementController::class, 'approve']);
+                Route::post('/{reimbursement}/reject', [ReimbursementController::class, 'reject']);
+                Route::post('/{reimbursement}/mark-paid', [ReimbursementController::class, 'markPaid']);
+            });
 
         // Capitation - WRITE
         Route::middleware('permission:finance.capitation')
@@ -536,15 +580,22 @@ Route::middleware(['auth:sanctum', 'branch.isolation', 'license'])->group(functi
             Route::middleware('permission:compliance.manage')->delete('filings/{filing}/documents/{doc}', [ComplianceController::class, 'deleteDocument']);
         });
 
+    
     // ── AI Tools - WRITE operations ──────────────────────────────────────
     Route::middleware('permission:ai.tools')
         ->prefix('ai')
         ->group(function () {
+
+            // ── Existing (keep as-is) ────────────────────────────────────────
             Route::post('classify-document', [AIController::class, 'classifyDocument']);
-            Route::post('smart-route', [AIController::class, 'smartRoute']);
-            Route::post('ocr-document', [AIController::class, 'ocrDocument']);
-            Route::post('summarize-report', [AIController::class, 'summarizeReport']);
-            Route::post('chat', [AIController::class, 'chat']);
+            Route::post('smart-route',       [AIController::class, 'smartRoute']);
+            Route::post('ocr-document',      [AIController::class, 'ocrDocument']);
+            Route::post('summarize-report',  [AIController::class, 'summarizeReport']);
+            Route::post('chat',              [AIController::class, 'chat'])->middleware('throttle:30,1');
+    
+            // ── New G8.AI features ───────────────────────────────────────────
+            Route::post('enrollee-response', [NexumAiController::class, 'enrolleeResponse']);
+            
         });
 
     // ── Import - WRITE operations ────────────────────────────────────────
@@ -561,6 +612,11 @@ Route::middleware(['auth:sanctum', 'branch.isolation', 'license'])->group(functi
         // Enrollee Portal - WRITE
         Route::prefix('enrollee')->group(function () {
             Route::post('/complaints', [App\Http\Controllers\Portal\EnrolleePortalController::class, 'submitComplaint']);
+
+            Route::post('/claims/{claim}/confirm-utilization', [App\Http\Controllers\Portal\EnrolleePortalController::class, 'confirmUtilization']);
+            Route::post('/claims/{claim}/dispute-utilization', [App\Http\Controllers\Portal\EnrolleePortalController::class, 'disputeUtilization']);
+            Route::post('/reimbursements', [App\Http\Controllers\Portal\EnrolleePortalController::class, 'submitReimbursement']);
+            Route::post('/check-in', [App\Http\Controllers\Portal\EnrolleePortalController::class, 'checkIn']);
         });
 
         // Corporate Portal - WRITE
@@ -571,6 +627,16 @@ Route::middleware(['auth:sanctum', 'branch.isolation', 'license'])->group(functi
             Route::post('/claims/export', [App\Http\Controllers\Portal\CorporatePortalController::class, 'exportClaims']);
             Route::put('/profile', [App\Http\Controllers\Portal\CorporatePortalController::class, 'updateProfile']);
         });
+
+        // Provider Portal - WRITE
+        Route::prefix('provider')->group(function () {
+            Route::post('/verify-enrollee', [App\Http\Controllers\Portal\ProviderPortalController::class, 'verifyEnrollee']);
+            Route::post('/claims', [App\Http\Controllers\Portal\ProviderPortalController::class, 'storeClaim']);
+            Route::post('/pre-auths', [App\Http\Controllers\Portal\ProviderPortalController::class, 'storePreAuth']);
+            Route::post('/check-ins/{checkin}/acknowledge', [App\Http\Controllers\Portal\ProviderPortalController::class, 'acknowledgeCheckin']);
+
+        });
+
     });
 
     // ── Pre-Auth - WRITE operations ──────────────────────────────────────

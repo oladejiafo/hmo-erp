@@ -13,6 +13,8 @@ Artisan::command('inspire', function () {
 
 Schedule::job(new GenerateScheduledReportsJob)->dailyAt('06:00');
 
+Schedule::command('sanctum:prune-expired --hours=24')->daily();
+
 /**
     * * * * * cd /path-to-erp && php artisan schedule:run >> /dev/null 2>&1
 */ 
