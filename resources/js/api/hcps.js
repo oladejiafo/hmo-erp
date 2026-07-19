@@ -47,7 +47,7 @@ export const blacklistHCP = async (id, data = {}) => {
     return response.data;
 };
 
-// Undo blacklist — restores to active (or pending if never accredited)
+// Undo blacklist - restores to active (or pending if never accredited)
 export const unblacklistHCP = async (id, data = {}) => {
     const response = await apiClient.patch(`/hcps/${id}/unblacklist`, data);
     return response.data;

@@ -146,7 +146,7 @@ export default function ReportsPage() {
                                 <input type="date" className="form-control form-control-sm" style={{ width: 140 }}
                                     value={dateFrom} onChange={e => setDateFrom(e.target.value)}
                                     placeholder="From" title="Date from" />
-                                <span className="text-muted">—</span>
+                                <span className="text-muted">-</span>
                                 <input type="date" className="form-control form-control-sm" style={{ width: 140 }}
                                     value={dateTo} onChange={e => setDateTo(e.target.value)}
                                     placeholder="To" title="Date to" />
@@ -283,7 +283,7 @@ export default function ReportsPage() {
                                         <strong>{r.count}</strong>,
                                         formatCurrency(r.total_value),
                                         formatCurrency(r.avg_value),
-                                        <span className={r.oldest_days > 30 ? 'text-danger fw-semibold' : ''}>{r.oldest_days ?? '—'}</span>,
+                                        <span className={r.oldest_days > 30 ? 'text-danger fw-semibold' : ''}>{r.oldest_days ?? '-'}</span>,
                                     ]);
                                 })()}
                             />
@@ -665,7 +665,7 @@ function GenerateTab({ queryClient }) {
                                         <label className="form-label fw-semibold" style={{fontSize:13}}>Payment Batch *</label>
                                         <select className="form-select" value={form.payment_batch_id} onChange={e => setForm(f=>({...f,payment_batch_id:e.target.value}))}>
                                             <option value="">Select batch…</option>
-                                            {batches.map(b => <option key={b.id} value={b.id}>{b.batch_number} — ₦{Number(b.total_amount).toLocaleString()}</option>)}
+                                            {batches.map(b => <option key={b.id} value={b.id}>{b.batch_number} - ₦{Number(b.total_amount).toLocaleString()}</option>)}
                                         </select>
                                     </div>
                                 </>
@@ -771,13 +771,13 @@ function HistoryTab() {
                                             </td>
                                             <td className="font-monospace" style={{fontSize:12}}>{r.period}</td>
                                             <td style={{fontSize:12}}>
-                                                {r.hcp?.name ?? r.corporate?.name ?? (rt?.nhia ? 'NHIA' : '—')}
+                                                {r.hcp?.name ?? r.corporate?.name ?? (rt?.nhia ? 'NHIA' : '-')}
                                             </td>
-                                            <td style={{fontSize:12}}>{r.generated_at ? formatDateTime(r.generated_at) : '—'}</td>
+                                            <td style={{fontSize:12}}>{r.generated_at ? formatDateTime(r.generated_at) : '-'}</td>
                                             <td className="text-end font-monospace">
-                                                {r.total_amount ? formatCurrency(r.total_amount) : '—'}
+                                                {r.total_amount ? formatCurrency(r.total_amount) : '-'}
                                             </td>
-                                            <td className="text-center">{r.record_count ?? '—'}</td>
+                                            <td className="text-center">{r.record_count ?? '-'}</td>
                                             <td>
                                                 <span className="badge" style={{background:ss.bg,color:ss.color,fontSize:10}}>
                                                     {r.status==='generating' && <span className="spinner-border spinner-border-sm me-1" style={{width:8,height:8}}/>}
@@ -880,7 +880,7 @@ function SchedulesTab() {
                                                 </select>
                                             </td>
                                             <td className="text-muted" style={{fontSize:11}}>{sched.last_run_at ? new Date(sched.last_run_at).toLocaleDateString() : 'Never'}</td>
-                                            <td className="text-muted" style={{fontSize:11}}>{sched.next_run_at ? new Date(sched.next_run_at).toLocaleDateString() : '—'}</td>
+                                            <td className="text-muted" style={{fontSize:11}}>{sched.next_run_at ? new Date(sched.next_run_at).toLocaleDateString() : '-'}</td>
                                             <td>
                                                 <div className="form-check form-switch mb-0">
                                                     <input className="form-check-input" type="checkbox"
@@ -942,7 +942,7 @@ function ReportTable({ cols, rows }) {
 }
 
 function RiskBadge({ score }) {
-    if (score == null || score === 0) return <span className="text-muted">—</span>;
+    if (score == null || score === 0) return <span className="text-muted">-</span>;
     const n = parseFloat(score).toFixed(1);
     const cls = n >= 70 ? 'bg-danger-subtle text-danger' : n >= 40 ? 'bg-warning-subtle text-warning' : 'bg-success-subtle text-success';
     return <span className={`badge ${cls}`} style={{ fontSize: 10 }}>{n}</span>;

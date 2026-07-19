@@ -57,7 +57,7 @@ class EnrolleeCardService
             'expiry'       => $enrollee->expiry_date?->format('Y-m-d'),
             'corporate_id' => $enrollee->corporate_id,
             'issued'       => now()->toDateString(),
-            // Checksum for tamper detection — not a security measure, just integrity
+            // Checksum for tamper detection - not a security measure, just integrity
             'chk'          => substr(md5($enrollee->enrollee_id . $cardNumber . config('app.key')), 0, 8),
         ];
 

@@ -20,7 +20,7 @@ return new class extends Migration
                   ->nullable()
                   ->constrained('hcp_tariffs')
                   ->nullOnDelete()
-                  ->comment('Matched tariff line — null if service not in agreed tariff list');
+                  ->comment('Matched tariff line - null if service not in agreed tariff list');
             $table->string('service_code', 30)->nullable();
             $table->string('service_name', 200);
             $table->enum('category', [

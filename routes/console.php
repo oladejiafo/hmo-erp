@@ -25,6 +25,6 @@ Schedule::command('license:check')
          ->withoutOverlapping()
          ->runInBackground()
          ->onFailure(function () {
-             // Silent failure — LicenseService handles grace period logic internally.
+             // Silent failure - LicenseService handles grace period logic internally.
              // The command itself logs warnings via Log::warning().
          });

@@ -35,7 +35,7 @@ class NhiaReportService
 
     public function __construct()
     {
-        // Pull from config — set in config/hmo.php
+        // Pull from config - set in config/hmo.php
         $this->hmoInfo = [
             'name'          => config('hmo.name',    'HMO NAME'),
             'code'          => config('hmo.nhia_code','HMO-000'),
@@ -347,7 +347,7 @@ class NhiaReportService
 
         // Sheets 2–5: Monthly breakdown, HCP summary, Corporate summary, Diagnosis analysis
         foreach (['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'] as $i=>$month) {
-            // (abbreviated — in production each month gets a full row)
+            // (abbreviated - in production each month gets a full row)
         }
 
         $hcpSheet = $spreadsheet->createSheet()->setTitle('HCP Summary');
@@ -455,7 +455,7 @@ class NhiaReportService
         $sheet       = $spreadsheet->getActiveSheet()->setTitle('Cost Report');
 
         $sheet->mergeCells('A1:I1');
-        $sheet->setCellValue('A1', strtoupper($this->hmoInfo['name']).' — CORPORATE HEALTHCARE COST REPORT');
+        $sheet->setCellValue('A1', strtoupper($this->hmoInfo['name']).' - CORPORATE HEALTHCARE COST REPORT');
         $sheet->getStyle('A1')->getFont()->setBold(true)->setSize(13);
         $sheet->setCellValue('A2','Corporate: '.$corporate->name);
         $sheet->setCellValue('A3','Period: '.Carbon::parse($start)->format('d M Y').' – '.Carbon::parse($end)->format('d M Y'));

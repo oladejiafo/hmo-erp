@@ -39,17 +39,17 @@ use Carbon\Carbon;
  *   > ₦2M:   pending → [Desk Officer] → awaiting_md → [MD] → awaiting_ceo → [CEO] → approved
  *
  * Permissions consumed (must be synced in DB):
- *   pa.view              — read any PA
- *   pa.request           — submit new PA
- *   pa.approve_standard  — Desk Officer approval (first step for all tiers)
- *   pa.approve_high_value— Medical Director sign-off (₦500k–₦2M)
- *   pa.approve_critical  — CEO sign-off (>₦2M)
- *   pa.decline           — decline or revoke any PA
+ *   pa.view              - read any PA
+ *   pa.request           - submit new PA
+ *   pa.approve_standard  - Desk Officer approval (first step for all tiers)
+ *   pa.approve_high_value- Medical Director sign-off (₦500k–₦2M)
+ *   pa.approve_critical  - CEO sign-off (>₦2M)
+ *   pa.decline           - decline or revoke any PA
  */
 class PreAuthController extends Controller
 {
     // ─────────────────────────────────────────────────────────────────────
-    // INDEX — paginated list with queue/filter support
+    // INDEX - paginated list with queue/filter support
     // GET /pre-auth
     // ─────────────────────────────────────────────────────────────────────
 
@@ -124,7 +124,7 @@ class PreAuthController extends Controller
     }
 
     // ─────────────────────────────────────────────────────────────────────
-    // STORE — submit a new PA request
+    // STORE - submit a new PA request
     // POST /pre-auth
     // ─────────────────────────────────────────────────────────────────────
 
@@ -217,7 +217,7 @@ class PreAuthController extends Controller
     }
 
     // ─────────────────────────────────────────────────────────────────────
-    // STATS — KPI bar for PAListPage
+    // STATS - KPI bar for PAListPage
     // GET /pre-auth/stats
     // ─────────────────────────────────────────────────────────────────────
 
@@ -260,7 +260,7 @@ class PreAuthController extends Controller
     }
 
     // ─────────────────────────────────────────────────────────────────────
-    // VALIDATE CODE — used during claim submission (live PA code check)
+    // VALIDATE CODE - used during claim submission (live PA code check)
     // POST /pre-auth/validate-code
     // ─────────────────────────────────────────────────────────────────────
 
@@ -341,7 +341,7 @@ class PreAuthController extends Controller
     }
 
     // ─────────────────────────────────────────────────────────────────────
-    // SHOW — full PA detail
+    // SHOW - full PA detail
     // GET /pre-auth/{pa}
     // ─────────────────────────────────────────────────────────────────────
 
@@ -368,7 +368,7 @@ class PreAuthController extends Controller
     }
 
     // ─────────────────────────────────────────────────────────────────────
-    // APPROVE — multi-step approval logic
+    // APPROVE - multi-step approval logic
     // POST /pre-auth/{pa}/approve
     // ─────────────────────────────────────────────────────────────────────
 
@@ -405,7 +405,7 @@ class PreAuthController extends Controller
                 $pa->desk_approved_at    = now();
 
                 if ($tier === 'standard') {
-                    // One-step — go directly to approved
+                    // One-step - go directly to approved
                     $nextStatus   = 'approved';
                     $generateCode = true;
                     $event        = 'pa_issued';
@@ -415,7 +415,7 @@ class PreAuthController extends Controller
                     $event      = 'escalated_to_md';
                     $eventLabel = 'Escalated to Medical Director';
                 } else {
-                    // ceo tier — desk first step
+                    // ceo tier - desk first step
                     $nextStatus = 'awaiting_md';
                     $event      = 'escalated_to_md';
                     $eventLabel = 'Escalated to Medical Director (CEO approval required)';
@@ -488,7 +488,7 @@ class PreAuthController extends Controller
         });
 
         $pa->load(['enrollee', 'hcp', 'submittedBy', 'reviewedBy', 'timeline']);
-
+        app(\App\Services\NotificationService::class)->providerPreAuthDecision($pa);
         return response()->json([
             'data'    => $this->formatDetail($pa),
             'message' => $pa->status === 'approved'
@@ -498,7 +498,7 @@ class PreAuthController extends Controller
     }
 
     // ─────────────────────────────────────────────────────────────────────
-    // DECLINE — decline at any active stage
+    // DECLINE - decline at any active stage
     // POST /pre-auth/{pa}/decline
     // ─────────────────────────────────────────────────────────────────────
 
@@ -532,7 +532,7 @@ class PreAuthController extends Controller
                 $validated['reason']
             );
         });
-
+        app(\App\Services\NotificationService::class)->providerPreAuthDecision($pa);
         return response()->json([
             'data'    => ['id' => $pa->id, 'status' => 'declined'],
             'message' => 'PA request declined.',
@@ -540,7 +540,7 @@ class PreAuthController extends Controller
     }
 
     // ─────────────────────────────────────────────────────────────────────
-    // REVOKE — cancel an approved (unused) PA code
+    // REVOKE - cancel an approved (unused) PA code
     // POST /pre-auth/{pa}/revoke
     // ─────────────────────────────────────────────────────────────────────
 
@@ -589,7 +589,7 @@ class PreAuthController extends Controller
     }
 
     // ─────────────────────────────────────────────────────────────────────
-    // DOWNLOAD LETTER — PDF approval letter for provider
+    // DOWNLOAD LETTER - PDF approval letter for provider
     // GET /pre-auth/{pa}/download
     // ─────────────────────────────────────────────────────────────────────
 

@@ -41,7 +41,7 @@ class ProfileController extends Controller
     }
 
     /**
-     * Update name and phone only — email/branch changes go through admin.
+     * Update name and phone only - email/branch changes go through admin.
      */
     public function update(Request $request): JsonResponse
     {

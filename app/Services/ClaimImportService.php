@@ -3,11 +3,11 @@
  * FILE: app/Services/ClaimImportService.php
  *
  * Core import engine. Handles:
- *  1. parse()      — reads xlsx/csv into raw rows array
- *  2. autoMap()    — fuzzy-matches source column headers to system fields
- *  3. applyMap()   — transforms raw rows using confirmed mapping
- *  4. validate()   — validates each row (enrollee lookup, dupe check, plan limits)
- *  5. pushToQueue()— inserts approved rows into the claims table as 'pending'
+ *  1. parse()      - reads xlsx/csv into raw rows array
+ *  2. autoMap()    - fuzzy-matches source column headers to system fields
+ *  3. applyMap()   - transforms raw rows using confirmed mapping
+ *  4. validate()   - validates each row (enrollee lookup, dupe check, plan limits)
+ *  5. pushToQueue()- inserts approved rows into the claims table as 'pending'
  */
 namespace App\Services;
 
@@ -110,7 +110,7 @@ class ClaimImportService
                 if ($normalised === $synonym) return $fieldKey;
             }
         }
-        // Partial match — source header contains a synonym
+        // Partial match - source header contains a synonym
         foreach (self::FIELD_SYNONYMS as $fieldKey => $synonyms) {
             foreach ($synonyms as $synonym) {
                 if (str_contains($normalised, $synonym) || str_contains($synonym, $normalised)) {
@@ -162,7 +162,7 @@ class ClaimImportService
                 if (!$enrollee) {
                     $errors[] = ['field' => 'enrollee_id_raw', 'message' => "Enrollee '{$row->enrollee_id_raw}' not found in system"];
                 } elseif ($enrollee->corporate_id && $enrollee->corporate_id !== $batch->hcp->id) {
-                    // cross-HCP check optional — skip if not applicable
+                    // cross-HCP check optional - skip if not applicable
                 } else {
                     $resolvedEnrolleeId = $enrollee->id;
 

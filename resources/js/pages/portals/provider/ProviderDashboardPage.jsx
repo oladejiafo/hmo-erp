@@ -1,5 +1,5 @@
 /**
- * NEW FILE — resources/js/pages/portals/provider/ProviderDashboardPage.jsx
+ * NEW FILE - resources/js/pages/portals/provider/ProviderDashboardPage.jsx
  */
 import React from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
@@ -17,7 +17,7 @@ export default function ProviderDashboardPage() {
         queryFn: fetchProviderDashboard,
     });
 
-    // [PHASE 2b] — poll every 15s for new check-ins, no websocket needed
+    // [PHASE 2b] - poll every 15s for new check-ins, no websocket needed
     const { data: checkinsData } = useQuery({
         queryKey: ['provider-checkins'],
         queryFn: fetchProviderCheckins,
@@ -48,7 +48,7 @@ export default function ProviderDashboardPage() {
                 </button>
             </div>
 
-            {/* [PHASE 2b] — check-in alert strip, only shows when someone's waiting */}
+            {/* [PHASE 2b] - check-in alert strip, only shows when someone's waiting */}
             {checkins.length > 0 && (
                 <div style={checkinStripStyle}>
                     <div style={checkinHeaderStyle}>

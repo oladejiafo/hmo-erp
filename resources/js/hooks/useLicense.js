@@ -1,5 +1,5 @@
 /**
- * useLicense — ERP Frontend hook
+ * useLicense - ERP Frontend hook
  *
  * Provides license status to any component that needs to:
  *   - Know whether to disable a button/form
@@ -24,7 +24,7 @@ const fetchLicenseStatus = () =>
     axios.get('/api/settings/license').then(r => r.data);
 
 export const RESTRICTED_MSG =
-    'This action is unavailable — the system is in restricted mode due to a licensing issue. Contact your software vendor.';
+    'This action is unavailable - the system is in restricted mode due to a licensing issue. Contact your software vendor.';
 
 export function useLicense() {
     const { data, isLoading } = useQuery({
@@ -33,11 +33,11 @@ export function useLicense() {
         refetchInterval: 15 * 60 * 1000,
         staleTime:       10 * 60 * 1000,
         retry:           false,
-        // Don't throw if this fails — don't want license check to break the app
+        // Don't throw if this fails - don't want license check to break the app
         throwOnError:    false,
     });
 
-    const status = data?.status ?? 'valid'; // fail open — if we can't check, don't block
+    const status = data?.status ?? 'valid'; // fail open - if we can't check, don't block
 
     return {
         status,
@@ -56,7 +56,7 @@ export function useLicense() {
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
-// Axios response interceptor — catches 403 LICENSE_RESTRICTED responses
+// Axios response interceptor - catches 403 LICENSE_RESTRICTED responses
 // and shows a consistent toast, rather than each component handling it.
 //
 // Mount this ONCE in resources/js/app.jsx:
@@ -74,7 +74,7 @@ export function setupLicenseInterceptor(showToast) {
                 error.response?.data?.error_code === 'LICENSE_RESTRICTED'
             ) {
                 showToast?.(
-                    'This action is blocked — the system licence is restricted. Contact your vendor.',
+                    'This action is blocked - the system licence is restricted. Contact your vendor.',
                     { type: 'error', toastId: 'license-restricted' } // toastId prevents duplicates
                 );
             }

@@ -34,7 +34,7 @@ export const queryClient = new QueryClient({
     defaultOptions: {
         queries: {
             retry:              smartRetry,
-            staleTime:          30_000,    // 30s — prevents hammering the API on every re-mount
+            staleTime:          30_000,    // 30s - prevents hammering the API on every re-mount
             refetchOnWindowFocus: false,   // prevents a refetch cascade when user alt-tabs back
         },
         mutations: {

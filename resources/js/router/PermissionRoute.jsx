@@ -3,7 +3,7 @@ import { useAuth } from '../contexts/AuthContext';
 
 /**
  * Renders children only if the user has the required permission.
- * Shows an "Access Denied" card otherwise — does not redirect,
+ * Shows an "Access Denied" card otherwise - does not redirect,
  * because the user is authenticated, just not authorised for this page.
  */
 export default function PermissionRoute({ permission, children }) {

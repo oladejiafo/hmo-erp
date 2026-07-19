@@ -256,9 +256,9 @@ export default function HCPFormPage() {
                                     onChange={handleChange}
                                     className={`form-select ${errors.payment_model ? 'is-invalid' : ''}`}
                                 >
-                                    <option value="capitation">Capitation — Monthly headcount-based</option>
-                                    <option value="fee_for_service">Fee for Service — Claim-based only</option>
-                                    <option value="hybrid">Hybrid — Capitation + FFS</option>
+                                    <option value="capitation">Capitation - Monthly headcount-based</option>
+                                    <option value="fee_for_service">Fee for Service - Claim-based only</option>
+                                    <option value="hybrid">Hybrid - Capitation + FFS</option>
                                 </select>
                                 {errors.payment_model && <div className="invalid-feedback">{errors.payment_model}</div>}
                             </div>
@@ -274,7 +274,7 @@ export default function HCPFormPage() {
                             </div>
                         </div>
 
-                        {/* FFS-specific fields — only shown for FFS and Hybrid */}
+                        {/* FFS-specific fields - only shown for FFS and Hybrid */}
                         {isFFS && (
                             <div
                                 className="rounded-3 p-4 mb-4"
@@ -298,7 +298,7 @@ export default function HCPFormPage() {
                                     <label className="form-check-label fw-semibold" htmlFor="ffs_tariff_enforced" style={{ fontSize: 13 }}>
                                         Strict Tariff Enforcement
                                         <span className="text-muted fw-normal ms-2" style={{ fontSize: 12 }}>
-                                            — claims validated exactly against agreed rates, zero tolerance buffer
+                                            - claims validated exactly against agreed rates, zero tolerance buffer
                                         </span>
                                     </label>
                                 </div>

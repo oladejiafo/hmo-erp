@@ -1,5 +1,5 @@
 /**
- * FILE LOCATION: resources/js/pages/portal/corporate/CorpClaimsPage.jsx
+ * FILE LOCATION: resources/js/pages/portals/corporate/CorpClaimsPage.jsx
  * Corporate self-service: view claims for all enrolled staff, filter, export.
  */
 import React, { useState } from 'react';
@@ -118,10 +118,10 @@ export default function CorpClaimsPage() {
                                     {c.dependent_name && <div style={{ fontSize:11, color:'#718096' }}>for: {c.dependent_name}</div>}
                                 </td>
                                 <td style={{ ...tdStyle, color:'#718096' }}>{formatDate(c.service_date)}</td>
-                                <td style={{ ...tdStyle, fontSize:12 }}>{c.hcp_name ?? '—'}</td>
+                                <td style={{ ...tdStyle, fontSize:12 }}>{c.hcp_name ?? '-'}</td>
                                 <td style={{ ...tdStyle, fontWeight:500 }}>{formatCurrency(c.total_amount_claimed)}</td>
                                 <td style={{ ...tdStyle, color: c.total_amount_paid ? '#137333' : '#a0aec0', fontWeight: c.total_amount_paid ? 600 : 400 }}>
-                                    {c.total_amount_paid ? formatCurrency(c.total_amount_paid) : '—'}
+                                    {c.total_amount_paid ? formatCurrency(c.total_amount_paid) : '-'}
                                 </td>
                                 <td style={tdStyle}><StatusBadge status={c.status} /></td>
                             </tr>

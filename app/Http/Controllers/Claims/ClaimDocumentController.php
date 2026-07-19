@@ -28,7 +28,7 @@ class ClaimDocumentController extends Controller
     public function index(Claim $claim): JsonResponse
     {
         /** @disregard P1013 */
-        $this->authorize('view claims');
+        $this->authorize('claims.view');
         
         $documents = $claim->documents()
             ->orderByDesc('created_at')
@@ -49,7 +49,7 @@ class ClaimDocumentController extends Controller
     public function store(StoreClaimDocumentRequest $request, Claim $claim): JsonResponse
     {
         /** @disregard P1013 */
-        $this->authorize('submit claims');
+        $this->authorize('claims.submit');
         
         $document = $this->documentService->upload(
             $claim,
@@ -74,7 +74,7 @@ class ClaimDocumentController extends Controller
     public function download(Claim $claim, ClaimDocument $document)
     {
         /** @disregard P1013 */
-        $this->authorize('view claims');
+        $this->authorize('claims.view');
         
         // Ensure document belongs to claim
         if ($document->claim_id !== $claim->id) {
@@ -101,7 +101,7 @@ class ClaimDocumentController extends Controller
     public function destroy(Claim $claim, ClaimDocument $document): JsonResponse
     {
         /** @disregard P1013 */
-        $this->authorize('submit claims');
+        $this->authorize('claims.submit');
         
         // Ensure document belongs to claim
         if ($document->claim_id !== $claim->id) {

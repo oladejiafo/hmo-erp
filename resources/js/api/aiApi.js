@@ -1,7 +1,7 @@
 /**
  * FILE: resources/js/api/aiApi.js
  *
- * AI microservice calls — all routed through Laravel (/api/v1/ai/*)
+ * AI microservice calls - all routed through Laravel (/api/v1/ai/*)
  * which forwards to the Python FastAPI service with the X-AI-Key secret.
  *
  * Uses the shared axios client (resources/js/api/client.js) which

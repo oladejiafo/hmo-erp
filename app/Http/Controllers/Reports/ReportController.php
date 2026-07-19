@@ -201,7 +201,7 @@ class ReportController extends Controller
 
     public function branchComparison(Request $request): JsonResponse
     {
-        // HQ only — enforced by route middleware
+        // HQ only - enforced by route middleware
         $year = $request->year ?? now()->year;
 
         $data = DB::table('branches')
@@ -304,7 +304,7 @@ class ReportController extends Controller
             'status'          => 'queued',
         ]);
 
-        // Generate synchronously for now — queue for async in production
+        // Generate synchronously for now - queue for async in production
         try {
             $this->service->generate($report);
         } catch (\Throwable $e) {
@@ -373,7 +373,7 @@ class ReportController extends Controller
     public function export(Request $request): JsonResponse
     {
         // TODO: Implement async Excel export using queue job
-        // Placeholder — returns 202 Accepted
+        // Placeholder - returns 202 Accepted
         return response()->json([
             'message' => 'Export queued. You will be notified when ready.',
         ], 202);

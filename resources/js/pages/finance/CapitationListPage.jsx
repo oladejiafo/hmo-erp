@@ -124,7 +124,7 @@ function SummaryCards() {
     const cards = [
         {
             label:   'This Month',
-            value:   d.current_run_amount != null ? formatCurrency(d.current_run_amount) : '—',
+            value:   d.current_run_amount != null ? formatCurrency(d.current_run_amount) : '-',
             sub:     d.current_run_period ?? (isLoading ? '…' : 'No run yet'),
             icon:    DollarSign,
             color:   '#0f4c81',
@@ -132,7 +132,7 @@ function SummaryCards() {
         },
         {
             label:   'Active Members',
-            value:   d.total_active_members?.toLocaleString() ?? '—',
+            value:   d.total_active_members?.toLocaleString() ?? '-',
             sub:     `${(d.active_principal_count ?? 0).toLocaleString()} principals · ${(d.active_dependent_count ?? 0).toLocaleString()} dependants`,
             icon:    Users,
             color:   '#137333',
@@ -140,7 +140,7 @@ function SummaryCards() {
         },
         {
             label:   'YTD Paid',
-            value:   d.ytd_paid_amount != null ? formatCurrency(d.ytd_paid_amount) : '—',
+            value:   d.ytd_paid_amount != null ? formatCurrency(d.ytd_paid_amount) : '-',
             sub:     `${NOW.getFullYear()} year to date`,
             icon:    TrendingUp,
             color:   '#7c3aed',
@@ -148,7 +148,7 @@ function SummaryCards() {
         },
         {
             label:   'HCPs with Rates',
-            value:   d.hcp_with_rates_count?.toLocaleString() ?? '—',
+            value:   d.hcp_with_rates_count?.toLocaleString() ?? '-',
             sub:     d.pending_runs_count
                 ? `${d.pending_runs_count} run${d.pending_runs_count > 1 ? 's' : ''} pending approval`
                 : 'All rates current',
@@ -274,7 +274,7 @@ function RunsTab({ navigate }) {
                                             </td>
                                             <td className="text-end">
                                                 {varZero ? (
-                                                    <span className="text-muted">—</span>
+                                                    <span className="text-muted">-</span>
                                                 ) : (
                                                     <span style={{
                                                         display: 'flex', alignItems: 'center', justifyContent: 'flex-end', gap: 3,
@@ -299,7 +299,7 @@ function RunsTab({ navigate }) {
                                                         {run.batch_number}
                                                     </span>
                                                 ) : (
-                                                    <span className="text-muted">—</span>
+                                                    <span className="text-muted">-</span>
                                                 )}
                                             </td>
                                             <td style={{ color: '#6b7280' }}>
@@ -369,7 +369,7 @@ function GenerateRunModal({ onClose, onSuccess }) {
                         <p className="text-muted mb-4" style={{ fontSize: 13 }}>
                             The system will snapshot current enrollee headcounts per HCP and
                             compute capitation amounts using agreed rates. The run starts as a
-                            draft — you can review and adjust before approving.
+                            draft - you can review and adjust before approving.
                         </p>
 
                         <div className="row g-3">

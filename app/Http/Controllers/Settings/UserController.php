@@ -80,7 +80,7 @@ class UserController extends Controller
         }
     
         return response()->json([
-            'message' => "User created. Temporary password set — user must change on first login.",
+            'message' => "User created. Temporary password set - user must change on first login.",
             'data'    => new UserResource($user->load('branch', 'roles')),
         ], 201);
     }

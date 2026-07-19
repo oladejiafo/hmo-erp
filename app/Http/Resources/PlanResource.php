@@ -143,7 +143,7 @@ class StorePlanRequest extends FormRequest
             'description'                  => ['nullable', 'string'],
             'notes'                        => ['nullable', 'string'],
 
-            // Benefit items (optional on create — can be added after)
+            // Benefit items (optional on create - can be added after)
             'benefit_items'                        => ['nullable', 'array'],
             'benefit_items.*.benefit_category'     => ['required', 'string'],
             'benefit_items.*.benefit_name'         => ['required', 'string', 'max:150'],

@@ -41,6 +41,12 @@ use App\Http\Controllers\Settings\SystemSettingController;
 use App\Http\Controllers\Settings\LicenseController;
 use App\Http\Controllers\ProfileController;
 use App\Http\Controllers\Finance\ReimbursementController;
+
+use App\Http\Controllers\TicketController;
+use App\Http\Controllers\Portal\ProviderClaimImportController;
+use App\Http\Controllers\Finance\PaymentGatewayWebhookController;
+use App\Http\Controllers\Corporate\PlanRequestController;
+
 /*
 |--------------------------------------------------------------------------
 | HMO ERP API Routes
@@ -63,6 +69,8 @@ Route::prefix('auth')->middleware('throttle:5,1')->group(function () {
     Route::post('reset-password', [AuthController::class, 'resetPassword']);
 });
 Route::middleware('auth:sanctum')->post('auth/set-initial-password', [AuthController::class, 'setInitialPassword']);
+
+Route::post('webhooks/flutterwave', [PaymentGatewayWebhookController::class, 'flutterwave']);
 
 // Super-admin only management (GET is read, PUT/POST are writes)
 Route::prefix('settings/system')
@@ -150,6 +158,14 @@ Route::middleware(['auth:sanctum', 'branch.isolation'])->group(function () {
             // Corporate Invoices - READ only
             Route::get('{corporate}/invoices', [CorporateInvoiceController::class, 'index'])
                 ->middleware('permission:corporates.invoices');
+
+        });
+
+    Route::middleware('permission:plan_requests.view')
+        ->prefix('plan-requests')
+        ->group(function () {
+            Route::get('/', [PlanRequestController::class, 'index']);
+            Route::get('/{planRequest}', [PlanRequestController::class, 'show']);
         });
 
     // ── Cross-Corporate Plans - READ only ────────────────────────────────
@@ -304,12 +320,21 @@ Route::middleware(['auth:sanctum', 'branch.isolation'])->group(function () {
         });
 
     // ── Compliance - READ only ───────────────────────────────────────────
+    
     Route::middleware('permission:compliance.view')
         ->prefix('compliance')
         ->group(function () {
             Route::get('filings', [ComplianceController::class, 'index']);
             Route::get('filings/summary', [ComplianceController::class, 'summary']);
             Route::get('filings/{filing}', [ComplianceController::class, 'show']);
+        });
+
+    // ── Tickets - READ only ──────────────────────────────────────────────
+    Route::middleware('permission:tickets.view')
+        ->prefix('tickets')
+        ->group(function () {
+            Route::get('/', [TicketController::class, 'index']);
+            Route::get('/{ticket}', [TicketController::class, 'show']);
         });
 
     // ── AI Tools - READ only (GET) ───────────────────────────────────────
@@ -359,6 +384,7 @@ Route::middleware(['auth:sanctum', 'branch.isolation'])->group(function () {
             Route::get('/claims', [App\Http\Controllers\Portal\EnrolleePortalController::class, 'claims']);
             Route::get('/find-hcp', [App\Http\Controllers\Portal\EnrolleePortalController::class, 'findHcp']);
             Route::get('/complaints', [App\Http\Controllers\Portal\EnrolleePortalController::class, 'complaints']);
+            Route::get('/complaints/{ticket}', [App\Http\Controllers\Portal\EnrolleePortalController::class, 'ticketShow']);
             Route::get('/reimbursements', [App\Http\Controllers\Portal\EnrolleePortalController::class, 'reimbursements']);
         });
 
@@ -369,6 +395,17 @@ Route::middleware(['auth:sanctum', 'branch.isolation'])->group(function () {
             Route::get('/claims', [App\Http\Controllers\Portal\CorporatePortalController::class, 'claims']);
             Route::get('/invoices', [App\Http\Controllers\Portal\CorporatePortalController::class, 'invoices']);
             Route::get('/profile', [App\Http\Controllers\Portal\CorporatePortalController::class, 'profile']);
+
+            Route::get('/tickets', [App\Http\Controllers\Portal\CorporatePortalController::class, 'tickets']);
+            Route::get('/tickets/{ticket}', [App\Http\Controllers\Portal\CorporatePortalController::class, 'ticketShow']);
+
+            Route::get('/available-plans', [App\Http\Controllers\Portal\CorporatePortalController::class, 'availablePlans']);
+            Route::get('/budget', [App\Http\Controllers\Portal\CorporatePortalController::class, 'budgetDashboard']);
+            Route::get('/plan-requests', [App\Http\Controllers\Portal\CorporatePortalController::class, 'planRequests']);
+
+            Route::get('/renewal-status', [App\Http\Controllers\Portal\CorporatePortalController::class, 'renewalStatus']);
+            Route::get('/utilization-report/export', [App\Http\Controllers\Portal\CorporatePortalController::class, 'exportUtilizationReport']);
+
         });
 
         // Provider Portal - READ only
@@ -378,6 +415,15 @@ Route::middleware(['auth:sanctum', 'branch.isolation'])->group(function () {
             Route::get('/claims/{claim}', [App\Http\Controllers\Portal\ProviderPortalController::class, 'claimShow']);
             Route::get('/pre-auths', [App\Http\Controllers\Portal\ProviderPortalController::class, 'preAuths']);
             Route::get('/check-ins', [App\Http\Controllers\Portal\ProviderPortalController::class, 'checkins']);
+
+            Route::get('/claims/import', [ProviderClaimImportController::class, 'index']);
+            Route::get('/claims/import/{batch}', [ProviderClaimImportController::class, 'show']);
+            Route::get('/claims/import/{batch}/rows', [ProviderClaimImportController::class, 'rows']);
+            Route::get('/payments', [App\Http\Controllers\Portal\ProviderPortalController::class, 'payments']);
+            Route::get('/reconciliation', [App\Http\Controllers\Portal\ProviderPortalController::class, 'reconciliation']);
+            Route::get('/tickets', [App\Http\Controllers\Portal\ProviderPortalController::class, 'tickets']);
+            Route::get('/tickets/{ticket}', [App\Http\Controllers\Portal\ProviderPortalController::class, 'ticketShow']);
+
         });
 
     });
@@ -443,6 +489,13 @@ Route::middleware(['auth:sanctum', 'branch.isolation', 'license'])->group(functi
         Route::middleware('permission:plans.edit')->patch('{plan}/discontinue', [CorporatePlanController::class, 'discontinue']);
         Route::middleware('permission:plans.create')->post('{plan}/duplicate', [CorporatePlanController::class, 'duplicate']);
         Route::middleware('permission:plans.edit')->put('{plan}/benefit-items', [CorporatePlanController::class, 'syncBenefitItems']);
+    });
+
+    Route::middleware('permission:plan_requests.review')
+    ->prefix('plan-requests')
+    ->group(function () {
+        Route::post('/{planRequest}/approve', [PlanRequestController::class, 'approve']);
+        Route::post('/{planRequest}/reject', [PlanRequestController::class, 'reject']);
     });
 
     // ── Corporate Invoices - WRITE operations ────────────────────────────
@@ -551,6 +604,9 @@ Route::middleware(['auth:sanctum', 'branch.isolation', 'license'])->group(functi
             ->group(function () {
                 Route::post('/batch', [FFSProvidersController::class, 'createBatch']);
             });
+
+        Route::middleware('permission:finance.batch_approve')->post('batches/{batch}/disburse-gateway', [PaymentBatchController::class, 'disburseViaGateway']);
+
     });
 
     // ── Reports - WRITE operations ───────────────────────────────────────
@@ -569,6 +625,7 @@ Route::middleware(['auth:sanctum', 'branch.isolation', 'license'])->group(functi
             Route::middleware('permission:reports.export')->post('export', [ReportController::class, 'export']);
         });
 
+    
     // ── Compliance - WRITE operations ────────────────────────────────────
     Route::middleware('permission:compliance.view')
         ->prefix('compliance')
@@ -580,7 +637,17 @@ Route::middleware(['auth:sanctum', 'branch.isolation', 'license'])->group(functi
             Route::middleware('permission:compliance.manage')->delete('filings/{filing}/documents/{doc}', [ComplianceController::class, 'deleteDocument']);
         });
 
-    
+    // ── Tickets - WRITE operations ───────────────────────────────────────
+    Route::middleware('permission:tickets.manage')
+        ->prefix('tickets')
+        ->group(function () {
+            Route::post('/{ticket}/assign', [TicketController::class, 'assign']);
+            Route::post('/{ticket}/reply', [TicketController::class, 'reply']);
+            Route::post('/{ticket}/resolve', [TicketController::class, 'resolve']);
+            Route::post('/{ticket}/close', [TicketController::class, 'close']);
+            Route::post('/{ticket}/reopen', [TicketController::class, 'reopen']);
+        });
+
     // ── AI Tools - WRITE operations ──────────────────────────────────────
     Route::middleware('permission:ai.tools')
         ->prefix('ai')
@@ -612,7 +679,7 @@ Route::middleware(['auth:sanctum', 'branch.isolation', 'license'])->group(functi
         // Enrollee Portal - WRITE
         Route::prefix('enrollee')->group(function () {
             Route::post('/complaints', [App\Http\Controllers\Portal\EnrolleePortalController::class, 'submitComplaint']);
-
+            Route::post('/complaints/{ticket}/reply', [App\Http\Controllers\Portal\EnrolleePortalController::class, 'ticketReply']);
             Route::post('/claims/{claim}/confirm-utilization', [App\Http\Controllers\Portal\EnrolleePortalController::class, 'confirmUtilization']);
             Route::post('/claims/{claim}/dispute-utilization', [App\Http\Controllers\Portal\EnrolleePortalController::class, 'disputeUtilization']);
             Route::post('/reimbursements', [App\Http\Controllers\Portal\EnrolleePortalController::class, 'submitReimbursement']);
@@ -626,6 +693,19 @@ Route::middleware(['auth:sanctum', 'branch.isolation', 'license'])->group(functi
             Route::post('/enrollees/bulk', [App\Http\Controllers\Portal\CorporatePortalController::class, 'bulkUploadEnrollees']);
             Route::post('/claims/export', [App\Http\Controllers\Portal\CorporatePortalController::class, 'exportClaims']);
             Route::put('/profile', [App\Http\Controllers\Portal\CorporatePortalController::class, 'updateProfile']);
+
+            Route::post('/tickets', [App\Http\Controllers\Portal\CorporatePortalController::class, 'submitTicket']);
+            Route::post('/tickets/{ticket}/reply', [App\Http\Controllers\Portal\CorporatePortalController::class, 'ticketReply']);
+
+            Route::patch('/enrollees/{id}/upgrade-tier', [App\Http\Controllers\Portal\CorporatePortalController::class, 'upgradeEnrolleeTier']);
+            Route::post('/plan-requests/estimate', [App\Http\Controllers\Portal\CorporatePortalController::class, 'estimatePlan']);
+            Route::post('/plan-requests', [App\Http\Controllers\Portal\CorporatePortalController::class, 'submitPlanRequest']);
+            Route::post('/broadcast', [App\Http\Controllers\Portal\CorporatePortalController::class, 'broadcast']);
+
+            Route::patch('/enrollees/{id}/reactivate', [App\Http\Controllers\Portal\CorporatePortalController::class, 'reactivateEnrollee']);
+            Route::post('/enrollees/bulk-status', [App\Http\Controllers\Portal\CorporatePortalController::class, 'bulkUpdateEnrolleeStatus']);
+            Route::post('/request-renewal', [App\Http\Controllers\Portal\CorporatePortalController::class, 'requestRenewal']);
+
         });
 
         // Provider Portal - WRITE
@@ -634,6 +714,14 @@ Route::middleware(['auth:sanctum', 'branch.isolation', 'license'])->group(functi
             Route::post('/claims', [App\Http\Controllers\Portal\ProviderPortalController::class, 'storeClaim']);
             Route::post('/pre-auths', [App\Http\Controllers\Portal\ProviderPortalController::class, 'storePreAuth']);
             Route::post('/check-ins/{checkin}/acknowledge', [App\Http\Controllers\Portal\ProviderPortalController::class, 'acknowledgeCheckin']);
+
+            Route::post('/claims/import/upload', [ProviderClaimImportController::class, 'upload']);
+            Route::post('/claims/import/{batch}/map', [ProviderClaimImportController::class, 'confirmMapping']);
+            Route::patch('/claims/import/{batch}/rows/{row}', [ProviderClaimImportController::class, 'updateRow']);
+            Route::post('/claims/import/{batch}/bulk-approve-valid', [ProviderClaimImportController::class, 'bulkApproveValid']);
+            Route::post('/claims/import/{batch}/push', [ProviderClaimImportController::class, 'push']);
+            Route::post('/tickets', [App\Http\Controllers\Portal\ProviderPortalController::class, 'submitTicket']);
+            Route::post('/tickets/{ticket}/reply', [App\Http\Controllers\Portal\ProviderPortalController::class, 'ticketReply']);
 
         });
 

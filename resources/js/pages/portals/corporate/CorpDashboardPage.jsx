@@ -1,7 +1,7 @@
 /**
- * FILE LOCATION: resources/js/pages/portal/corporate/CorpDashboardPage.jsx
+ * FILE LOCATION: resources/js/pages/portals/corporate/CorpDashboardPage.jsx
  *
- * Corporate self-service dashboard — landing page after login for corporate users.
+ * Corporate self-service dashboard - landing page after login for corporate users.
  * Shows: enrollee count, invoice status, recent claims, quick actions.
  */
 

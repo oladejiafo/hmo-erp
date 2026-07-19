@@ -100,7 +100,7 @@ class User extends Authenticatable implements AuditableContract
 
     public function recordLogin(string $ip): void
     {
-        // updateQuietly skips model events — we don't want a login to create an audit log entry
+        // updateQuietly skips model events - we don't want a login to create an audit log entry
         $this->updateQuietly([
             'last_login_at' => now(),
             'last_login_ip' => $ip,

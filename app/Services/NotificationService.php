@@ -12,6 +12,7 @@ use App\Models\ComplianceFiling;
 use App\Models\SystemSetting; // ADD THIS USE STATEMENT
 use Illuminate\Support\Collection;
 use Illuminate\Support\Facades\DB;
+use App\Models\Corporate;
 
 /**
  * FILE LOCATION: app/Services/NotificationService.php
@@ -166,13 +167,81 @@ class NotificationService
             $this->create($user->id, $filing->branch_id, [
                 'type'             => $type,
                 'severity'         => $severity,
-                'title'            => "{$filing->title} — " . ($daysLeft < 0 ? 'OVERDUE' : "Due in {$daysLeft} days"),
+                'title'            => "{$filing->title} - " . ($daysLeft < 0 ? 'OVERDUE' : "Due in {$daysLeft} days"),
                 'body'             => $body,
                 'action_url'       => "/compliance/{$filing->id}",
                 'notifiable_type'  => ComplianceFiling::class,
                 'notifiable_id'    => $filing->id,
             ]);
         }
+    }
+
+
+    public function providerClaimDecision(Claim $claim): void
+    {
+        $user = User::where('hcp_id', $claim->hcp_id)->first();
+        if (!$user) return; // facility has no portal login yet - nothing to notify
+
+        $decided = $claim->status->value; // 'approved' | 'rejected'
+        $this->create($user->id, $claim->branch_id, [
+            'type'            => 'claim_decision',
+            'severity'        => $decided === 'rejected' ? 'warning' : 'info',
+            'title'           => ucfirst($decided) . ": {$claim->claim_number}",
+            'body'            => $decided === 'rejected'
+                ? "Claim {$claim->claim_number} was rejected. Reason: {$claim->rejection_reason}"
+                : "Claim {$claim->claim_number} was approved for " . number_format($claim->total_amount_approved, 2) . ".",
+            'action_url'      => "/provider/claims/{$claim->id}",
+            'notifiable_type' => Claim::class,
+            'notifiable_id'   => $claim->id,
+        ]);
+    }
+
+    public function providerPaymentMade(\App\Models\ProviderPayment $payment): void
+    {
+        $user = User::where('hcp_id', $payment->hcp_id)->first();
+        if (!$user) return;
+
+        $this->create($user->id, $payment->claim?->branch_id, [
+            'type'            => 'payment_made',
+            'severity'        => 'info',
+            'title'           => 'Payment processed',
+            'body'            => "A payment of " . number_format($payment->amount, 2) . " has been processed. Reference: {$payment->payment_reference}",
+            'action_url'      => '/provider/payments',
+            'notifiable_type' => \App\Models\ProviderPayment::class,
+            'notifiable_id'   => $payment->id,
+        ]);
+    }
+
+    public function providerPreAuthDecision(PreAuthorisation $pa): void
+    {
+        $user = User::where('hcp_id', $pa->hcp_id)->first();
+        if (!$user) return;
+
+        $approved = in_array($pa->status, ['approved']);
+        $this->create($user->id, $pa->branch_id, [
+            'type'            => 'pa_decision',
+            'severity'        => $approved ? 'info' : 'warning',
+            'title'           => ($approved ? 'Pre-Auth Approved' : 'Pre-Auth Declined') . ": {$pa->pa_number}",
+            'body'            => $approved
+                ? "Pre-authorisation {$pa->pa_number} was approved. Code: {$pa->pa_code}"
+                : "Pre-authorisation {$pa->pa_number} was declined.",
+            'action_url'      => '/provider/pre-auths',
+            'notifiable_type' => PreAuthorisation::class,
+            'notifiable_id'   => $pa->id,
+        ]);
+    }
+
+    public function ticketReplied(\App\Models\Ticket $ticket, \App\Models\User $repliedTo): void
+    {
+        $this->create($repliedTo->id, $ticket->branch_id, [
+            'type'            => 'ticket_reply',
+            'severity'        => 'info',
+            'title'           => "New reply on {$ticket->ticket_number}",
+            'body'            => "There's a new reply on your ticket: {$ticket->subject}",
+            'action_url'      => "/tickets/{$ticket->id}", // portal-relative, frontend resolves per portalType()
+            'notifiable_type' => \App\Models\Ticket::class,
+            'notifiable_id'   => $ticket->id,
+        ]);
     }
 
     // ── Generic ───────────────────────────────────────────────────────────────
@@ -194,6 +263,45 @@ class NotificationService
     }
 
     // ── Private Helpers ───────────────────────────────────────────────────────
+
+    public function corporateUtilizationAlert(Claim $claim): void
+    {
+        if (!$claim->enrollee->corporate_id) return;
+
+        $corporateUser = User::where('corporate_id', $claim->enrollee->corporate_id)->first();
+        if (!$corporateUser) return;
+
+        $this->create($corporateUser->id, $claim->branch_id, [
+            'type'            => 'utilization_alert',
+            'severity'        => 'info',
+            'title'           => 'Plan utilization activity',
+            'body'            => 'An employee under your plan visited a healthcare facility. No personal or clinical details are shared here, see your Budget Dashboard for aggregate utilization.',
+            'action_url'      => '/corporate/budget',
+            'notifiable_type' => Claim::class,
+            'notifiable_id'   => $claim->id,
+        ]);
+    }
+
+    public function broadcastToCorporateEnrollees(Corporate $corporate, string $title, string $body): int
+    {
+        $enrolleeUserIds = User::whereIn('enrollee_id', function ($query) use ($corporate) {
+            $query->select('id')->from('enrollees')->where('corporate_id', $corporate->id)->where('status', 'active');
+        })->pluck('id');
+
+        foreach ($enrolleeUserIds as $userId) {
+            $this->create($userId, $corporate->branch_id, [
+                'type'            => 'broadcast',
+                'severity'        => 'info',
+                'title'           => $title,
+                'body'            => $body,
+                'action_url'      => null,
+                'notifiable_type' => Corporate::class,
+                'notifiable_id'   => $corporate->id,
+            ]);
+        }
+
+        return $enrolleeUserIds->count();
+    }
 
     /**
      * Create a notification record in the database.

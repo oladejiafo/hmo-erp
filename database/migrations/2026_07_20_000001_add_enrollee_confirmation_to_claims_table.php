@@ -5,10 +5,10 @@ use Illuminate\Database\Schema\Blueprint;
 use Illuminate\Support\Facades\Schema;
 
 /**
- * Phase 1 — Fraud/trust loop.
+ * Phase 1 - Fraud/trust loop.
  *
  * Adds enrollee-side utilization confirmation to the existing claims table.
- * This is the "did you actually receive this service" check — the enrollee
+ * This is the "did you actually receive this service" check - the enrollee
  * confirms or disputes a claim before it moves further down the approval chain.
  *
  * NOTE: assumes `claims` table exists already (it does, per Claim.php).

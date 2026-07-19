@@ -37,7 +37,7 @@ class BranchController extends Controller
             'phone'   => ['nullable', 'string', 'max:20'],
             'email'   => ['nullable', 'email', 'max:100'],
             'type'    => ['required', Rule::in(['STATE', 'REGIONAL'])],
-            // HQ type can only be created by direct DB seeding — never via API
+            // HQ type can only be created by direct DB seeding - never via API
         ]);
 
         $validated['status'] = 'active';
@@ -60,7 +60,7 @@ class BranchController extends Controller
     public function update(Request $request, Branch $branch): JsonResponse
     {
         if ($branch->isHQ()) {
-            // Restrict HQ editable fields — you cannot rename or retype HQ via API
+            // Restrict HQ editable fields - you cannot rename or retype HQ via API
             $validated = $request->validate([
                 'address' => ['nullable', 'string'],
                 'phone'   => ['nullable', 'string', 'max:20'],

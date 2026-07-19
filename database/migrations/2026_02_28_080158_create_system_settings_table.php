@@ -5,17 +5,17 @@ use Illuminate\Database\Schema\Blueprint;
 use Illuminate\Support\Facades\Schema;
 
 /**
- * Creates the system_settings table — a typed key-value store for all
+ * Creates the system_settings table - a typed key-value store for all
  * configurable parameters that were previously hard-coded or env-only.
  *
  * Groups:
- *   hmo_info    — Organisation identity (name, code, address, currency …)
- *   financial   — VAT rate, claim thresholds, PA tiers, SLA targets …
- *   fraud       — Risk score weights and detection thresholds
- *   pre_auth    — PA amount tiers, TAT limits
- *   sla         — Per-claim-type processing targets (days)
- *   operational — Token lifetime, max dependents, dashboard cache, etc.
- *   notifications — Alert trigger thresholds
+ *   hmo_info    - Organisation identity (name, code, address, currency …)
+ *   financial   - VAT rate, claim thresholds, PA tiers, SLA targets …
+ *   fraud       - Risk score weights and detection thresholds
+ *   pre_auth    - PA amount tiers, TAT limits
+ *   sla         - Per-claim-type processing targets (days)
+ *   operational - Token lifetime, max dependents, dashboard cache, etc.
+ *   notifications - Alert trigger thresholds
  *
  * FILE LOCATION: database/migrations/2025_02_01_000001_create_system_settings_table.php
  */
@@ -44,7 +44,7 @@ return new class extends Migration
             // The stored value (always as string; cast on read by the model)
             $table->text('value')->nullable();
 
-            // Default value — used to reset, and shown as placeholder
+            // Default value - used to reset, and shown as placeholder
             $table->text('default_value')->nullable();
 
             // Optional: min/max for numeric fields (stored as JSON: {"min":0,"max":100})

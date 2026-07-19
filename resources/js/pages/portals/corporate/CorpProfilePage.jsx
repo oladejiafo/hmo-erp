@@ -1,5 +1,5 @@
 /**
- * FILE LOCATION: resources/js/pages/portal/corporate/CorpProfilePage.jsx
+ * FILE LOCATION: resources/js/pages/portals/corporate/CorpProfilePage.jsx
  * Corporate self-service: view/edit company profile and contact info.
  */
 import React, { useState, useEffect } from 'react';
@@ -84,7 +84,7 @@ export default function CorpProfilePage() {
                 <InfoCard icon={Shield} color="#0f4c81" bg="#e8f0fe" label="Current Plan" value={d?.plan_name ?? 'N/A'} />
                 <InfoCard icon={Calendar} color="#137333" bg="#e6f4ea" label="Policy Expiry" value={formatDate(d?.policy_expiry)} />
                 <InfoCard icon={Calendar} color="#b45309" bg="#fff3e0" label="Policy Start" value={formatDate(d?.policy_start)} />
-                <InfoCard icon={Building2} color="#5e35b1" bg="#f3e5f5" label="HMO Branch" value={d?.branch_name ?? '—'} />
+                <InfoCard icon={Building2} color="#5e35b1" bg="#f3e5f5" label="HMO Branch" value={d?.branch_name ?? '-'} />
             </div>
 
             {/* Editable contact details */}
@@ -168,7 +168,7 @@ export default function CorpProfilePage() {
                                 style={inputStyle} 
                             />
                         ) : (
-                            <div style={valueStyle}>{d?.contact_person ?? '—'}</div>
+                            <div style={valueStyle}>{d?.contact_person ?? '-'}</div>
                         )}
                     </div>
                     <div>
@@ -183,7 +183,7 @@ export default function CorpProfilePage() {
                                 style={inputStyle} 
                             />
                         ) : (
-                            <div style={valueStyle}>{d?.contact_email ?? '—'}</div>
+                            <div style={valueStyle}>{d?.contact_email ?? '-'}</div>
                         )}
                     </div>
                     <div>
@@ -198,7 +198,7 @@ export default function CorpProfilePage() {
                                 style={inputStyle} 
                             />
                         ) : (
-                            <div style={valueStyle}>{d?.contact_phone ?? '—'}</div>
+                            <div style={valueStyle}>{d?.contact_phone ?? '-'}</div>
                         )}
                     </div>
                     <div>
@@ -212,7 +212,7 @@ export default function CorpProfilePage() {
                                 style={inputStyle} 
                             />
                         ) : (
-                            <div style={valueStyle}>{d?.address ?? '—'}</div>
+                            <div style={valueStyle}>{d?.address ?? '-'}</div>
                         )}
                     </div>
                 </div>

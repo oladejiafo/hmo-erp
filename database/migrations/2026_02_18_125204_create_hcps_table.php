@@ -35,7 +35,7 @@ return new class extends Migration
                   ->comment('National Health Insurance Scheme accreditation number');
             $table->enum('tier', ['primary', 'secondary', 'tertiary'])
                   ->default('primary')
-                  ->comment('Care level — determines claim routing and approval limits');
+                  ->comment('Care level - determines claim routing and approval limits');
             $table->enum('status', ['pending', 'active', 'suspended', 'blacklisted', 'terminated'])
                   ->default('pending');
             $table->decimal('performance_score', 5, 2)

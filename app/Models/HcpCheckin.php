@@ -22,7 +22,7 @@ class HcpCheckin extends Model
 
     public function isExpired(): bool
     {
-        // A check-in nobody acknowledged in 30 minutes isn't useful anymore —
+        // A check-in nobody acknowledged in 30 minutes isn't useful anymore -
         // the member's either already been seen at the desk or gave up and
         // walked to the counter directly. Auto-expired at read time (see
         // ProviderPortalController::checkins()), no scheduled job needed for

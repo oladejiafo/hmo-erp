@@ -18,12 +18,12 @@ use Illuminate\Support\Facades\Log;
  *
  * FILE LOCATION: app/Http/Controllers/Settings/SystemSettingController.php
  *
- * Routes (add to routes/api.php — see routes_settings_block.php):
- *   GET    /settings/system              → index()    — all settings grouped
- *   GET    /settings/system/public       → public()   — safe subset for frontend bootstrap
- *   PUT    /settings/system              → updateMany() — batch update (super_admin only)
- *   PUT    /settings/system/{key}        → update()   — single key update (super_admin only)
- *   POST   /settings/system/reset/{key} → reset()    — reset one key to default
+ * Routes (add to routes/api.php - see routes_settings_block.php):
+ *   GET    /settings/system              → index()    - all settings grouped
+ *   GET    /settings/system/public       → public()   - safe subset for frontend bootstrap
+ *   PUT    /settings/system              → updateMany() - batch update (super_admin only)
+ *   PUT    /settings/system/{key}        → update()   - single key update (super_admin only)
+ *   POST   /settings/system/reset/{key} → reset()    - reset one key to default
  */
 class SystemSettingController extends Controller
 {
@@ -34,7 +34,7 @@ class SystemSettingController extends Controller
      *
      * Returns the small set of settings the frontend needs on boot before a
      * user is logged in (currency, HMO name, locale).  No auth required.
-     * Cache-friendly — these rarely change.
+     * Cache-friendly - these rarely change.
      */
     public function public(): JsonResponse
     {

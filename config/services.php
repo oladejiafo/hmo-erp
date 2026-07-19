@@ -46,4 +46,15 @@ return [
     'openai' => [
         'key' => env('OPENAI_API_KEY', ''),
     ],
+
+    'flutterwave' => [
+        'secret_key' => env('FLUTTERWAVE_SECRET_KEY'),
+        'base_url' => env('FLUTTERWAVE_BASE_URL', 'https://api.flutterwave.com/v3'),
+        'webhook_url' => env('FLUTTERWAVE_WEBHOOK_URL'),
+        'webhook_hash' => env('FLUTTERWAVE_WEBHOOK_HASH'),
+    ],
+
+    'payment_gateway' => [
+        'default' => env('PAYMENT_GATEWAY_DEFAULT', 'flutterwave'),
+    ],
 ];

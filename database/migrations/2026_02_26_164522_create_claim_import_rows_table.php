@@ -19,7 +19,7 @@ return new class extends Migration {
                   ->constrained('claim_import_batches')
                   ->cascadeOnDelete();
 
-            // The resolved FK — null until validation succeeds
+            // The resolved FK - null until validation succeeds
             $table->foreignId('enrollee_id')
                   ->nullable()
                   ->constrained('enrollees')

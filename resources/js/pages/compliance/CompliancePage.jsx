@@ -3,12 +3,12 @@
  * ROUTE:         /compliance
  * PERMISSION:    compliance.view
  *
- * Compliance Calendar — tracks regulatory obligations, internal audits,
+ * Compliance Calendar - tracks regulatory obligations, internal audits,
  * contract renewals, and recurring filing deadlines.
  *
  * Tabs:
- *   Calendar — visual 3-month forward view of all due dates
- *   Filings  — full list with filters, create, complete, upload docs
+ *   Calendar - visual 3-month forward view of all due dates
+ *   Filings  - full list with filters, create, complete, upload docs
  */
 
 import React, { useState, useMemo } from 'react';
@@ -174,7 +174,7 @@ function SummaryCards() {
                             <div>
                                 <div style={{ fontSize: 11, color: '#6b7280', textTransform: 'uppercase', letterSpacing: 0.5 }}>{card.label}</div>
                                 <div style={{ fontSize: 22, fontWeight: 700, color: card.color, lineHeight: 1.2 }}>
-                                    {isLoading ? '…' : (card.value ?? '—')}
+                                    {isLoading ? '…' : (card.value ?? '-')}
                                 </div>
                             </div>
                         </div>
@@ -372,7 +372,7 @@ function FilingsTab({ onSelect, canManage, qc }) {
                                                 </span>
                                             </td>
                                             <td style={{ color: '#374151', fontSize: 12 }}>
-                                                {f.assigned_to_name ?? '—'}
+                                                {f.assigned_to_name ?? '-'}
                                             </td>
                                             <td className="text-end">
                                                 <span style={{ fontWeight: 700, color: urgColor }}>

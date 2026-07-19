@@ -106,7 +106,7 @@ export default function MyBenefitsPage() {
                     <div style={waitingPeriodsTitleStyle}>Waiting Periods</div>
                 </div>
                 {[
-                    { service:'General / OPD',       period:'None — immediate access' },
+                    { service:'General / OPD',       period:'None - immediate access' },
                     { service:'Maternity / Obstetric',period:'10 months from enrolment' },
                     { service:'Chronic disease drugs',period:'2–3 months from enrolment' },
                     { service:'Dental (non-emergency)',period:'14–90 days (plan-dependent)' },

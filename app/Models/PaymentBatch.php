@@ -10,7 +10,7 @@ use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 
-// NOTE: CapitationRun is in the same namespace — no explicit use needed.
+// NOTE: CapitationRun is in the same namespace - no explicit use needed.
 
 class PaymentBatch extends Model
 {

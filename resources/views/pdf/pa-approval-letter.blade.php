@@ -2,7 +2,7 @@
 <html>
 <head>
     <meta charset="utf-8">
-    <title>PA Approval Letter - {{ $pa->pa_code }}</title>
+    <title>Pre Authorization Code Approval Letter - {{ $pa->pa_code }}</title>
     <meta http-equiv="Content-Type" content="text/html; charset=utf-8"/>
     <style>
         * {
@@ -144,7 +144,7 @@
         <h1>PRE-AUTHORISATION APPROVAL</h1>
         
         <div class="pa-code-box">
-            <div class="label">PA Code</div>
+            <div class="label">Pre Authorization Code</div>
             <div class="code">{{ $pa->pa_code }}</div>
         </div>
         
@@ -165,7 +165,7 @@
         <tr><td>Approved Amount:</td><td class="amount">{!! html_entity_decode($currencySymbol) !!}{{ number_format($pa->approved_amount ?? $pa->estimated_amount, 2) }}</td></tr>
     </table>
 
-    <p>Please quote PA code <strong>{{ $pa->pa_code }}</strong> when submitting the claim.</p>
+    <p>Please quote Pre Authorization Code <strong>{{ $pa->pa_code }}</strong> when submitting the claim.</p>
 
     @if($pa->approval_note)
         <div class="note-box">

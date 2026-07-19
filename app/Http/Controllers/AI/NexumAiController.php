@@ -22,7 +22,7 @@ use Illuminate\Support\Facades\Auth;
  * Sits alongside the existing AIController (which uses the local AIService).
  *
  * Branch isolation is enforced automatically via the BelongsToBranch
- * global scope on all models — no manual branch_id filtering needed.
+ * global scope on all models - no manual branch_id filtering needed.
  *
  * Routes live in routes/api.php under:
  *   GET  /ai/claims-anomaly/{hcp}
@@ -44,7 +44,7 @@ class NexumAiController extends Controller
      * Analyse a provider's claims submission for anomalies.
      *
      * Query params:
-     *   period  — e.g. "2025-Q1" | "2025-01" | "2025" (defaults to current quarter)
+     *   period  - e.g. "2025-Q1" | "2025-01" | "2025" (defaults to current quarter)
      *
      * Response:
      * {
@@ -278,7 +278,7 @@ class NexumAiController extends Controller
      * Response:
      * {
      *   "success": true,
-     *   "digest": "This week has been busy — 47 new claims submitted...",
+     *   "digest": "This week has been busy - 47 new claims submitted...",
      *   "stats": { ... }
      * }
      */
@@ -329,7 +329,7 @@ class NexumAiController extends Controller
     }
 
     // ══════════════════════════════════════════════════════════════
-    //  5. CLAIM RISK SCORE (G8.AI enhanced — supplements existing local risk)
+    //  5. CLAIM RISK SCORE (G8.AI enhanced - supplements existing local risk)
     //  GET /ai/claim-risk/{claim}
     // ══════════════════════════════════════════════════════════════
 

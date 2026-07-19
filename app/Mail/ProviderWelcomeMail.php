@@ -1,9 +1,9 @@
 <?php
 /**
- * NEW FILE — app/Mail/ProviderWelcomeMail.php
+ * NEW FILE - app/Mail/ProviderWelcomeMail.php
  *
  * ASSUMPTION FLAGGED: written from the constructor shape implied by
- * `new EnrolleeWelcomeMail($enrollee, $tempPassword)` — I have not seen
+ * `new EnrolleeWelcomeMail($enrollee, $tempPassword)` - I have not seen
  * the real EnrolleeWelcomeMail.php. Align the view path and content
  * structure to match it once you send that file, so providers get a
  * visually consistent welcome email to enrollees/corporates rather than
@@ -28,7 +28,7 @@ class ProviderWelcomeMail extends Mailable
 
     public function build()
     {
-        return $this->subject('Your Provider Portal Account — ' . config('app.name'))
+        return $this->subject('Your Provider Portal Account - ' . config('app.name'))
             ->view('emails.provider_welcome') // NEW view, doesn't exist yet either
             ->with([
                 'hcpName' => $this->hcp->name,

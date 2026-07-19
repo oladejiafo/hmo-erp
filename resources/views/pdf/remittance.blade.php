@@ -51,7 +51,7 @@
 {{-- ── Header ────────────────────────────────────────────────────────── --}}
 <div class="header">
   <h1>{{ $company_name }}</h1>
-  <div class="sub">Remittance Advice — Provider Payment Notification</div>
+  <div class="sub">Remittance Advice - Provider Payment Notification</div>
   <div class="ref">
     <div class="sub">Reference</div>
     <div class="ref-number">{{ $reference }}</div>
@@ -74,7 +74,7 @@
       </div>
       <div class="info-block">
         <div class="label">Provider Type</div>
-        <div class="value">{{ ucfirst($hcp?->type?->value ?? '—') }}</div>
+        <div class="value">{{ ucfirst($hcp?->type?->value ?? '-') }}</div>
       </div>
     </div>
     <div class="col">
@@ -84,11 +84,11 @@
       </div>
       <div class="info-block">
         <div class="label">Account Name</div>
-        <div class="value">{{ $bank?->account_name ?? '—' }}</div>
+        <div class="value">{{ $bank?->account_name ?? '-' }}</div>
       </div>
       <div class="info-block">
         <div class="label">Account Number</div>
-        <div class="value mono">{{ $bank?->account_number ?? '—' }}</div>
+        <div class="value mono">{{ $bank?->account_number ?? '-' }}</div>
       </div>
     </div>
   </div>
@@ -101,7 +101,7 @@
     <div class="col">
       <div class="info-block">
         <div class="label">Claim Number</div>
-        <div class="value mono">{{ $claim?->claim_number ?? '—' }}</div>
+        <div class="value mono">{{ $claim?->claim_number ?? '-' }}</div>
       </div>
       <div class="info-block">
         <div class="label">Enrollee</div>
@@ -112,13 +112,13 @@
       </div>
       <div class="info-block">
         <div class="label">Service Date</div>
-        <div class="value">{{ $claim?->service_date?->format('d M Y') ?? '—' }}</div>
+        <div class="value">{{ $claim?->service_date?->format('d M Y') ?? '-' }}</div>
       </div>
     </div>
     <div class="col">
       <div class="info-block">
         <div class="label">Batch Number</div>
-        <div class="value mono">{{ $batch?->batch_number ?? '—' }}</div>
+        <div class="value mono">{{ $batch?->batch_number ?? '-' }}</div>
       </div>
       <div class="info-block">
         <div class="label">Payment Date</div>

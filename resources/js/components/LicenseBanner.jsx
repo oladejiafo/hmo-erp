@@ -1,12 +1,12 @@
 /**
- * LicenseBanner — ERP Frontend
+ * LicenseBanner - ERP Frontend
  *
  * Shows a persistent banner at the top of the admin shell when:
  *   - Status is 'grace'      → amber warning with days remaining
  *   - Status is 'restricted' → red blocking banner with contact info
  *   - Status is 'unlicensed' → amber (no key configured)
  *
- * Silent when status is 'valid' — no banner shown.
+ * Silent when status is 'valid' - no banner shown.
  *
  * USAGE: Mount inside AppLayout.jsx, above the main content area.
  *
@@ -41,7 +41,7 @@ export default function LicenseBanner() {
     console.log('LicenseBanner - status:', data?.status);
     if (isLoading || !data) return null;
 
-    // Valid — no banner
+    // Valid - no banner
     if (data.status === 'valid') return null;
 
     const isRestricted = data.status === 'restricted';
@@ -70,7 +70,7 @@ export default function LicenseBanner() {
             <div style={{ flex: 1 }}>
                 {isRestricted && (
                     <span style={{ color: text, fontWeight: 700, fontSize: 14 }}>
-                        System Restricted — Write operations are disabled.{' '}
+                        System Restricted - Write operations are disabled.{' '}
                         <span style={{ fontWeight: 400 }}>
                             You can still view data and export reports.
                         </span>

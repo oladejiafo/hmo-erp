@@ -1,14 +1,14 @@
 <?php
 /**
- * NEW FILE — app/Http/Controllers/Finance/ReimbursementController.php
+ * NEW FILE - app/Http/Controllers/Finance/ReimbursementController.php
  *
  * Staff-facing side of Phase 1's reimbursement flow. Mirrors the shape of
  * your PaymentBatchController approve/reject pattern rather than inventing
- * something new. Deliberately thin for Phase 1 — no partial-approval
+ * something new. Deliberately thin for Phase 1 - no partial-approval
  * workflow yet, just approve-with-amount / reject / mark-paid.
  *
  * ASSUMPTION FLAGGED: permission slugs 'reimbursements.view' and
- * 'reimbursements.review' are NOT yet in your permissions seeder — this
+ * 'reimbursements.review' are NOT yet in your permissions seeder - this
  * needs adding (Spatie permission create) before these routes will resolve
  * for any role. I can't see your seeder from here to add it directly.
  */

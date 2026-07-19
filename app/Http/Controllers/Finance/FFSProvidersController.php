@@ -84,7 +84,7 @@ class FFSProvidersController extends Controller
         $branchId = $request->user()->branch_id;
         $isHQ     = $request->user()->hasRole(['hq_manager', 'ceo']);
 
-        // Get 12 months of completed FFS batch totals — use provider_payments not payment_batch_items
+        // Get 12 months of completed FFS batch totals - use provider_payments not payment_batch_items
         $ffsMonths = DB::table('payment_batches as b')
             ->join('provider_payments as pp', 'pp.batch_id', '=', 'b.id')
             ->join('health_care_providers as h', 'h.id', '=', 'pp.hcp_id')

@@ -83,7 +83,7 @@ export default function MyIDCardPage() {
                                 ...detailValueStyle,
                                 fontFamily: mono ? 'monospace' : 'inherit',
                             }}>
-                                {value ?? '—'}
+                                {value ?? '-'}
                             </div>
                         </div>
                     ))}

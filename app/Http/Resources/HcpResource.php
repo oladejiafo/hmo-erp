@@ -31,7 +31,7 @@ class HcpResource extends JsonResource
             'state'             => $this->state,
             'lga'               => $this->lga,
 
-            // Raw FKs — needed for edit form selects
+            // Raw FKs - needed for edit form selects
             'branch_id'         => $this->branch_id,
             'branch'            => $this->whenLoaded('branch', fn () => [
                 'id'   => $this->branch->id,

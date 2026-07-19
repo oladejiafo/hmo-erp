@@ -190,7 +190,7 @@ export default function HCPListPage() {
                                                 </td>
                                                 <td style={{ fontSize: 12 }}>{hcp.state}</td>
                                                 <td style={{ fontSize: 13, fontWeight: 600 }}>
-                                                    {hcp.performance_score != null ? parseFloat(hcp.performance_score).toFixed(1) : '—'}
+                                                    {hcp.performance_score != null ? parseFloat(hcp.performance_score).toFixed(1) : '-'}
                                                 </td>
                                                 <td>
                                                     <StatusBadge

@@ -4,7 +4,7 @@
  * Everything from your original file is preserved as-is. New lines are marked
  * with "// [PHASE 1]" comments so a diff against your real file is easy.
  * Do not just overwrite blindly if your live file has moved on since you sent
- * this — diff it first.
+ * this - diff it first.
  */
 
 namespace App\Models;
@@ -39,7 +39,7 @@ class Claim extends Model
         'import_batch_id',   // FK to claim_import_batches
         'hcp_invoice_ref',
 
-        // [PHASE 1] — utilization confirmation
+        // [PHASE 1] - utilization confirmation
         'enrollee_confirmation_status',
         'enrollee_confirmed_at',
         'enrollee_disputed_at',
@@ -97,7 +97,7 @@ class Claim extends Model
         return $this->total_amount_claimed - $this->total_amount_approved;
     }
 
-    // [PHASE 1] — can the enrollee still act on this claim's confirmation?
+    // [PHASE 1] - can the enrollee still act on this claim's confirmation?
     public function canBeConfirmedByEnrollee(): bool
     {
         return $this->enrollee_confirmation_status === ClaimConfirmationStatus::PENDING

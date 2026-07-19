@@ -1,7 +1,7 @@
 /**
  * FILE LOCATION: resources/js/pages/dashboard/DashboardPage.jsx
  *
- * Enhanced dashboard — Phase 5
+ * Enhanced dashboard - Phase 5
  * New additions vs original:
  *   - Loss Ratio KPI card (current month + YTD, risk-colour coded)
  *   - 6-month Loss Ratio Trend chart (area + bar combo)
@@ -136,7 +136,7 @@ export default function DashboardPage() {
                         icon={CreditCard} color="warning" loading={isLoading} />
                 </div>
 
-                {/* Loss Ratio KPI — special card */}
+                {/* Loss Ratio KPI - special card */}
                 <div className="col-sm-6 col-xl">
                     <div className="card border-0 shadow-sm h-100" style={{ borderRadius: 12 }}>
                         <div className="card-body py-3 px-4">
@@ -145,7 +145,7 @@ export default function DashboardPage() {
                                     <div style={{ fontSize: 11, color: '#6b7280', textTransform: 'uppercase', letterSpacing: 0.5 }}>Loss Ratio (YTD)</div>
                                     <div className="d-flex align-items-baseline gap-2 mt-1">
                                         <div style={{ fontSize: 26, fontWeight: 800, color: lrConf.color }}>
-                                            {lr?.ytd != null ? `${lr.ytd}%` : '—'}
+                                            {lr?.ytd != null ? `${lr.ytd}%` : '-'}
                                         </div>
                                         <span style={{
                                             padding: '1px 7px', borderRadius: 10, fontSize: 10, fontWeight: 700,
@@ -158,7 +158,7 @@ export default function DashboardPage() {
                                         <TrendIndicator change={lr?.change} />
                                     </div>
                                     <div style={{ fontSize: 10, color: '#9ca3af', marginTop: 2 }}>
-                                        This month: {lr?.current_month != null ? `${lr.current_month}%` : '—'}
+                                        This month: {lr?.current_month != null ? `${lr.current_month}%` : '-'}
                                     </div>
                                 </>
                             )}
@@ -173,13 +173,13 @@ export default function DashboardPage() {
                     {
                         icon: Clock, color: '#6366f1', bg: '#eef2ff',
                         label: 'Avg Processing Time',
-                        value: kpi?.avg_processing_days != null ? `${kpi.avg_processing_days}d` : '—',
+                        value: kpi?.avg_processing_days != null ? `${kpi.avg_processing_days}d` : '-',
                         sub: 'from submission to paid',
                     },
                     {
                         icon: Shield, color: '#0891b2', bg: '#ecfeff',
-                        label: 'PA Approval Rate',
-                        value: kpi?.pa_approval_rate != null ? `${kpi.pa_approval_rate}%` : '—',
+                        label: 'Pre-Auth. Approval Rate',
+                        value: kpi?.pa_approval_rate != null ? `${kpi.pa_approval_rate}%` : '-',
                         sub: `${kpi?.active_pa_count ?? 0} active requests`,
                     },
                     {
@@ -193,7 +193,7 @@ export default function DashboardPage() {
                         color: (kpi?.overdue_invoices ?? 0) > 0 ? '#dc2626' : '#6b7280',
                         bg:   (kpi?.overdue_invoices ?? 0) > 0 ? '#fef2f2' : '#f9fafb',
                         label: 'Overdue Invoices',
-                        value: kpi?.overdue_invoices ?? '—',
+                        value: kpi?.overdue_invoices ?? '-',
                         sub: 'corporate premiums past due',
                     },
                 ].map(({ icon: Icon, color, bg, label, value, sub }) => (
@@ -244,7 +244,7 @@ export default function DashboardPage() {
         }
         // Safe number formatting
         const num = typeof val === 'number' ? val : parseFloat(val);
-        return [isNaN(num) ? '—' : num.toFixed(1), 'Avg Risk'];
+        return [isNaN(num) ? '-' : num.toFixed(1), 'Avg Risk'];
     }} 
 />
                                         <Bar yAxisId="left" dataKey="count" radius={[4, 4, 0, 0]}>
@@ -283,7 +283,7 @@ export default function DashboardPage() {
                                     <PendingItem icon={AlertTriangle} iconClass="text-danger" label="Supervisor Review"
                                         count={d?.pending_actions?.claims_supervisor ?? 0}
                                         onClick={() => navigate('/claims?status=supervisor_review')} />
-                                    <PendingItem icon={CheckCircle} iconClass="text-success" label="Approved — Not Batched"
+                                    <PendingItem icon={CheckCircle} iconClass="text-success" label="Approved - Not Batched"
                                         count={d?.pending_actions?.claims_approved_not_batched ?? 0}
                                         onClick={() => navigate('/finance')}
                                         highlight={(d?.pending_actions?.claims_approved_not_batched ?? 0) > 0} />

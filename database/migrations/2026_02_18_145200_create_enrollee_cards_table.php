@@ -17,7 +17,7 @@ return new class extends Migration
                   ->constrained()
                   ->cascadeOnDelete();
             $table->string('card_number', 30)->unique()->comment('Printed card number');
-            $table->string('qr_code_data')->comment('QR payload — encodes enrollee_id + plan + expiry');
+            $table->string('qr_code_data')->comment('QR payload - encodes enrollee_id + plan + expiry');
             $table->string('qr_image_path')->nullable()->comment('Path to generated QR PNG');
             $table->enum('status', ['active', 'expired', 'lost', 'replaced', 'cancelled'])
                   ->default('active');

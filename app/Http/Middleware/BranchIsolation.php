@@ -26,7 +26,7 @@ class BranchIsolation
             return $next($request);
         }
 
-        // HQ users can explicitly target any branch — they have full access
+        // HQ users can explicitly target any branch - they have full access
         if ($user->isHQ()) {
             return $next($request);
         }
@@ -42,7 +42,7 @@ class BranchIsolation
             }
         }
 
-        // Force branch_id on write operations — always the authenticated user's branch
+        // Force branch_id on write operations - always the authenticated user's branch
         if ($request->isMethod('POST') || $request->isMethod('PUT') || $request->isMethod('PATCH')) {
             $request->merge(['branch_id' => $user->branch_id]);
         }

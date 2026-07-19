@@ -5,18 +5,18 @@ use Illuminate\Database\Schema\Blueprint;
 use Illuminate\Support\Facades\Schema;
 
 /**
- * Phase 1 — Fraud/trust loop.
+ * Phase 1 - Fraud/trust loop.
  *
  * Out-of-pocket reimbursement requests. An enrollee pays a provider directly
  * (or the HMO's payment-to-hospital left a gap) and requests money back.
  * Deliberately modeled close to how `claims` works (branch scope, audit log,
- * generated reference number) so staff review it the same way they review claims —
+ * generated reference number) so staff review it the same way they review claims -
  * no new mental model for your ops team.
  *
  * ASSUMPTION FLAGGED: BelongsToBranch / HasAuditLog / GeneratesUniqueId traits
  * are used here exactly as they're used on Claim/Enrollee. I have not seen the
  * trait source. If GeneratesUniqueId expects a specific column name or a
- * declared prefix constant on the model, that needs matching once I see it —
+ * declared prefix constant on the model, that needs matching once I see it -
  * the model file below declares $referenceColumn as a guess for that contract.
  */
 return new class extends Migration

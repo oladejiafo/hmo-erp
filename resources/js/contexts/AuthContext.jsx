@@ -6,7 +6,7 @@
  * BUG 1 FIXED: fetchUser() now calls clearSession() when the API returns a
  *   successful 200 but `userData` is null/undefined (malformed response).
  *   Previously it returned early WITHOUT clearing the session, which left
- *   `loading = false` and `user = null` simultaneously — causing ProtectedRoute
+ *   `loading = false` and `user = null` simultaneously - causing ProtectedRoute
  *   to redirect to /login for a genuinely authenticated user whose /auth/me
  *   response was oddly shaped.
  *
@@ -81,7 +81,7 @@ export const AuthProvider = ({ children }) => {
 
             // ── BUG 1 FIX ────────────────────────────────────────────────────
             if (!userData || typeof userData !== 'object') {
-                console.warn('fetchUser: unexpected response shape — clearing session', response.data);
+                console.warn('fetchUser: unexpected response shape - clearing session', response.data);
                 clearSession();    // ← was a bare `return` before; user stayed null with loading=false
                 return;
             }
@@ -102,11 +102,11 @@ export const AuthProvider = ({ children }) => {
         } catch (error) {
             console.error('fetchUser error:', error);
 
-            // Auth endpoint 401 — token is invalid/expired
+            // Auth endpoint 401 - token is invalid/expired
             if (error.response?.status === 401) {
                 clearSession();
             }
-            // Other errors (5xx, network) — keep the token; don't log the user out
+            // Other errors (5xx, network) - keep the token; don't log the user out
         } finally {
             setLoading(false);
             isInitialAuthCheck.current = false;  // restore normal 401 event handling
@@ -120,11 +120,11 @@ export const AuthProvider = ({ children }) => {
     //    No hard reload. No blank screen.
     useEffect(() => {
         const handleUnauthorized = (e) => {
-            // Don't react during the initial auth check — the event could be
+            // Don't react during the initial auth check - the event could be
             // a stale in-flight request from a previous render cycle.
             if (isInitialAuthCheck.current) return;
 
-            console.warn('hmo:unauthorized received — clearing session', e.detail);
+            console.warn('hmo:unauthorized received - clearing session', e.detail);
             clearSession();
         };
 
@@ -141,7 +141,7 @@ export const AuthProvider = ({ children }) => {
         // If no token: loading is already false (see initial state), ProtectedRoute
         // redirects to /login immediately without waiting.
     }, []); // eslint-disable-line react-hooks/exhaustive-deps
-    // Note: intentionally NOT including fetchUser in deps — we only want this to
+    // Note: intentionally NOT including fetchUser in deps - we only want this to
     // run once on mount. Adding fetchUser (a useCallback) here would cause an
     // infinite loop if clearSession ever changes its identity.
 

@@ -5,7 +5,7 @@ use Illuminate\Database\Schema\Blueprint;
 use Illuminate\Support\Facades\Schema;
 
 /**
- * ERP — license_cache table.
+ * ERP - license_cache table.
  *
  * Stores the last valid signed token received from the licensing server.
  * Single-row table (only row has id = 1).
@@ -27,7 +27,7 @@ return new class extends Migration
             // The raw signed token as returned by the licensing server
             $table->text('signed_token')->nullable();
 
-            // Decoded payload fields — stored for quick reads without re-parsing
+            // Decoded payload fields - stored for quick reads without re-parsing
             $table->string('license_key', 64)->nullable();
             $table->string('client_name')->nullable();
             $table->string('plan', 20)->nullable();

@@ -3,7 +3,7 @@
  * ROUTE:         /reports/sla
  * PERMISSION:    reports.branch
  *
- * SLA monitoring dashboard — shows how well claims are being processed
+ * SLA monitoring dashboard - shows how well claims are being processed
  * against NHIS target turnaround times.
  */
 
@@ -107,7 +107,7 @@ export default function SLADashboardPage() {
                     {[
                         {
                             label:   'Open Claims',
-                            value:   d.kpis?.total_open?.toLocaleString() ?? '—',
+                            value:   d.kpis?.total_open?.toLocaleString() ?? '-',
                             sub:     'Currently unresolved',
                             icon:    Clock,
                             color:   '#2563eb',
@@ -115,7 +115,7 @@ export default function SLADashboardPage() {
                         },
                         {
                             label:   'SLA Breached',
-                            value:   d.kpis?.breached?.toLocaleString() ?? '—',
+                            value:   d.kpis?.breached?.toLocaleString() ?? '-',
                             sub:     'Past deadline, still open',
                             icon:    AlertTriangle,
                             color:   d.kpis?.breached > 0 ? '#dc2626' : '#059669',
@@ -123,7 +123,7 @@ export default function SLADashboardPage() {
                         },
                         {
                             label:   'At Risk (24h)',
-                            value:   d.kpis?.at_risk_24h?.toLocaleString() ?? '—',
+                            value:   d.kpis?.at_risk_24h?.toLocaleString() ?? '-',
                             sub:     'Due within 24 hours',
                             icon:    ShieldAlert,
                             color:   '#d97706',
@@ -133,7 +133,7 @@ export default function SLADashboardPage() {
                             label:   'Compliance Rate',
                             value:   d.kpis?.compliance_rate != null
                                 ? `${d.kpis.compliance_rate}%`
-                                : '—',
+                                : '-',
                             sub:     'Resolved within SLA this month',
                             icon:    CheckCircle,
                             color:   (d.kpis?.compliance_rate ?? 100) >= 90 ? '#059669' : '#dc2626',
@@ -325,8 +325,8 @@ export default function SLADashboardPage() {
                                                     {c.status?.replace(/_/g, ' ')}
                                                 </span>
                                             </td>
-                                            <td style={{ fontSize: 12 }}>{c.hcp_name ?? '—'}</td>
-                                            <td style={{ fontSize: 12 }}>{c.enrollee_name ?? '—'}</td>
+                                            <td style={{ fontSize: 12 }}>{c.hcp_name ?? '-'}</td>
+                                            <td style={{ fontSize: 12 }}>{c.enrollee_name ?? '-'}</td>
                                             <td className="text-end font-monospace">
                                                 <span style={{ color: c.age_days > (c.sla_target ?? 7) ? '#dc2626' : '#374151', fontWeight: 600 }}>
                                                     {c.age_days}d
@@ -341,7 +341,7 @@ export default function SLADashboardPage() {
                                                         +{c.days_over_sla}d
                                                     </span>
                                                 ) : (
-                                                    <span className="text-muted">—</span>
+                                                    <span className="text-muted">-</span>
                                                 )}
                                             </td>
                                             <td><ChevronRight size={14} className="text-muted" /></td>
@@ -350,7 +350,7 @@ export default function SLADashboardPage() {
                                     {(overdueData?.data ?? []).length === 0 && (
                                         <tr>
                                             <td colSpan={9} className="text-center py-5 text-muted">
-                                                {filter === 'breached' ? '✓ No breached claims — SLA is healthy.' : 'No claims match this filter.'}
+                                                {filter === 'breached' ? '✓ No breached claims - SLA is healthy.' : 'No claims match this filter.'}
                                             </td>
                                         </tr>
                                     )}

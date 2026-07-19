@@ -8,22 +8,22 @@ use Illuminate\Support\Facades\Schema;
  * FILE LOCATION: database/migrations/2025_01_01_000002_create_pa_timelines_table.php
  *
  * Audit trail for every status transition and action on a PA request.
- * One row per event. Append-only — rows are never updated or deleted.
+ * One row per event. Append-only - rows are never updated or deleted.
  *
  * Events logged:
- *   submitted                — PA created
- *   desk_approved            — Desk Officer gave first approval
- *   escalated_to_md          — Escalated to Medical Director (amount > ₦500k)
- *   md_approved              — Medical Director gave sign-off
- *   escalated_to_ceo         — Escalated to CEO (amount > ₦2M)
- *   ceo_approved             — CEO gave sign-off
- *   pa_issued                — Final approval, pa_code generated
- *   declined                 — PA declined at any stage
- *   revoked                  — Approved PA code manually cancelled
- *   code_validated           — /validate-code called (e.g. during claim submission)
- *   code_validation_failed   — Validation attempt failed (wrong enrollee/HCP/expired)
- *   used_on_claim            — Claim submitted with this PA code; claim_id linked
- *   expired                  — Scheduled job marked PA as expired
+ *   submitted                - PA created
+ *   desk_approved            - Desk Officer gave first approval
+ *   escalated_to_md          - Escalated to Medical Director (amount > ₦500k)
+ *   md_approved              - Medical Director gave sign-off
+ *   escalated_to_ceo         - Escalated to CEO (amount > ₦2M)
+ *   ceo_approved             - CEO gave sign-off
+ *   pa_issued                - Final approval, pa_code generated
+ *   declined                 - PA declined at any stage
+ *   revoked                  - Approved PA code manually cancelled
+ *   code_validated           - /validate-code called (e.g. during claim submission)
+ *   code_validation_failed   - Validation attempt failed (wrong enrollee/HCP/expired)
+ *   used_on_claim            - Claim submitted with this PA code; claim_id linked
+ *   expired                  - Scheduled job marked PA as expired
  */
 return new class extends Migration
 {
@@ -58,7 +58,7 @@ return new class extends Migration
             // Extra context (e.g. PA code issued, claim number linked)
             $table->json('meta')->nullable();
 
-            // created_at only — no updated_at (append-only)
+            // created_at only - no updated_at (append-only)
             $table->timestamp('created_at')->useCurrent();
 
             // Indexes

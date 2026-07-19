@@ -13,7 +13,7 @@ use Illuminate\Support\Facades\Schema;
  *   - fee_for_service : paid exclusively via claim batches, excluded from capitation runs
  *   - hybrid       : both; receives capitation AND has FFS claims batched separately
  *
- * Also adds ffs_tariff_enforced flag — when true, claims from this HCP
+ * Also adds ffs_tariff_enforced flag - when true, claims from this HCP
  * are validated strictly against the agreed tariff schedule (no tolerance buffer).
  *
  * Run: php artisan migrate

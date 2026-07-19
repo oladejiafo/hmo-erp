@@ -198,7 +198,7 @@ function GroupPanel({ groupKey, settings, values, onChange, onReset, onSave, sav
                             {settings.length} setting{settings.length !== 1 ? 's' : ''}
                             {groupDirty && (
                                 <span style={{ marginLeft: 8, color: '#B45309', fontWeight: 600 }}>
-                                    — unsaved changes
+                                    - unsaved changes
                                 </span>
                             )}
                         </div>
@@ -384,7 +384,7 @@ export default function SystemSettingsPage() {
                     </h1>
                     <p style={{ margin: '4px 0 0', fontSize: 14, color: '#6B7280' }}>
                         Configure HMO information, financial limits, SLA targets, and fraud detection thresholds.
-                        Changes take effect immediately — the system cache is cleared on save.
+                        Changes take effect immediately - the system cache is cleared on save.
                     </p>
                 </div>
                 <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
@@ -421,7 +421,7 @@ export default function SystemSettingsPage() {
                 <p style={{ margin: 0, fontSize: 13, color: '#1E293B', lineHeight: 1.6 }}>
                     All changes are logged in the audit trail with your name and timestamp.
                     Currency and HMO name changes affect printed documents, reports, and the member portal immediately.
-                    SLA and fraud threshold changes apply to new claims from the moment of saving — existing claims are not re-evaluated.
+                    SLA and fraud threshold changes apply to new claims from the moment of saving - existing claims are not re-evaluated.
                 </p>
             </div>
 

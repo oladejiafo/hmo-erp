@@ -1,7 +1,7 @@
 /**
  * FILE LOCATION: resources/js/router/AppRouter.jsx
  *
- * ARCHITECTURE — THREE SEPARATE ROUTE TREES:
+ * ARCHITECTURE - THREE SEPARATE ROUTE TREES:
  *
  *   1. Public         /login, /set-password         → AuthLayout
  *   2. HMO Staff      /  /enrollees /corporates ...  → ProtectedRoute > AppLayout (sidebar)
@@ -106,6 +106,12 @@ import CorpClaimsPage from "../pages/portals/corporate/CorpClaimsPage";
 import CorpInvoicesPage from "../pages/portals/corporate/CorpInvoicesPage";
 import CorpProfilePage from "../pages/portals/corporate/CorpProfilePage";
 
+import CorpBroadcastPage from "../pages/portals/corporate/CorpBroadcastPage";
+import CorpBudgetDashboardPage from "../pages/portals/corporate/CorpBudgetDashboardPage";
+import CorpPlanBuilderPage from "../pages/portals/corporate/CorpPlanBuilderPage";
+// import CorpPlanRequestsPage from "../pages/portals/corporate/CorpPlanRequestsPage";
+import CorpRenewalsPage from "../pages/portals/corporate/CorpRenewalsPage";
+
 // ── Enrollee Portal pages ──────────────────────────────────────────────────
 import EnrolleeDashboardPage from "../pages/portals/enrollee/EnrolleeDashboardPage";
 import MyIDCardPage from "../pages/portals/enrollee/MyIDCardPage";
@@ -120,6 +126,12 @@ import ProviderDashboardPage from "../pages/portals/provider/ProviderDashboardPa
 import ProviderClaimsPage from "../pages/portals/provider/ProviderClaimsPage";
 import ProviderPreAuthPage from "../pages/portals/provider/ProviderPreAuthPage";
 import ProviderClaimSubmitPage from "../pages/portals/provider/ProviderClaimSubmitPage";
+
+import ProviderClaimImportPage from "../pages/portals/provider/ProviderClaimImportPage";      // NEW
+import ProviderPaymentsPage from "../pages/portals/provider/ProviderPaymentsPage";            // NEW
+import ProviderReconciliationPage from "../pages/portals/provider/ProviderReconciliationPage"; // NEW
+import ProviderTicketsPage from "../pages/portals/provider/ProviderTicketsPage";              // NEW
+// import ProviderTicketDetailPage from "../pages/portals/provider/ProviderTicketDetailPage"; 
 
 // Add these new page imports
 import SLADashboardPage from "../pages/reports/SLADashboardPage";
@@ -143,7 +155,7 @@ import PermissionRoute from "./PermissionRoute";
 import LicenseSettingsPanel from '../pages/settings/LicenseSettingsPanel';
 
 // ─────────────────────────────────────────────────────────────────────────────
-// Helper — matches /enrollee and /enrollee/* but NOT /enrollees
+// Helper - matches /enrollee and /enrollee/* but NOT /enrollees
 // ─────────────────────────────────────────────────────────────────────────────
 function isPortalPath(path, prefix) {
     return path === prefix || path.startsWith(prefix + "/");
@@ -233,7 +245,7 @@ export default function AppRouter() {
     return (
         <Routes>
             {/* ══════════════════════════════════════════════════════════════
-                PUBLIC — no auth required
+                PUBLIC - no auth required
             ══════════════════════════════════════════════════════════════ */}
             <Route element={<AuthLayout />}>
                 <Route
@@ -251,7 +263,7 @@ export default function AppRouter() {
             <Route path="/terms" element={<TermsPage />} />
 
             {/* ══════════════════════════════════════════════════════════════
-                HMO STAFF — AppLayout (full sidebar + topbar shell)
+                HMO STAFF - AppLayout (full sidebar + topbar shell)
                 /  /enrollees  /corporates  /hcps  /claims  /pre-auth  etc.
                 ProtectedRoute will redirect portal users away from here.
             ══════════════════════════════════════════════════════════════ */}
@@ -303,7 +315,7 @@ export default function AppRouter() {
                     </PermissionRoute>
                 } /> */}
 
-                {/* ── Corporates (HMO staff view — /corporates NOT /corporate) ── */}
+                {/* ── Corporates (HMO staff view - /corporates NOT /corporate) ── */}
                 <Route path="corporates">
                     <Route
                         index
@@ -364,7 +376,7 @@ export default function AppRouter() {
                     />
                 </Route>
 
-                {/* ── Enrollees (HMO staff view — /enrollees NOT /enrollee) ── */}
+                {/* ── Enrollees (HMO staff view - /enrollees NOT /enrollee) ── */}
                 <Route path="enrollees">
                     <Route
                         index
@@ -523,7 +535,7 @@ export default function AppRouter() {
                             // </PermissionRoute>
                         }
                     />
-                    {/* tat-report must come BEFORE :id — otherwise 'tat-report' is treated as an id param */}
+                    {/* tat-report must come BEFORE :id - otherwise 'tat-report' is treated as an id param */}
                     <Route
                         path="tat-report"
                         element={
@@ -749,7 +761,7 @@ export default function AppRouter() {
             {/* ── END HMO STAFF ROUTES ─────────────────────────────────── */}
 
             {/* ══════════════════════════════════════════════════════════════
-                CORPORATE PORTAL — /corporate/*
+                CORPORATE PORTAL - /corporate/*
                 Completely separate route tree from AppLayout.
                 CorporateLayout renders its own topnav, NO sidebar.
                 ProtectedRoute redirects non-corporate users away.
@@ -775,10 +787,17 @@ export default function AppRouter() {
                     path="/corporate/profile"
                     element={<CorpProfilePage />}
                 />
+
+                <Route path="/corporate/broadcast" element={<CorpBroadcastPage />} />
+                <Route path="/corporate/budget" element={<CorpBudgetDashboardPage />} />
+                <Route path="/corporate/available-plans" element={<CorpPlanBuilderPage />} />
+                {/* <Route path="/corporate/plan-requests" element={<CorpPlanRequestsPage />} /> */}
+                <Route path="/corporate/renewals" element={<CorpRenewalsPage />} />
+
             </Route>
 
             {/* ══════════════════════════════════════════════════════════════
-                ENROLLEE PORTAL — /enrollee/*
+                ENROLLEE PORTAL - /enrollee/*
                 Completely separate route tree from AppLayout.
                 EnrolleeLayout renders its own topnav, NO sidebar.
                 ProtectedRoute redirects non-enrollee users away.
@@ -803,7 +822,7 @@ export default function AppRouter() {
             </Route>
 
             {/* ══════════════════════════════════════════════════════════════
-                PROVIDER PORTAL — /provider/*
+                PROVIDER PORTAL - /provider/*
             ══════════════════════════════════════════════════════════════ */}
             <Route
                 element={
@@ -819,6 +838,13 @@ export default function AppRouter() {
                 <Route path="/provider/pre-auths" element={<ProviderPreAuthPage />} />
                 {/* <Route path="/provider/pre-auths/:id" element={<ProviderPreAuthDetailPage />} /> */}
                 {/* <Route path="/provider/verify" element={<ProviderVerifyPage />} /> */}
+
+                <Route path="/provider/claims/import" element={<ProviderClaimImportPage />} />
+                <Route path="/provider/payments" element={<ProviderPaymentsPage />} />
+                <Route path="/provider/reconciliation" element={<ProviderReconciliationPage />} />
+                <Route path="/provider/tickets" element={<ProviderTicketsPage />} />
+                {/* <Route path="/provider/tickets/:id" element={<ProviderTicketDetailPage />} /> */}
+                
             </Route>
 
             <Route

@@ -13,9 +13,13 @@ use Illuminate\Http\Request;
 use Barryvdh\DomPDF\Facade\Pdf;
 use Illuminate\Http\Response;
 use Illuminate\Support\Facades\Log;
+use App\Models\Ticket;
+use App\Services\TicketService;
 
 class EnrolleePortalController extends Controller
 {
+    public function __construct(protected TicketService $ticketService) {}
+
     /**
      * Get the enrollee's ID card details
      */
@@ -379,30 +383,29 @@ class EnrolleePortalController extends Controller
     {
         $user = $request->user();
         $enrollee = $user->enrollee;
-        
+
         if (!$enrollee) {
             return response()->json(['data' => []], 200);
         }
 
-        $complaints = Complaint::where('enrollee_id', $enrollee->id)
+        $tickets = Ticket::forEnrollee($enrollee->id)
             ->orderBy('created_at', 'desc')
             ->get();
 
         return response()->json([
-            'data' => $complaints->map(function($complaint) {
-                return [
-                    'id' => $complaint->id,
-                    'ticket_number' => $complaint->ticket_number,
-                    'subject' => $complaint->subject,
-                    'description' => $complaint->description,
-                    'category' => $complaint->category,
-                    'status' => $complaint->status,
-                    'hcp_name' => $complaint->hcp_name,
-                    'created_at' => $complaint->created_at?->toISOString(),
-                    'resolution_note' => $complaint->resolution_note,
-                    'resolved_at' => $complaint->resolved_at?->format('Y-m-d'),
-                ];
-            }),
+            'data' => $tickets->map(fn($t) => [
+                'id' => $t->id,
+                'ticket_number' => $t->ticket_number,
+                'subject' => $t->subject,
+                'description' => $t->description,
+                'category' => $t->category,
+                'status' => $t->status,
+                'priority' => $t->priority,
+                'hcp_name' => $t->hcp_name,
+                'created_at' => $t->created_at?->toISOString(),
+                'resolution_note' => $t->resolution_note,
+                'resolved_at' => $t->resolved_at?->format('Y-m-d'),
+            ]),
         ]);
     }
 
@@ -419,37 +422,25 @@ class EnrolleePortalController extends Controller
         ]);
 
         $user = $request->user();
-        $enrollee = $user->enrollee;
-        
-        if (!$enrollee) {
+
+        if (!$user->enrollee) {
             return response()->json(['message' => 'Enrollee not found'], 404);
         }
 
-        // Generate ticket number
-        $ticketNumber = 'CMP-' . date('Y') . '-' . str_pad(Complaint::count() + 1, 6, '0', STR_PAD_LEFT);
-
-        $complaint = Complaint::create([
-            'enrollee_id' => $enrollee->id,
-            'ticket_number' => $ticketNumber,
-            'subject' => $request->subject,
-            'description' => $request->description,
-            'category' => $request->category,
-            'hcp_name' => $request->hcp_name,
-            'status' => 'open',
-        ]);
+        $ticket = $this->ticketService->createForUser($user, $request->only(['subject', 'description', 'category', 'hcp_name']));
 
         return response()->json([
             'message' => 'Complaint submitted successfully',
             'data' => [
-                'id' => $complaint->id,
-                'ticket_number' => $complaint->ticket_number,
-                'status' => $complaint->status,
+                'id' => $ticket->id,
+                'ticket_number' => $ticket->ticket_number,
+                'status' => $ticket->status,
             ],
         ], 201);
     }
 
     /**
-     * [PHASE 2b] — Enrollee taps "I'm here" on arrival at a facility.
+     * [PHASE 2b] - Enrollee taps "I'm here" on arrival at a facility.
      * Creates a check-in row the provider's dashboard polls for.
      */
     public function checkIn(Request $request): JsonResponse
@@ -468,7 +459,7 @@ class EnrolleePortalController extends Controller
 
         if (!$enrollee->canMakeClaim()) {
             // Reuses the same eligibility check claims already rely on
-            // (active status, plan not expired, benefit balance > 0) —
+            // (active status, plan not expired, benefit balance > 0) -
             // no point alerting a front desk for a member who can't
             // actually be seen under their plan right now.
             return response()->json([
@@ -488,5 +479,53 @@ class EnrolleePortalController extends Controller
             'message' => 'Checked in. Front desk has been notified.',
             'data' => ['id' => $checkin->id, 'status' => $checkin->status],
         ], 201);
+    }
+
+    public function ticketShow(Request $request, Ticket $ticket): JsonResponse
+    {
+        $enrollee = $request->user()->enrollee;
+
+        if (!$enrollee || $ticket->enrollee_id !== $enrollee->id) {
+            return response()->json(['message' => 'Ticket not found'], 404);
+        }
+
+        $ticket->load('publicMessages.user:id,name,user_type');
+
+        return response()->json([
+            'data' => [
+                'id' => $ticket->id,
+                'ticket_number' => $ticket->ticket_number,
+                'subject' => $ticket->subject,
+                'status' => $ticket->status,
+                'messages' => $ticket->publicMessages->map(fn($m) => [
+                    'id' => $m->id,
+                    'sender_type' => $m->sender_type,
+                    'message' => $m->message,
+                    'created_at' => $m->created_at?->format('Y-m-d H:i'),
+                ]),
+            ],
+        ]);
+    }
+
+    /**
+     * [PHASE 3] - enrollee replies on their own ticket.
+     */
+    public function ticketReply(Request $request, Ticket $ticket): JsonResponse
+    {
+        $request->validate(['message' => 'required|string|min:1|max:2000']);
+
+        $enrollee = $request->user()->enrollee;
+
+        if (!$enrollee || $ticket->enrollee_id !== $enrollee->id) {
+            return response()->json(['message' => 'Ticket not found'], 404);
+        }
+
+        if (!$ticket->isEditableByRaiser()) {
+            return response()->json(['message' => 'This ticket is closed and can no longer be replied to.'], 422);
+        }
+
+        $this->ticketService->addMessage($ticket, $request->user(), $request->message);
+
+        return response()->json(['message' => 'Reply sent.']);
     }
 }

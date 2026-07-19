@@ -135,7 +135,7 @@ export default function AIToolsPage() {
                             <h6 className="fw-bold mb-3">Document Classification</h6>
                             <p className="text-muted small mb-4">
                                 Paste claim document text to auto-classify claim type,
-                                suggest ICD-10 codes, and determine PA requirements.
+                                suggest ICD-10 codes, and determine Pre-Auth. requirements.
                             </p>
 
                             <div className="mb-4">
@@ -168,7 +168,7 @@ export default function AIToolsPage() {
                                             Confidence: {classifyMutation.data.confidence}%
                                         </span>
                                         <span className="badge bg-success">
-                                            PA Required: {classifyMutation.data.pa_required ? 'Yes' : 'No'}
+                                            Pre-Auth. Required: {classifyMutation.data.pa_required ? 'Yes' : 'No'}
                                         </span>
                                     </div>
                                     <p><strong>Claim Type:</strong> {classifyMutation.data.claim_type}</p>
@@ -263,25 +263,25 @@ export default function AIToolsPage() {
                                     <div className="row">
                                         <div className="col-md-6 mb-2">
                                             <small className="text-muted">Patient Name</small>
-                                            <p className="fw-semibold mb-0">{ocrResult.patient_name || '—'}</p>
+                                            <p className="fw-semibold mb-0">{ocrResult.patient_name || '-'}</p>
                                         </div>
                                         <div className="col-md-6 mb-2">
                                             <small className="text-muted">Service Date</small>
-                                            <p className="fw-semibold mb-0">{ocrResult.service_date || '—'}</p>
+                                            <p className="fw-semibold mb-0">{ocrResult.service_date || '-'}</p>
                                         </div>
                                         <div className="col-md-6 mb-2">
                                             <small className="text-muted">Diagnosis</small>
-                                            <p className="fw-semibold mb-0">{ocrResult.diagnosis || '—'}</p>
+                                            <p className="fw-semibold mb-0">{ocrResult.diagnosis || '-'}</p>
                                         </div>
                                         <div className="col-md-6 mb-2">
                                             <small className="text-muted">Total Amount</small>
                                             <p className="fw-semibold mb-0">
-                                                ₦{ocrResult.total_amount?.toLocaleString() || '—'}
+                                                ₦{ocrResult.total_amount?.toLocaleString() || '-'}
                                             </p>
                                         </div>
                                         <div className="col-md-6 mb-2">
                                             <small className="text-muted">Provider</small>
-                                            <p className="fw-semibold mb-0">{ocrResult.provider_name || '—'}</p>
+                                            <p className="fw-semibold mb-0">{ocrResult.provider_name || '-'}</p>
                                         </div>
                                     </div>
 
@@ -405,7 +405,7 @@ export default function AIToolsPage() {
 
                             {clustersQuery.data?.noise_points > 0 && (
                                 <div className="alert alert-warning">
-                                    <strong>{clustersQuery.data.noise_points} isolated anomalies</strong> — individual cases not fitting any pattern
+                                    <strong>{clustersQuery.data.noise_points} isolated anomalies</strong> - individual cases not fitting any pattern
                                 </div>
                             )}
 

@@ -1,5 +1,5 @@
 """
-AI Microservice — HMO ERP
+AI Microservice - HMO ERP
 =========================
 FastAPI service that provides AI capabilities to the Laravel backend.
 """
@@ -77,7 +77,7 @@ AI_SERVICE_KEY = os.getenv("AI_SERVICE_KEY", "")
 
 async def verify_key(x_ai_key: str = Header(..., alias="X-AI-Key")):
     if not AI_SERVICE_KEY:
-        logger.warning("AI_SERVICE_KEY not configured — allowing request (dev mode)")
+        logger.warning("AI_SERVICE_KEY not configured - allowing request (dev mode)")
         return
 
     if x_ai_key != AI_SERVICE_KEY:

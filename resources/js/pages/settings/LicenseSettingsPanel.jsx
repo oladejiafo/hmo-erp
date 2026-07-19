@@ -1,5 +1,5 @@
 /**
- * LicenseSettingsPanel — ERP Frontend
+ * LicenseSettingsPanel - ERP Frontend
  *
  * Shows license status and emergency token input in the System Settings page.
  * Super-admin only. Mount inside SystemSettingsPage.jsx.
@@ -139,9 +139,9 @@ export default function LicenseSettingsPanel() {
                 }}>
                     {[
                         { label: 'Status',       value: <StatusBadge status={s.status} /> },
-                        { label: 'Plan',         value: s.plan ? s.plan.charAt(0).toUpperCase() + s.plan.slice(1) : '—' },
-                        { label: 'Client',       value: s.client_name ?? '—' },
-                        { label: 'License Key',  value: <code style={{ fontSize: 12 }}>{s.license_key ?? '—'}</code> },
+                        { label: 'Plan',         value: s.plan ? s.plan.charAt(0).toUpperCase() + s.plan.slice(1) : '-' },
+                        { label: 'Client',       value: s.client_name ?? '-' },
+                        { label: 'License Key',  value: <code style={{ fontSize: 12 }}>{s.license_key ?? '-'}</code> },
                         { label: 'Expires',      value: s.license_expires_at ?? 'Never (Lifetime)' },
                         { label: 'Last Check-in',value: s.last_successful_checkin
                             ? new Date(s.last_successful_checkin).toLocaleString()
@@ -149,7 +149,7 @@ export default function LicenseSettingsPanel() {
                         { label: 'Failures',     value: s.consecutive_failures ?? 0 },
                         { label: 'Next Check-in',value: s.cache_valid_until
                             ? new Date(s.cache_valid_until).toLocaleString()
-                            : '—' },
+                            : '-' },
                     ].map(({ label, value }) => (
                         <div key={label} style={{
                             background: '#F8FAFC', borderRadius: 8, padding: '12px 16px',
@@ -188,7 +188,7 @@ export default function LicenseSettingsPanel() {
                     }}>
                         <Clock size={16} color="#1D6DB5" />
                         <span style={{ fontSize: 13, color: '#1E293B' }}>
-                            <strong>Emergency Token Active</strong> — expires {s.emergency_token_expires}.
+                            <strong>Emergency Token Active</strong> - expires {s.emergency_token_expires}.
                         </span>
                     </div>
                 )}

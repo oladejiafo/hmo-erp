@@ -29,13 +29,13 @@ router = APIRouter()
 
 
 REPORT_DESCRIPTIONS = {
-    "aging":           "Claims Aging Report — how long pending claims have been waiting",
-    "by_hcp":          "Claims by HCP — volume and value summary per provider",
-    "by_type":         "Claims by Type — breakdown by medical service category",
-    "cost_corporate":  "Cost by Corporate — premium vs claims spend per employer",
-    "high_cost":       "High-Cost Enrollees — members generating the most claims spend",
-    "hcp_performance": "HCP Performance — rejection rates, turnaround times, risk scores",
-    "branch_comparison":"Branch Comparison — cross-branch performance overview",
+    "aging":           "Claims Aging Report - how long pending claims have been waiting",
+    "by_hcp":          "Claims by HCP - volume and value summary per provider",
+    "by_type":         "Claims by Type - breakdown by medical service category",
+    "cost_corporate":  "Cost by Corporate - premium vs claims spend per employer",
+    "high_cost":       "High-Cost Enrollees - members generating the most claims spend",
+    "hcp_performance": "HCP Performance - rejection rates, turnaround times, risk scores",
+    "branch_comparison":"Branch Comparison - cross-branch performance overview",
 }
 
 
@@ -71,7 +71,7 @@ Style guide:
 - Highlight anomalies, risks, or items needing management attention
 - Use Nigerian context (₦ currency, NHIA regulations where relevant)
 - Keep the tone professional but direct
-- Return ONLY valid JSON — no preamble, no markdown
+- Return ONLY valid JSON - no preamble, no markdown
 """
 
 
@@ -79,7 +79,7 @@ Style guide:
 async def summarise_report(req: SummariseRequest):
     report_desc = REPORT_DESCRIPTIONS.get(req.report_type, req.report_type)
 
-    # Truncate data to avoid token overflow — sample first 100 rows
+    # Truncate data to avoid token overflow - sample first 100 rows
     sample_data = req.data[:100]
 
     context_parts = []

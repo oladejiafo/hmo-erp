@@ -2,14 +2,14 @@ import React from 'react';
 import { AlertCircle, HelpCircle } from 'lucide-react';
 
 /**
- * FormField — wraps any form input with a consistent label, hint, error display.
+ * FormField - wraps any form input with a consistent label, hint, error display.
  *
  * Usage:
  *   <FormField label="Email" required error={errors.email?.message}>
  *     <input className="form-control" {...register('email')} />
  *   </FormField>
  *
- *   <FormField label="Notes" hint="Optional — max 500 characters.">
+ *   <FormField label="Notes" hint="Optional - max 500 characters.">
  *     <textarea className="form-control" />
  *   </FormField>
  *

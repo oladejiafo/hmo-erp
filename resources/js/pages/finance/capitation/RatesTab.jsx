@@ -183,7 +183,7 @@ function TierBadge({ tier }) {
             padding: '2px 10px', borderRadius: 12, fontSize: 11, fontWeight: 600,
             textTransform: 'capitalize', color: s.color, background: s.bg,
         }}>
-            {tier ?? '—'}
+            {tier ?? '-'}
         </span>
     );
 }
@@ -249,7 +249,7 @@ function SetRateModal({ existing, onClose, onSuccess }) {
                 <div className="modal-content">
                     <div className="modal-header">
                         <h5 className="modal-title fw-bold">
-                            {isNew ? 'Set Capitation Rate' : `Update Rate — ${existing.hcp_name}`}
+                            {isNew ? 'Set Capitation Rate' : `Update Rate - ${existing.hcp_name}`}
                         </h5>
                         <button className="btn-close" onClick={onClose} />
                     </div>
@@ -265,7 +265,7 @@ function SetRateModal({ existing, onClose, onSuccess }) {
                             </div>
                         )}
 
-                        {/* HCP selector — only on new */}
+                        {/* HCP selector - only on new */}
                         {isNew && (
                             <div className="mb-3">
                                 <label className="form-label fw-semibold" style={{ fontSize: 13 }}>
@@ -279,7 +279,7 @@ function SetRateModal({ existing, onClose, onSuccess }) {
                                     <option value="">Select HCP…</option>
                                     {hcps.map(h => (
                                         <option key={h.id} value={h.id}>
-                                            {h.name} ({h.hcp_code}) — {h.tier ?? 'No tier'}
+                                            {h.name} ({h.hcp_code}) - {h.tier ?? 'No tier'}
                                         </option>
                                     ))}
                                 </select>

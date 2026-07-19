@@ -18,10 +18,10 @@ class EnrolleeObserver
                 ->where('status', 'active')
                 ->update(['status' => 'cancelled']);
 
-            Log::info("Enrollee {$enrollee->enrollee_id} suspended — active card cancelled.");
+            Log::info("Enrollee {$enrollee->enrollee_id} suspended - active card cancelled.");
         }
 
-        // When reactivated, log it — a new card must be manually issued
+        // When reactivated, log it - a new card must be manually issued
         if ($enrollee->isDirty('status') && $enrollee->status->value === 'active') {
             Log::info("Enrollee {$enrollee->enrollee_id} reactivated. New card required.");
         }

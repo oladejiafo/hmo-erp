@@ -90,7 +90,7 @@ return new class extends Migration
                 'expired',                  // pa_code validity window has passed
                 'used',                     // linked to a claim (claim_id is set)
                 'revoked',                  // manually cancelled after approval
-                'emergency_retrospective',  // emergency — care already given, retrospective review
+                'emergency_retrospective',  // emergency - care already given, retrospective review
             ])->default('pending');
 
             // ── Submission Channel ─────────────────────────────────────────

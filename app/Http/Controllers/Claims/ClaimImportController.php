@@ -36,7 +36,7 @@ class ClaimImportController extends Controller
         $sourceHeaders = array_keys($rawRows[0]);
         $autoMapping   = $this->service->autoMap($sourceHeaders);
 
-        // Create a pending batch (no rows yet — committed on Step 3)
+        // Create a pending batch (no rows yet - committed on Step 3)
         $batchNumber = ClaimImportBatch::generateBatchNumber();
         $filePath    = $this->service->storeFile($file, $batchNumber);
 
@@ -118,7 +118,7 @@ class ClaimImportController extends Controller
             ]);
         });
 
-        // Run validation (synchronous — fast enough for typical batch sizes)
+        // Run validation (synchronous - fast enough for typical batch sizes)
         $this->service->validateRows($batch);
         $batch->refresh();
 
@@ -131,7 +131,7 @@ class ClaimImportController extends Controller
         ]);
     }
 
-    // Step 3: Review — get paginated rows with their validation status
+    // Step 3: Review - get paginated rows with their validation status
     public function rows(Request $request, ClaimImportBatch $batch): JsonResponse
     {
         $rows = $batch->rows()

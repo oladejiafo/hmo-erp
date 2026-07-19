@@ -7,7 +7,7 @@ use Illuminate\Support\Facades\Http;
 use Illuminate\Support\Facades\Log;
 
 /**
- * LicenseService — ERP
+ * LicenseService - ERP
  *
  * Single source of truth for license status in the ERP.
  * All other parts of the system (middleware, frontend API) call this.
@@ -22,7 +22,7 @@ use Illuminate\Support\Facades\Log;
  * FLOW:
  *   1. CheckLicense command runs every 24h (or per checkin_interval_hours)
  *   2. Calls performCheckin() → hits licensing server → stores signed token
- *   3. All runtime reads go to resolveStatus() — reads from license_cache table
+ *   3. All runtime reads go to resolveStatus() - reads from license_cache table
  *   4. False-positive protection: only enters grace after 3+ failures over 48h
  *   5. Emergency token: overrides cache for N days when pasted into settings
  *
@@ -38,7 +38,7 @@ class LicenseService
 
     /**
      * Get the current effective license status.
-     * This is the method everything else calls — fast, no HTTP.
+     * This is the method everything else calls - fast, no HTTP.
      *
      * Returns: 'valid' | 'grace' | 'restricted' | 'unlicensed'
      */
@@ -62,7 +62,7 @@ class LicenseService
             return $cache->status ?? 'restricted';
         }
 
-        // 4. Cache expired — check consecutive failure history
+        // 4. Cache expired - check consecutive failure history
         // If we haven't failed enough times over enough hours, treat as 'grace'
         // (prevents a brief network blip from restricting the system)
         if ($cache->consecutive_failures < self::MIN_FAILURES_BEFORE_GRACE) {
@@ -74,7 +74,7 @@ class LicenseService
             return 'grace';
         }
 
-        // 5. Enough failures have accumulated — use whatever status the server last sent
+        // 5. Enough failures have accumulated - use whatever status the server last sent
         // (could be grace if they're in a grace period, or restricted)
         return $cache->status === 'valid' ? 'grace' : ($cache->status ?? 'restricted');
     }
@@ -100,7 +100,7 @@ class LicenseService
             // ← ADD THIS BLOCK
             // Cache token is still fresh, but has the actual license expired?
             if ($cache->license_expires_at && now()->gt($cache->license_expires_at)) {
-                // License has expired — honour grace period if one was granted
+                // License has expired - honour grace period if one was granted
                 if ($cache->grace_ends_at && now()->lt($cache->grace_ends_at)) {
                     return 'grace';
                 }
@@ -117,7 +117,7 @@ class LicenseService
             return $status;
         }
     
-        // 4. Cache expired — check consecutive failure history
+        // 4. Cache expired - check consecutive failure history
         if ($cache->consecutive_failures < self::MIN_FAILURES_BEFORE_GRACE) {
             return 'grace';
         }
@@ -298,7 +298,7 @@ class LicenseService
 
         // Verify the signature
         if (! $this->verifyAndDecode($token)) {
-            Log::error('License token signature verification FAILED — possible tampering or server key mismatch.');
+            Log::error('License token signature verification FAILED - possible tampering or server key mismatch.');
             $this->recordFailure($cache);
             return 'error';
         }
@@ -351,7 +351,7 @@ class LicenseService
         $publicKeyPem = config('licensing.public_key');
 
         if (! $publicKeyPem) {
-            Log::error('Licensing public key not configured — cannot verify token.');
+            Log::error('Licensing public key not configured - cannot verify token.');
             return null;
         }
 
@@ -382,7 +382,7 @@ class LicenseService
 
     /**
      * Generate a stable fingerprint for this server installation.
-     * Uses hostname + a salt stored in the app key — stable across restarts,
+     * Uses hostname + a salt stored in the app key - stable across restarts,
      * but unique to this deployment.
      */
     private function generateFingerprint(): string

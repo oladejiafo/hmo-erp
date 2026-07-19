@@ -10,7 +10,7 @@ class ClaimObserver
 {
     /**
      * After a claim is created, immediately dispatch the validation job.
-     * The job runs in the 'claims' queue — separate from the default queue
+     * The job runs in the 'claims' queue - separate from the default queue
      * so high-volume claim submissions don't block other queue jobs.
      */
     public function created(Claim $claim): void

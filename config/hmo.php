@@ -8,10 +8,10 @@
  */
 
 return [
-    // These are boot-time / infrastructure settings — kept in env only
+    // These are boot-time / infrastructure settings - kept in env only
     'storage_disk'            => env('HMO_STORAGE_DISK', 'local'),
 
-    // Fallback defaults — real values come from system_settings table
+    // Fallback defaults - real values come from system_settings table
     'name'                    => env('HMO_NAME', 'HMO Management System'),
     'enrollee_id_prefix'      => env('ENROLLEE_ID_PREFIX', 'HMO'),
     'claim_escalation_amount' => env('CLAIM_ESCALATION_AMOUNT', 500000),
@@ -19,7 +19,7 @@ return [
     'max_dependents'          => 4,
     'dashboard_cache_minutes' => 5,
 
-    // Nigerian states list — static, not configurable via UI
+    // Nigerian states list - static, not configurable via UI
     'states' => [
         'Abia', 'Adamawa', 'Akwa Ibom', 'Anambra', 'Bauchi', 'Bayelsa',
         'Benue', 'Borno', 'Cross River', 'Delta', 'Ebonyi', 'Edo',

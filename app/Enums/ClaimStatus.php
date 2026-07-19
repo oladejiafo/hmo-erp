@@ -49,7 +49,7 @@ enum ClaimStatus: string
 
     /**
      * Valid transitions FROM this status.
-     * This is the state machine definition — enforced by ClaimStateService.
+     * This is the state machine definition - enforced by ClaimStateService.
      */
     public function allowedTransitions(): array
     {

@@ -84,7 +84,7 @@ const TIER_LABELS = {
 const URGENCY_OPTIONS = [
     { value: 'standard',  label: '🟢 Standard',  desc: 'Elective or planned procedure. TAT: 15–30 min.' },
     { value: 'urgent',    label: '🟡 Urgent',     desc: 'Time-sensitive but not immediately life-threatening. TAT: 30–60 min.' },
-    { value: 'emergency', label: '🔴 Emergency',  desc: 'Immediate life-threatening situation. Care proceeds; PA is retrospective within 24 hrs.' },
+    { value: 'emergency', label: '🔴 Emergency',  desc: 'Immediate life-threatening situation. Care proceeds; Pre-Auth. Code is retrospective within 24 hrs.' },
 ];
 
 export default function PAFormPage() {
@@ -196,7 +196,7 @@ export default function PAFormPage() {
         },
         onSuccess: (res) => {
             const pa = res.data?.data;
-            toast.success('PA Request submitted successfully');
+            toast.success('Pre-Auth. Code Request submitted successfully');
             navigate(`/pre-auth/${pa?.id}`);
         },
         onError: (err) => {
@@ -223,7 +223,7 @@ export default function PAFormPage() {
                 <div>
                     <h4 className="fw-bold mb-0">New Pre-Authorisation Request</h4>
                     <p className="text-muted mb-0" style={{ fontSize: 13 }}>
-                        Submit for clinical review. Emergency cases may proceed — PA is retrospective.
+                        Submit for clinical review. Emergency cases may proceed - PA is retrospective.
                     </p>
                 </div>
             </div>
@@ -236,7 +236,7 @@ export default function PAFormPage() {
                     <div>
                         <div className="fw-bold">Emergency Mode</div>
                         <div style={{ fontSize: 13 }}>
-                            The patient can receive care immediately. This PA request will be reviewed retrospectively within 24 hours by the clinical team.
+                            The patient can receive care immediately. This Pre-Auth. request will be reviewed retrospectively within 24 hours by the clinical team.
                             The claim will <strong>not</strong> be rejected solely for lack of prior authorisation in an emergency.
                         </div>
                     </div>
@@ -350,7 +350,7 @@ export default function PAFormPage() {
                                 </label>
                                 <select className="form-select" value={form.dependent_id}
                                         onChange={e => set('dependent_id', e.target.value)}>
-                                    <option value="">— Principal member —</option>
+                                    <option value="">- Principal member -</option>
                                     {selectedEnrollee.dependants.map(d => (
                                         <option key={d.id} value={d.id}>
                                             {d.first_name} {d.last_name} ({d.relationship})
@@ -798,7 +798,7 @@ export default function PAFormPage() {
                                 ? <><span className="spinner-border spinner-border-sm" /> Submitting…</>
                                 : form.urgency === 'emergency'
                                     ? <><Zap size={16} /> Submit Emergency PA</>
-                                    : <><FileText size={16} /> Submit PA Request</>
+                                    : <><FileText size={16} /> Submit Pre-Auth. Request</>
                             }
                         </button>
 

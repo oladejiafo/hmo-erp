@@ -136,7 +136,7 @@ export default function ClaimImportHistoryPage() {
                                                 <td className="ps-3 font-monospace">
                                                     {b.batch_number}
                                                 </td>
-                                                <td>{b.hcp?.name || "—"}</td>
+                                                <td>{b.hcp?.name || "-"}</td>
                                                 <td>{b.claim_period}</td>
                                                 <td style={{ fontSize: 12 }}>
                                                     {formatDateTime(

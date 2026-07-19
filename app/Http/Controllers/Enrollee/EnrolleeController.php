@@ -190,7 +190,7 @@ class EnrolleeController extends Controller
 
     /**
      * Transfer enrollee from one branch to another.
-     * Requires HQ approval — creates a pending transfer log.
+     * Requires HQ approval - creates a pending transfer log.
      */
     public function transfer(TransferEnrolleeRequest $request, Enrollee $enrollee): JsonResponse
     {

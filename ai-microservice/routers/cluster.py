@@ -7,10 +7,10 @@ Runs unsupervised clustering on recent fraud flags to surface patterns
 that may not be obvious from the per-HCP fraud heatmap.
 
 Pipeline:
-  1. Receive fraud_flags array (from Laravel — last 3 months, up to 1000 rows)
+  1. Receive fraud_flags array (from Laravel - last 3 months, up to 1000 rows)
   2. Encode features: flag_score, flag_type (ordinal), amount, time-of-day
   3. Normalise with StandardScaler
-  4. Run DBSCAN (density-based — good for irregular shapes, auto-detects outliers)
+  4. Run DBSCAN (density-based - good for irregular shapes, auto-detects outliers)
   5. For each cluster, ask Claude to generate a human-readable label + description
   6. Return clusters with member IDs, risk scores, and descriptions
 
@@ -182,7 +182,7 @@ async def fraud_cluster(req: ClusterRequest):
         )
 
     except ImportError:
-        logger.warning("scikit-learn not installed — returning simple group-by-flag-type clusters")
+        logger.warning("scikit-learn not installed - returning simple group-by-flag-type clusters")
         return _simple_cluster_fallback(flags, req.run_at)
 
     except Exception as e:
@@ -199,7 +199,7 @@ async def _describe_cluster(
 ) -> tuple[str, str]:
     """Ask Claude to label and describe a fraud cluster."""
     if is_noise:
-        return "Isolated Anomalies", f"{len(members)} isolated fraud flags that don't fit any pattern — review individually."
+        return "Isolated Anomalies", f"{len(members)} isolated fraud flags that don't fit any pattern - review individually."
 
     prompt = f"""
 You are a fraud analyst for a Nigerian HMO.

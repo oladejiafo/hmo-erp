@@ -2,7 +2,7 @@
 routers/_client.py
 ──────────────────
 Shared async wrapper around Anthropic Claude (primary) with OpenAI fallback.
-All routers import call_ai() — they never touch the SDK directly.
+All routers import call_ai() - they never touch the SDK directly.
 """
 
 import json

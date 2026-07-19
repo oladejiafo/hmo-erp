@@ -5,12 +5,12 @@ use Illuminate\Database\Schema\Blueprint;
 use Illuminate\Support\Facades\Schema;
 
 /**
- * Provider Portal — HCP user accounts.
+ * Provider Portal - HCP user accounts.
  *
  * Mirrors the exact pattern already on `users` for corporate_id (see
  * 0001_01_01_000000_create_users_table.php): nullable FK, null on delete.
  * user_type is already a plain nullable string column (no DB enum
- * constraint), so 'hcp_user' as a new value needs no schema change there —
+ * constraint), so 'hcp_user' as a new value needs no schema change there -
  * confirmed by reading the real migration. Only hcp_id is new.
  */
 return new class extends Migration

@@ -1,6 +1,6 @@
 /**
  * FILE LOCATION: resources/js/pages/portal/enrollee/EnrolleeDashboardPage.jsx
- * Member self-service home — shows coverage summary, benefit balance, recent claims, quick links.
+ * Member self-service home - shows coverage summary, benefit balance, recent claims, quick links.
  */
 import React from 'react';
 import { useQuery } from '@tanstack/react-query';
@@ -45,7 +45,7 @@ export default function EnrolleeDashboardPage() {
                 </div>
                 <div style={{ textAlign: 'right' }}>
                     <div style={coverageLabelStyle}>COVERAGE VALID UNTIL</div>
-                    <div style={coverageDateStyle}>{d?.coverage_end ? formatDate(d.coverage_end) : '—'}</div>
+                    <div style={coverageDateStyle}>{d?.coverage_end ? formatDate(d.coverage_end) : '-'}</div>
                     {d?.status === 'active' && (
                         <div style={activeBadgeStyle}>✓ Active</div>
                     )}

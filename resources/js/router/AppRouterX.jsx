@@ -2,7 +2,7 @@
  * FILE LOCATION: resources/js/router/AppRouterX.jsx
  * PATCH NOTE: your real file (69 lines, verified from repo) with Provider
  * Portal wired in, marked [PHASE 2]. This file is short enough to give you
- * the full replacement rather than a fragment patch — safer than a partial
+ * the full replacement rather than a fragment patch - safer than a partial
  * diff on a file this size.
  */
 import React, { useEffect } from 'react';

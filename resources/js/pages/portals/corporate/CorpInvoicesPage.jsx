@@ -1,5 +1,5 @@
 /**
- * FILE LOCATION: resources/js/pages/portal/corporate/CorpInvoicesPage.jsx
+ * FILE LOCATION: resources/js/pages/portals/corporate/CorpInvoicesPage.jsx
  * Corporate self-service: view invoices, see payment status, download PDF.
  */
 import React, { useState } from 'react';

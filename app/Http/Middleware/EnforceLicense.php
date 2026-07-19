@@ -8,7 +8,7 @@ use Illuminate\Http\Request;
 use Symfony\Component\HttpFoundation\Response;
 
 /**
- * EnforceLicense Middleware — ERP
+ * EnforceLicense Middleware - ERP
  *
  * Blocks write operations when the license is in 'restricted' status.
  * Attach to any route group that performs state-changing operations.

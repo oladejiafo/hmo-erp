@@ -1,7 +1,7 @@
 /**
  * FILE LOCATION: resources/js/pages/auth/LoginPage.jsx
  *
- * Login page — rendered inside AuthLayout at GET /login.
+ * Login page - rendered inside AuthLayout at GET /login.
  *
  * AuthContext.login() return values:
  *   { requires_2fa: true }              → show OTP input

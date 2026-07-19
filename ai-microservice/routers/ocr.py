@@ -10,7 +10,7 @@ Input:
     filename      Original filename
     content_type  application/pdf | image/jpeg | image/png
     content       Base64-encoded file content
-    claim_id      Optional — for context in the prompt
+    claim_id      Optional - for context in the prompt
 
 Output:
     patient_name      str
@@ -95,7 +95,7 @@ Important:
 - Amounts should be plain numbers (e.g. 45000, not ₦45,000)
 - Dates must be YYYY-MM-DD (convert DD/MM/YYYY as needed)
 - Include ALL line items from the bill
-- Return ONLY valid JSON — no preamble, no markdown fences
+- Return ONLY valid JSON - no preamble, no markdown fences
 """
 
 

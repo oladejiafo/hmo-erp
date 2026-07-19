@@ -1,4 +1,4 @@
-# HMO ERP — AI Microservice
+# HMO ERP - AI Microservice
 # Docker image based on Python 3.12 slim
 #
 # Build:  docker build -t hmo-ai-service .
@@ -20,7 +20,7 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
     libgomp1 \
     && rm -rf /var/lib/apt/lists/*
 
-# Install Python deps first (layer cache — only rebuilds if requirements change)
+# Install Python deps first (layer cache - only rebuilds if requirements change)
 COPY requirements.txt .
 RUN pip install --no-cache-dir -r requirements.txt
 

@@ -11,7 +11,7 @@ use Carbon\Carbon;
  * FILE LOCATION: app/Models/UserNotification.php
  *
  * In-app notification for HMO staff.
- * Created by NotificationService — never directly by controllers.
+ * Created by NotificationService - never directly by controllers.
  *
  * @property int         $id
  * @property int         $user_id
@@ -30,7 +30,7 @@ class UserNotification extends Model
 {
     protected $table = 'user_notifications';
 
-    // No updated_at — notifications are immutable once created
+    // No updated_at - notifications are immutable once created
     public $timestamps   = true;
     const UPDATED_AT     = null;
 

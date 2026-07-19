@@ -267,7 +267,7 @@ export default function HelpDrawer() {
                     )}
                 </div>
 
-                {/* Footer — link to full help centre */}
+                {/* Footer - link to full help centre */}
                 <div className="px-4 py-3 border-top text-center" style={{ background: '#f8fafc' }}>
                     <button
                         className="btn btn-sm btn-outline-primary"

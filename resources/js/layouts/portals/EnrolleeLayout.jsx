@@ -6,7 +6,7 @@
  *
  * IMPORTANT: Access control (enrollee_user only) is enforced upstream
  * in ProtectedRoute. This layout does NOT need to repeat that check.
- * Previous version used <Navigate> without importing it — that's been removed.
+ * Previous version used <Navigate> without importing it - that's been removed.
  */
 
 import React, { useState } from 'react';

@@ -30,11 +30,11 @@ class HelpArticleSeeder extends Seeder
         return [
 
             // ═══════════════════════════════════════════════════════════════
-            // GETTING STARTED — all roles
+            // GETTING STARTED - all roles
             // ═══════════════════════════════════════════════════════════════
 
             [
-                'title'            => 'Welcome — What You Can Do in This System',
+                'title'            => 'Welcome - What You Can Do in This System',
                 'category'         => 'getting_started',
                 'is_featured'      => true,
                 'sort_order'       => 1,
@@ -43,7 +43,7 @@ class HelpArticleSeeder extends Seeder
                 'content'          => <<<MD
 # Welcome to the HMO Management System
 
-This system manages the complete lifecycle of healthcare provision — from enrolling members to paying providers and filing regulatory returns.
+This system manages the complete lifecycle of healthcare provision - from enrolling members to paying providers and filing regulatory returns.
 
 ## What your role allows you to do
 
@@ -61,7 +61,7 @@ When you log in, you will only see the sections relevant to your role. This guid
 | **Corporates** | Client company accounts |
 | **Finance** | Payment batches, capitation, FFS settlements |
 | **Reports** | NHIA returns and cost reports |
-| **Help** | This guide — always available from the **?** button |
+| **Help** | This guide - always available from the **?** button |
 
 ## How to get help fast
 
@@ -87,14 +87,14 @@ MD,
 2. Enter your **email address** and **password**
 3. Click **Sign In**
 
-If you see an error saying your account is inactive, contact your administrator — your account may need to be enabled.
+If you see an error saying your account is inactive, contact your administrator - your account may need to be enabled.
 
 ## Forgotten password
 
 1. On the login page, click **Forgot Password?**
 2. Enter your email address and click **Send Reset Link**
 3. Check your email (including the spam/junk folder)
-4. Click the link in the email — it expires after **60 minutes**
+4. Click the link in the email - it expires after **60 minutes**
 5. Enter and confirm your new password
 
 ## Changing your password when logged in
@@ -136,11 +136,11 @@ The Dashboard is the first page you see after logging in. It shows the most impo
 
 ## Trend charts
 
-The charts show claim volume and payment trends over the last 6 months. A rising claims line with a flat approved-amount line may indicate more queries or rejections — worth investigating.
+The charts show claim volume and payment trends over the last 6 months. A rising claims line with a flat approved-amount line may indicate more queries or rejections - worth investigating.
 
 ## Recent activity feed
 
-The right panel shows the last 10 actions in the system — useful for branch managers checking what the team has been doing.
+The right panel shows the last 10 actions in the system - useful for branch managers checking what the team has been doing.
 
 ## Quick actions
 
@@ -154,7 +154,7 @@ MD,
             ],
 
             // ═══════════════════════════════════════════════════════════════
-            // ENROLLEES — HMO staff + Corporate HR
+            // ENROLLEES - HMO staff + Corporate HR
             // ═══════════════════════════════════════════════════════════════
 
             [
@@ -192,7 +192,7 @@ You will need:
 5. Select the **Corporate** from the dropdown
    - This determines which plans are available in the next field
 6. Select the **Health Plan**
-7. Set the **Enrollment Date** — this is the date coverage begins
+7. Set the **Enrollment Date** - this is the date coverage begins
 8. Click **Save Enrollee**
 
 The system will automatically:
@@ -265,17 +265,17 @@ MD,
 ## Quick search
 
 Use the search bar at the top of the Enrollees list. You can search by:
-- **HMO Member Number** (e.g. HMO-000123) — fastest and most accurate
-- **Full name** — partial names work (e.g. "Ade" will find "Adewale", "Adebayo", etc.)
+- **HMO Member Number** (e.g. HMO-000123) - fastest and most accurate
+- **Full name** - partial names work (e.g. "Ade" will find "Adewale", "Adebayo", etc.)
 - **Phone number**
 - **National ID / NIN**
 
 ## Filters
 
 Use the filter panel (click **Filter** next to the search bar) to narrow results by:
-- **Corporate** — show only members from one company
-- **Plan** — show only members on a specific plan
-- **Status** — Active / Inactive / Expired / Suspended
+- **Corporate** - show only members from one company
+- **Plan** - show only members on a specific plan
+- **Status** - Active / Inactive / Expired / Suspended
 - **Enrollment date range**
 
 ## What to do if you can't find someone
@@ -283,15 +283,15 @@ Use the filter panel (click **Filter** next to the search bar) to narrow results
 1. Try searching with just the first 3–4 letters of their surname
 2. Check if they might be registered under a slightly different spelling
 3. Try their phone number or NIN instead of their name
-4. They may be a **dependent** (not a primary enrollee) — search for the primary member by family name
-5. Contact your HMO administrator — the member may be in a different branch
+4. They may be a **dependent** (not a primary enrollee) - search for the primary member by family name
+5. Contact your HMO administrator - the member may be in a different branch
 
 > **Tip:** HCPs at the point of care can verify a member's eligibility quickly using just their Member Number. Make sure members know their number.
 MD,
             ],
 
             // ═══════════════════════════════════════════════════════════════
-            // CLAIMS — Claims Officers
+            // CLAIMS - Claims Officers
             // ═══════════════════════════════════════════════════════════════
 
             [
@@ -313,8 +313,8 @@ HCP submits claim → Pending → Review → Approved / Queried / Rejected → P
 ## Opening the claims queue
 
 1. Go to **Claims** in the left menu
-2. The list defaults to **Pending** claims — these need your attention
-3. Claims are sorted oldest first — work from the top
+2. The list defaults to **Pending** claims - these need your attention
+3. Claims are sorted oldest first - work from the top
 
 ## Reviewing a single claim
 
@@ -331,9 +331,9 @@ HCP submits claim → Pending → Review → Approved / Queried / Rejected → P
 | Is a pre-auth required for this service type? | Plan's pre-auth threshold rules |
 
 3. Choose an action:
-   - **Approve** — enter the approved amount (may differ from claimed if partially approved)
-   - **Query** — select a query reason and add your note; returns to HCP for clarification
-   - **Reject** — select a rejection reason; claim is closed
+   - **Approve** - enter the approved amount (may differ from claimed if partially approved)
+   - **Query** - select a query reason and add your note; returns to HCP for clarification
+   - **Reject** - select a rejection reason; claim is closed
 4. Click **Submit Decision**
 
 ## Common query reasons
@@ -349,18 +349,18 @@ MD,
             ],
 
             [
-                'title'            => 'Bulk Claims Import — Step by Step',
+                'title'            => 'Bulk Claims Import - Step by Step',
                 'category'         => 'claims',
                 'is_featured'      => true,
                 'sort_order'       => 2,
                 'visible_to_roles' => ['super_admin','hq_admin','hq_manager','branch_manager','claims_officer'],
                 'related_pages'    => ['claims.import'],
                 'content'          => <<<MD
-# Bulk Claims Import — Step by Step
+# Bulk Claims Import - Step by Step
 
 Instead of entering claims one at a time, you can import an Excel or CSV file submitted by an HCP.
 
-## Step 1 — Upload
+## Step 1 - Upload
 
 1. Go to **Claims → Bulk Import**
 2. Drag and drop the file onto the upload area, or click to browse
@@ -370,7 +370,7 @@ Instead of entering claims one at a time, you can import an Excel or CSV file su
 4. Select the **Claim Period** (month the services were rendered)
 5. Click **Next: Map Columns**
 
-## Step 2 — Map Columns
+## Step 2 - Map Columns
 
 The system reads the column headers from the file and tries to automatically match them to the correct fields.
 
@@ -386,20 +386,20 @@ For each unmatched column, use the dropdown to select the correct field. If a co
 
 Click **Validate Rows** when done.
 
-## Step 3 — Review Rows
+## Step 3 - Review Rows
 
 The system validates every row and shows:
-- ✅ **Valid** — ready to import
-- ⚠️ **Error** — has a problem you need to address
-- 🔄 **Duplicate** — already exists in the system
+- ✅ **Valid** - ready to import
+- ⚠️ **Error** - has a problem you need to address
+- 🔄 **Duplicate** - already exists in the system
 
 **For error rows:** click the row to see what the problem is. You can:
-- **Approve with override** — accept it anyway (enter a reason)
-- **Skip** — exclude this row from the import
+- **Approve with override** - accept it anyway (enter a reason)
+- **Skip** - exclude this row from the import
 
 **Bulk approve:** Click **Approve All Valid** to approve all clean rows at once.
 
-## Step 4 — Confirm & Push
+## Step 4 - Confirm & Push
 
 Review the summary:
 - How many rows will be pushed to the claims queue
@@ -449,9 +449,9 @@ The system flags when a claim comes in without the required pre-auth.
    - Whether the HCP is on the approved provider list
 
 4. Decide:
-   - **Approve** — enter the approved amount and any conditions
-   - **Modify** — approve for a different amount or different procedure
-   - **Decline** — select a reason; the HCP and corporate are notified
+   - **Approve** - enter the approved amount and any conditions
+   - **Modify** - approve for a different amount or different procedure
+   - **Decline** - select a reason; the HCP and corporate are notified
 
 ## Time targets
 
@@ -463,14 +463,14 @@ The system flags when a claim comes in without the required pre-auth.
 
 ## After approval
 
-The system generates a **Pre-Auth Code** (e.g. PA-2025-001234). Share this code with the HCP — they must include it when submitting the claim. Claims matching a valid pre-auth code are fast-tracked in review.
+The system generates a **Pre-Auth Code** (e.g. PA-2025-001234). Share this code with the HCP - they must include it when submitting the claim. Claims matching a valid pre-auth code are fast-tracked in review.
 
 > **Warning:** Approving a pre-auth does not guarantee payment. The eventual claim is still reviewed to confirm the service matched the approved procedure and amount.
 MD,
             ],
 
             // ═══════════════════════════════════════════════════════════════
-            // PLANS — HMO staff
+            // PLANS - HMO staff
             // ═══════════════════════════════════════════════════════════════
 
             [
@@ -520,7 +520,7 @@ MD,
             ],
 
             // ═══════════════════════════════════════════════════════════════
-            // REPORTS — Branch Managers + HQ
+            // REPORTS - Branch Managers + HQ
             // ═══════════════════════════════════════════════════════════════
 
             [
@@ -573,7 +573,7 @@ All NHIA reports are generated in the prescribed format with:
 - Totals row at the bottom
 - Summary sheet with key metrics
 
-> **Reminder:** It is your responsibility to submit these reports to NHIA by the required deadlines. The system generates the file — submission is a manual step.
+> **Reminder:** It is your responsibility to submit these reports to NHIA by the required deadlines. The system generates the file - submission is a manual step.
 MD,
             ],
 
@@ -631,16 +631,16 @@ MD,
             // ═══════════════════════════════════════════════════════════════
 
             [
-                'title'            => 'Corporate HR Admin — Your Quick Start Guide',
+                'title'            => 'Corporate HR Admin - Your Quick Start Guide',
                 'category'         => 'getting_started',
                 'is_featured'      => true,
                 'sort_order'       => 10,
                 'visible_to_roles' => ['corporate_admin'],
                 'related_pages'    => ['dashboard','enrollees.index'],
                 'content'          => <<<MD
-# Corporate HR Admin — Your Quick Start Guide
+# Corporate HR Admin - Your Quick Start Guide
 
-As a Corporate HR Administrator, you manage your company's enrolled members. You do not process claims — that is handled by the HMO. Your role is the membership side.
+As a Corporate HR Administrator, you manage your company's enrolled members. You do not process claims - that is handled by the HMO. Your role is the membership side.
 
 ## What you can do
 
@@ -663,7 +663,7 @@ As a Corporate HR Administrator, you manage your company's enrolled members. You
 |---|---|
 | Register a new employee | Enrollees → New Enrollee |
 | Add a spouse or child | Enrollees → [name] → Dependents |
-| Employee resigned — remove coverage | Enrollees → [name] → Suspend/Terminate |
+| Employee resigned - remove coverage | Enrollees → [name] → Suspend/Terminate |
 | Check how much an employee has claimed | Enrollees → [name] → Benefits tab |
 | Download monthly cost report | Reports → Corporate Cost Report |
 | See all active members | Enrollees → filter by Status: Active |
@@ -686,8 +686,8 @@ MD,
 | | Suspension | Termination |
 |---|---|---|
 | **When to use** | Temporary leave (maternity, unpaid leave) | Employee has left the company |
-| **Effect** | Coverage paused — claims during suspension period are rejected | Coverage ends permanently |
-| **Reversible?** | Yes — reactivate when they return | No — must re-enroll if they rejoin |
+| **Effect** | Coverage paused - claims during suspension period are rejected | Coverage ends permanently |
+| **Reversible?** | Yes - reactivate when they return | No - must re-enroll if they rejoin |
 
 ## Suspending an enrollee
 
@@ -738,7 +738,7 @@ MD,
 ## Your benefit summary
 
 When you log in, your **dashboard** shows:
-- Your **annual benefit ceiling** — the maximum the HMO will pay for your care this year
+- Your **annual benefit ceiling** - the maximum the HMO will pay for your care this year
 - How much you have **used so far**
 - How much **remains**
 - Your **plan expiry date**
@@ -759,7 +759,7 @@ Under **My Profile**, you can see:
 
 ## Viewing your claims history
 
-Under **My Claims**, you can see every claim submitted on your behalf — including:
+Under **My Claims**, you can see every claim submitted on your behalf - including:
 - Which hospital submitted it
 - The service and date
 - How much was claimed and how much was approved
@@ -800,9 +800,9 @@ For each provider you will see:
 ## Tier levels
 
 Some plans have a **tier system**:
-- **Tier 1** — Primary care clinics (GP consultations, basic tests)
-- **Tier 2** — Secondary hospitals (specialists, minor surgery)
-- **Tier 3** — Tertiary / teaching hospitals (complex surgery, ICU)
+- **Tier 1** - Primary care clinics (GP consultations, basic tests)
+- **Tier 2** - Secondary hospitals (specialists, minor surgery)
+- **Tier 3** - Tertiary / teaching hospitals (complex surgery, ICU)
 
 Your plan may require a referral from a Tier 1 provider before you can access Tier 2 or 3 services. Check your plan details or call the HMO helpline.
 
@@ -848,10 +848,10 @@ Common reasons:
 
 ## What you can do
 
-1. **For queries:** Contact your HCP — they need to respond with the requested documents. You do not need to do anything unless the HCP asks for documents you hold (e.g. a referral letter).
+1. **For queries:** Contact your HCP - they need to respond with the requested documents. You do not need to do anything unless the HCP asks for documents you hold (e.g. a referral letter).
 
 2. **For rejections you believe are wrong:**
-   - Contact your **Corporate HR admin** — they can raise a formal query with the HMO
+   - Contact your **Corporate HR admin** - they can raise a formal query with the HMO
    - Or call the **HMO helpline** directly
    - Appeals must be submitted within **30 days** of the rejection date
 
@@ -860,7 +860,7 @@ MD,
             ],
 
             // ═══════════════════════════════════════════════════════════════
-            // ADMINISTRATION — super_admin only
+            // ADMINISTRATION - super_admin only
             // ═══════════════════════════════════════════════════════════════
 
             [
@@ -876,10 +876,10 @@ MD,
 
 | Role | Access level |
 |---|---|
-| **Super Admin** | Everything — no restrictions |
+| **Super Admin** | Everything - no restrictions |
 | **HQ Admin** | Full HQ access except system config |
-| **HQ Manager** | Claims, enrollees, reports — no finance approval |
-| **Branch Manager** | Their branch only — claims, enrollees, basic reports |
+| **HQ Manager** | Claims, enrollees, reports - no finance approval |
+| **Branch Manager** | Their branch only - claims, enrollees, basic reports |
 | **Claims Officer** | Claims review and pre-auth only |
 | **Corporate Admin** | Their corporate's enrollees only |
 | **Enrollee** | Self-service portal only |
@@ -890,7 +890,7 @@ MD,
 2. Click **+ New User**
 3. Enter name, email, and select the role
 4. For Corporate Admins, also select which corporate they manage
-5. Click **Create** — the user receives an email with login instructions
+5. Click **Create** - the user receives an email with login instructions
 
 ## Changing a user's role
 
@@ -907,7 +907,7 @@ When a staff member leaves:
 1. Open their user profile
 2. Click **Deactivate**
 
-Their account is disabled but their action history is preserved for audit purposes. **Never delete users** — this breaks the audit trail.
+Their account is disabled but their action history is preserved for audit purposes. **Never delete users** - this breaks the audit trail.
 
 ## Password resets
 

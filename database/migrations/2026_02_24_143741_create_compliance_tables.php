@@ -18,8 +18,8 @@ use Illuminate\Support\Facades\Schema;
  *   - Staff certification renewals
  *
  * Tables:
- *   compliance_filings       — individual obligation records
- *   compliance_documents     — supporting documents per filing
+ *   compliance_filings       - individual obligation records
+ *   compliance_documents     - supporting documents per filing
  *
  * Depends on: branches, users
  */

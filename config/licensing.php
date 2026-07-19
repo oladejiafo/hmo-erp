@@ -1,10 +1,10 @@
 <?php
 
 /**
- * ERP — config/licensing.php
+ * ERP - config/licensing.php
  *
  * Configuration for the license validation client.
- * All sensitive values come from .env — never hardcode here.
+ * All sensitive values come from .env - never hardcode here.
  *
  * FILE: config/licensing.php  (in each deployed ERP instance)
  */
@@ -26,7 +26,7 @@ return [
 
     /*
     | RSA public key from the licensing server.
-    | Used to verify signed tokens — cannot forge tokens with this.
+    | Used to verify signed tokens - cannot forge tokens with this.
     | Set in .env: LICENSING_PUBLIC_KEY="-----BEGIN PUBLIC KEY-----\n...\n"
     |
     | Obtain this by running on the licensing server:

@@ -1,7 +1,7 @@
 /**
  * FILE LOCATION: resources/js/pages/preauth/PADetailPage.jsx
  *
- * Pre-Authorisation Detail — clinical review workspace.
+ * Pre-Authorisation Detail - clinical review workspace.
  *
  * Three-step approval flow (triggered by estimated_amount):
  *   ≤ ₦500k   → Authorisation Desk Officer approves (one step → "approved")
@@ -12,12 +12,12 @@
  * Emergency PAs:
  *   - Status shows "emergency_retrospective"
  *   - Must be reviewed and formally approved/declined within 24 hrs
- *   - Declining an emergency PA does NOT void the claim — it flags for audit
+ *   - Declining an emergency PA does NOT void the claim - it flags for audit
  *
  * PA Code:
  *   Generated on FIRST approval decision (standard) or MD sign-off (high-value)
  *   Format: PA-YYYY-NNNNNNN  e.g. PA-2025-0042341
- *   Displayed prominently once issued — provider uses this code on the claim form
+ *   Displayed prominently once issued - provider uses this code on the claim form
  *
  * Permissions:
  *   pa.view              → read-only view
@@ -93,7 +93,7 @@ const STATUS_LABEL = {
     expired:                  'Expired',
     used:                     'Used on Claim',
     revoked:                  'Revoked',
-    emergency_retrospective:  'Emergency — Retrospective Review',
+    emergency_retrospective:  'Emergency - Retrospective Review',
 };
 const STATUS_COLOR = {
     pending:                 'warning',
@@ -155,7 +155,7 @@ export default function PADetailPage() {
             const pa = res.data?.data;
             toast.success(
                 pa?.status === 'approved'
-                    ? `✅ PA approved — Code: ${pa.pa_code}`
+                    ? `✅ Pre-Auth. approved - Code: ${pa.pa_code}`
                     : `✅ First approval recorded. Escalated to ${pa?.status === 'awaiting_md' ? 'Medical Director' : 'CEO'}.`
             );
             setApproveModal(false);
@@ -169,7 +169,7 @@ export default function PADetailPage() {
     const declineMutation = useMutation({
         mutationFn: () => declinePA(id, { reason: declineNote }),
         onSuccess: () => {
-            toast.info('PA request declined. Decline reason recorded.');
+            toast.info('Pre-Auth. request declined. Decline reason recorded.');
             setDeclineModal(false);
             invalidate();
             qc.invalidateQueries({ queryKey: ['pa-requests'] });
@@ -181,7 +181,7 @@ export default function PADetailPage() {
     const revokeMutation = useMutation({
         mutationFn: () => revokePA(id, { reason: revokeNote }),
         onSuccess: () => {
-            toast.warning('PA code revoked. Provider has been notified.');
+            toast.warning('Pre-Auth. code revoked. Provider has been notified.');
             setRevokeModal(false);
             invalidate();
             qc.invalidateQueries({ queryKey: ['pa-requests'] });
@@ -219,7 +219,7 @@ export default function PADetailPage() {
                 return;
             }
             
-            console.log('Downloading PA ID:', pa.id);
+            console.log('Downloading Pre-Auth. ID:', pa.id);
             
             const response = await axios.get(`/api/v1/pre-auth/${pa.id}/download`, {
                 headers: {
@@ -299,7 +299,7 @@ export default function PADetailPage() {
                     {pa.pa_code && (
                         <button
                             className="btn btn-outline-primary btn-sm d-flex align-items-center gap-1"
-                            onClick={() => { navigator.clipboard.writeText(pa.pa_code); toast.success('PA code copied!'); }}
+                            onClick={() => { navigator.clipboard.writeText(pa.pa_code); toast.success('Pre-Auth. code copied!'); }}
                         >
                             <Copy size={13} /> Copy Code
                         </button>
@@ -340,7 +340,7 @@ export default function PADetailPage() {
                     <div>
                         <div className="fw-bold" style={{ fontSize: 14 }}>Emergency Pre-Auth</div>
                         <div style={{ fontSize: 13 }}>
-                            Care was authorised to proceed immediately. This PA must be formally reviewed within <strong>24 hours</strong> of admission.
+                            Care was authorised to proceed immediately. This Pre-Auth. must be formally reviewed within <strong>24 hours</strong> of admission.
                             {isActive && <span className="ms-2 fw-bold">Action required now.</span>}
                         </div>
                     </div>
@@ -354,7 +354,7 @@ export default function PADetailPage() {
                     <div className="card-body py-3 px-4 d-flex align-items-center justify-content-between flex-wrap gap-3">
                         <div>
                             <div style={{ fontSize: 11, opacity: 0.75, textTransform: 'uppercase', letterSpacing: '0.5px', marginBottom: 4 }}>
-                                Pre-Authorisation Code — Provider must quote this on the claim
+                                Pre-Authorisation Code - Provider must quote this on the claim
                             </div>
                             <div style={{ fontSize: 28, fontWeight: 800, fontFamily: 'monospace', letterSpacing: 2 }}>
                                 {pa.pa_code}
@@ -362,7 +362,7 @@ export default function PADetailPage() {
                         </div>
                         <div className="d-flex flex-column align-items-end gap-1">
                             <div style={{ fontSize: 11, opacity: 0.75 }}>Valid Until</div>
-                            <div style={{ fontSize: 16, fontWeight: 700 }}>{pa.expires_at ? formatDate(pa.expires_at) : '—'}</div>
+                            <div style={{ fontSize: 16, fontWeight: 700 }}>{pa.expires_at ? formatDate(pa.expires_at) : '-'}</div>
                             {pa.status === 'used' && (
                                 <span style={{ fontSize: 11, background: 'rgba(255,255,255,0.2)', padding: '2px 10px', borderRadius: 10 }}>
                                     ✓ Used on Claim {pa.claim_number}
@@ -378,7 +378,7 @@ export default function PADetailPage() {
                             <button
                                 className="btn btn-sm d-flex align-items-center gap-1"
                                 style={{ background: 'rgba(255,255,255,0.2)', color: '#fff', border: '1px solid rgba(255,255,255,0.35)' }}
-                                onClick={() => { navigator.clipboard.writeText(pa.pa_code); toast.success('PA code copied!'); }}
+                                onClick={() => { navigator.clipboard.writeText(pa.pa_code); toast.success('Pre-Auth. code copied!'); }}
                             >
                                 <Copy size={13} /> Copy
                             </button>
@@ -442,7 +442,7 @@ export default function PADetailPage() {
             {/* ── Main grid ───────────────────────────────────────────────── */}
             <div className="row g-4">
 
-                {/* Left — clinical details */}
+                {/* Left - clinical details */}
                 <div className="col-lg-8">
 
                     {/* Patient & Provider */}
@@ -626,7 +626,7 @@ export default function PADetailPage() {
 
                 </div>
 
-                {/* Right — financial + meta */}
+                {/* Right - financial + meta */}
                 <div className="col-lg-4">
                     <div style={{ position: 'sticky', top: 24 }}>
 
@@ -637,10 +637,10 @@ export default function PADetailPage() {
                                     <DollarSign size={14} className="text-primary" /> Financial Details
                                 </div>
                                 {[
-                                    ['Estimated Amount', pa.estimated_amount ? formatCurrency(pa.estimated_amount) : '—'],
-                                    ['Approved Amount',  pa.approved_amount  ? formatCurrency(pa.approved_amount)  : pa.status === 'approved' ? 'Same as estimated' : '—'],
-                                    ['Validity Period',  pa.validity_days ? `${pa.validity_days} days` : '—'],
-                                    ['Expires',          pa.expires_at ? formatDate(pa.expires_at) : '—'],
+                                    ['Estimated Amount', pa.estimated_amount ? formatCurrency(pa.estimated_amount) : '-'],
+                                    ['Approved Amount',  pa.approved_amount  ? formatCurrency(pa.approved_amount)  : pa.status === 'approved' ? 'Same as estimated' : '-'],
+                                    ['Validity Period',  pa.validity_days ? `${pa.validity_days} days` : '-'],
+                                    ['Expires',          pa.expires_at ? formatDate(pa.expires_at) : '-'],
                                 ].map(([label, value]) => (
                                     <div key={label} className="d-flex justify-content-between py-2 border-bottom" style={{ fontSize: 13 }}>
                                         <span className="text-muted">{label}</span>
@@ -675,8 +675,8 @@ export default function PADetailPage() {
                                     ['Submitted',   formatDateTime(pa.created_at)],
                                     ['By',          pa.submitted_by_name ?? 'System'],
                                     ['Channel',     pa.submission_channel ?? 'HMO Portal'],
-                                    ['Reviewed At', pa.reviewed_at ? formatDateTime(pa.reviewed_at) : '—'],
-                                    ['Reviewed By', pa.reviewed_by_name ?? '—'],
+                                    ['Reviewed At', pa.reviewed_at ? formatDateTime(pa.reviewed_at) : '-'],
+                                    ['Reviewed By', pa.reviewed_by_name ?? '-'],
                                 ].map(([label, value]) => (
                                     <div key={label} className="d-flex justify-content-between py-1 border-bottom" style={{ fontSize: 12 }}>
                                         <span className="text-muted">{label}</span>
@@ -730,7 +730,7 @@ export default function PADetailPage() {
                                         <div className="alert alert-info py-2 mb-3" style={{ fontSize: 13 }}>
                                             <strong>Note:</strong> Your approval will escalate this to{' '}
                                             {tier === 'md' ? 'the Medical Director' : 'the Medical Director, then CEO'}{' '}
-                                            for final sign-off. The PA code will be generated after the last approval.
+                                            for final sign-off. The Pre-Auth. code will be generated after the last approval.
                                         </div>
                                     )}
 
@@ -783,7 +783,7 @@ export default function PADetailPage() {
                                         <div className="mt-3 p-3 rounded-3 bg-light border" style={{ fontSize: 12 }}>
                                             <div className="fw-semibold mb-1">Finalising approval for:</div>
                                             <div>{pa.enrollee_name} · {pa.hcp_name} · {pa.service_type_label ?? pa.service_type}</div>
-                                            <div className="text-muted mt-1">Your sign-off will generate the PA code and make it available to the provider.</div>
+                                            <div className="text-muted mt-1">Your sign-off will generate the Pre-Auth. code and make it available to the provider.</div>
                                         </div>
                                     )}
                                 </div>
@@ -831,12 +831,12 @@ export default function PADetailPage() {
                                     </label>
                                     <textarea
                                         className="form-control" rows={4}
-                                        placeholder="State clearly why this PA request is being declined. This will be communicated to the provider and enrollee. Minimum 20 characters."
+                                        placeholder="State clearly why this Pre-Auth. request is being declined. This will be communicated to the provider and enrollee. Minimum 20 characters."
                                         value={declineNote}
                                         onChange={e => setDeclineNote(e.target.value)}
                                     />
                                     <div className="form-text d-flex justify-content-between mt-1">
-                                        <span>Be specific — vague decline reasons can be challenged at NHIA.</span>
+                                        <span>Be specific - vague decline reasons can be challenged at NHIA.</span>
                                         <span className={declineNote.length < 20 ? 'text-danger' : 'text-muted'}>
                                             {declineNote.length}/500
                                         </span>
@@ -871,20 +871,20 @@ export default function PADetailPage() {
                                 <div className="modal-header">
                                     <h6 className="modal-title d-flex align-items-center gap-2">
                                         <XCircle size={16} className="text-warning" />
-                                        Revoke PA Code
+                                        Revoke Pre-Auth. Code
                                     </h6>
                                     <button className="btn-close" onClick={() => setRevokeModal(false)} />
                                 </div>
                                 <div className="modal-body">
                                     <div className="alert alert-warning py-2 mb-3" style={{ fontSize: 13 }}>
-                                        <strong>Revoking</strong> an approved PA code cancels it immediately. The provider will no longer be able to use <code>{pa.pa_code}</code> to process a claim. This action is logged and irreversible.
+                                        <strong>Revoking</strong> an approved Pre-Auth. code cancels it immediately. The provider will no longer be able to use <code>{pa.pa_code}</code> to process a claim. This action is logged and irreversible.
                                     </div>
                                     <label className="form-label fw-semibold" style={{ fontSize: 13 }}>
                                         Reason for Revocation <span className="text-danger">*</span>
                                     </label>
                                     <textarea
                                         className="form-control" rows={3}
-                                        placeholder="e.g. Enrollee coverage suspended, duplicate PA issued, patient no longer proceeding with treatment…"
+                                        placeholder="e.g. Enrollee coverage suspended, duplicate Pre-Auth. issued, patient no longer proceeding with treatment…"
                                         value={revokeNote}
                                         onChange={e => setRevokeNote(e.target.value)}
                                     />
@@ -954,7 +954,7 @@ function buildApprovalSteps(pa, tier) {
         });
     }
     steps.push({
-        label: 'PA Issued',
+        label: 'Pre-Auth. Issued',
         state: ['approved', 'used', 'expired'].includes(pa.status) ? 'done' : 'pending',
         by:    pa.pa_code,
         at:    pa.reviewed_at,
@@ -998,7 +998,7 @@ function InfoRow({ label, value }) {
                 {label}
             </div>
             <div style={{ fontSize: 13, color: '#2d3748' }}>
-                {value ?? <span className="text-muted">—</span>}
+                {value ?? <span className="text-muted">-</span>}
             </div>
         </div>
     );

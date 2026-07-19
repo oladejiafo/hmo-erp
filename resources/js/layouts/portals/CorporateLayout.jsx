@@ -1,34 +1,49 @@
 /**
  * FILE LOCATION: resources/js/layouts/portals/CorporateLayout.jsx
- *
- * Corporate Self-Service Portal shell.
- * Rendered for /corporate and /corporate/* routes.
- *
- * IMPORTANT: Access control (corporate_user only) is enforced upstream
- * in ProtectedRoute. This layout does NOT need to repeat that check.
- * Previous version used <Navigate> without importing it — that's been removed.
+ * PATCH NOTE: complete replacement of your real file. Two changes:
+ * 1. [FIX] children/Outlet handling, see PHASE7_CORPORATELAYOUT_BUG_CHECK.md
+ * 2. [PHASE 7] nav reorganized into logical groups instead of one flat
+ *    growing list — Dashboard/Staff/Claims stay primary (top-level), money
+ *    and plan-management items move into a "Manage" dropdown, since this
+ *    is a horizontal top-bar, not a sidebar, and kept growing past what a
+ *    single row comfortably holds.
  */
 
 import React, { useState } from 'react';
-import { Outlet, NavLink, useNavigate } from 'react-router-dom';
+import { Outlet, NavLink, useNavigate, useLocation } from 'react-router-dom';
 import {
     LayoutDashboard, Users, FileText, CreditCard,
     LogOut, Menu, X, Bell, User, Building2,
+    Wallet, Layers, FileCheck, Megaphone, RefreshCw, ChevronDown,
 } from 'lucide-react';
 import { useAuth } from '../../contexts/AuthContext';
 
-const navItems = [
+// Primary — used constantly, stays directly on the bar
+const primaryNavItems = [
     { path: '/corporate',            label: 'Dashboard',         icon: LayoutDashboard, exact: true },
     { path: '/corporate/enrollees',  label: 'Staff & Enrollees', icon: Users },
     { path: '/corporate/claims',     label: 'Claims',            icon: FileText },
-    { path: '/corporate/invoices',   label: 'Invoices',          icon: CreditCard },
-    { path: '/corporate/profile',    label: 'Company Profile',   icon: Building2 },
 ];
 
-export default function CorporateLayout() {
+// Secondary — grouped under "Manage" so the bar doesn't keep growing every
+// time a self-service feature gets added
+const manageNavItems = [
+    { path: '/corporate/invoices',       label: 'Invoices',        icon: CreditCard },
+    { path: '/corporate/budget',         label: 'Budget',          icon: Wallet },
+    { path: '/corporate/renewals',       label: 'Renewals',        icon: RefreshCw },
+    { path: '/corporate/available-plans', label: 'Plan Builder',   icon: Layers },
+    { path: '/corporate/broadcast',      label: 'Broadcast',       icon: Megaphone },
+    { path: '/corporate/profile',        label: 'Company Profile', icon: Building2 },
+];
+
+const allNavItems = [...primaryNavItems, ...manageNavItems]; // used for mobile menu, flat
+
+export default function CorporateLayout({ children }) { // [FIX]
     const { user, logout } = useAuth();
     const navigate = useNavigate();
+    const location = useLocation();
     const [menuOpen, setMenuOpen] = useState(false);
+    const [manageOpen, setManageOpen] = useState(false);
 
     const handleLogout = async () => {
         await logout();
@@ -37,11 +52,12 @@ export default function CorporateLayout() {
 
     const firstName   = user?.name?.split(' ')[0] || 'User';
     const companyName = user?.corporate?.name || 'Your Company';
+    const isManageActive = manageNavItems.some(item => location.pathname.startsWith(item.path));
 
     return (
         <div style={{ minHeight: '100vh', background: '#f0f4f8' }}>
 
-            {/* ── Top navigation ──────────────────────────────────────── */}
+            {/* Top navigation */}
             <nav style={{
                 background:    'linear-gradient(135deg, #0f4c81 0%, #1a6fad 100%)',
                 boxShadow:     '0 2px 12px rgba(15,76,129,0.3)',
@@ -52,19 +68,13 @@ export default function CorporateLayout() {
                 <div style={{ maxWidth: 1200, margin: '0 auto', padding: '0 24px' }}>
                     <div style={{ display: 'flex', alignItems: 'center', height: 64, gap: 32 }}>
 
-                        {/* Logo */}
                         <div style={{ display: 'flex', alignItems: 'center', gap: 10, flexShrink: 0 }}>
                             <div style={{
                                 width: 36, height: 36, borderRadius: 8,
                                 background: 'rgba(255,255,255,0.2)',
                                 display: 'flex', alignItems: 'center', justifyContent: 'center',
                             }}>
-                                {/* <svg width="20" height="20" viewBox="0 0 32 32" fill="none">
-                                    <path d="M16 2L28 8V16C28 22.6 22.8 28.6 16 30C9.2 28.6 4 22.6 4 16V8L16 2Z"
-                                          fill="white" fillOpacity="0.9"/>
-                                    <path d="M13 16H19M16 13V19" stroke="#0f4c81" strokeWidth="2.5" strokeLinecap="round"/>
-                                </svg> */}
-                                <img 
+                                <img
                                     src="/images/g8-nexum-logo.png"
                                     alt="G8 Nexum"
                                     width="20"
@@ -84,43 +94,74 @@ export default function CorporateLayout() {
                         </div>
 
                         {/* Desktop nav */}
-                        <div style={{ display: 'flex', gap: 4, flex: 1 }} className="d-none d-lg-flex">
-                            {navItems.map(item => (
+                        <div style={{ display: 'flex', gap: 4, flex: 1, alignItems: 'center' }} className="d-none d-lg-flex">
+                            {primaryNavItems.map(item => (
                                 <NavLink
                                     key={item.path}
                                     to={item.path}
                                     end={item.exact}
                                     style={({ isActive }) => ({
-                                        display:        'flex',
-                                        alignItems:     'center',
-                                        gap:            7,
-                                        padding:        '6px 14px',
-                                        borderRadius:   8,
-                                        textDecoration: 'none',
-                                        fontSize:       13,
-                                        fontWeight:     500,
-                                        color:          isActive ? '#fff' : 'rgba(255,255,255,0.75)',
-                                        background:     isActive ? 'rgba(255,255,255,0.18)' : 'transparent',
+                                        display: 'flex', alignItems: 'center', gap: 7,
+                                        padding: '6px 14px', borderRadius: 8, textDecoration: 'none',
+                                        fontSize: 13, fontWeight: 500,
+                                        color: isActive ? '#fff' : 'rgba(255,255,255,0.75)',
+                                        background: isActive ? 'rgba(255,255,255,0.18)' : 'transparent',
                                     })}
                                 >
                                     <item.icon size={15} />
                                     {item.label}
                                 </NavLink>
                             ))}
+
+                            {/* [PHASE 7] Manage dropdown */}
+                            <div style={{ position: 'relative' }}>
+                                <button
+                                    onClick={() => setManageOpen(o => !o)}
+                                    onBlur={() => setTimeout(() => setManageOpen(false), 150)}
+                                    style={{
+                                        display: 'flex', alignItems: 'center', gap: 6,
+                                        padding: '6px 14px', borderRadius: 8, border: 'none', cursor: 'pointer',
+                                        fontSize: 13, fontWeight: 500,
+                                        color: isManageActive ? '#fff' : 'rgba(255,255,255,0.75)',
+                                        background: isManageActive ? 'rgba(255,255,255,0.18)' : 'transparent',
+                                    }}
+                                >
+                                    Manage <ChevronDown size={13} style={{ transform: manageOpen ? 'rotate(180deg)' : 'none', transition: 'transform 0.15s' }} />
+                                </button>
+                                {manageOpen && (
+                                    <div style={{
+                                        position: 'absolute', top: '110%', left: 0, background: '#fff',
+                                        borderRadius: 10, boxShadow: '0 8px 24px rgba(0,0,0,0.15)',
+                                        minWidth: 200, padding: 6, zIndex: 300,
+                                    }}>
+                                        {manageNavItems.map(item => (
+                                            <NavLink
+                                                key={item.path}
+                                                to={item.path}
+                                                style={({ isActive }) => ({
+                                                    display: 'flex', alignItems: 'center', gap: 8,
+                                                    padding: '8px 12px', borderRadius: 7, textDecoration: 'none',
+                                                    fontSize: 13, fontWeight: 500,
+                                                    color: isActive ? '#0f4c81' : '#4a5568',
+                                                    background: isActive ? '#e8f0fe' : 'transparent',
+                                                })}
+                                            >
+                                                <item.icon size={14} />
+                                                {item.label}
+                                            </NavLink>
+                                        ))}
+                                    </div>
+                                )}
+                            </div>
                         </div>
 
-                        {/* Right actions */}
                         <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginLeft: 'auto' }}>
                             <button style={iconBtnStyle} aria-label="Notifications">
                                 <Bell size={18} color="rgba(255,255,255,0.8)" />
                             </button>
                             <div style={{
-                                display:    'flex',
-                                alignItems: 'center',
-                                gap:        8,
-                                padding:    '6px 12px',
-                                borderRadius: 8,
-                                background: 'rgba(255,255,255,0.12)',
+                                display: 'flex', alignItems: 'center', gap: 8,
+                                padding: '6px 12px', borderRadius: 8, background: 'rgba(255,255,255,0.12)',
                             }}>
                                 <div style={{
                                     width: 28, height: 28, borderRadius: '50%',
@@ -147,29 +188,21 @@ export default function CorporateLayout() {
                         </div>
                     </div>
 
-                    {/* Mobile nav */}
+                    {/* Mobile nav — flat list, all items */}
                     {menuOpen && (
-                        <div
-                            style={{ padding: '12px 0 16px', borderTop: '1px solid rgba(255,255,255,0.15)' }}
-                            className="d-lg-none"
-                        >
-                            {navItems.map(item => (
+                        <div style={{ padding: '12px 0 16px', borderTop: '1px solid rgba(255,255,255,0.15)' }} className="d-lg-none">
+                            {allNavItems.map(item => (
                                 <NavLink
                                     key={item.path}
                                     to={item.path}
                                     end={item.exact}
                                     onClick={() => setMenuOpen(false)}
                                     style={({ isActive }) => ({
-                                        display:        'flex',
-                                        alignItems:     'center',
-                                        gap:            10,
-                                        padding:        '10px 16px',
-                                        textDecoration: 'none',
-                                        color:          isActive ? '#fff' : 'rgba(255,255,255,0.75)',
-                                        background:     isActive ? 'rgba(255,255,255,0.12)' : 'transparent',
-                                        borderRadius:   8,
-                                        marginBottom:   2,
-                                        fontSize:       14,
+                                        display: 'flex', alignItems: 'center', gap: 10,
+                                        padding: '10px 16px', textDecoration: 'none',
+                                        color: isActive ? '#fff' : 'rgba(255,255,255,0.75)',
+                                        background: isActive ? 'rgba(255,255,255,0.12)' : 'transparent',
+                                        borderRadius: 8, marginBottom: 2, fontSize: 14,
                                     })}
                                 >
                                     <item.icon size={16} />
@@ -181,32 +214,21 @@ export default function CorporateLayout() {
                 </div>
             </nav>
 
-            {/* ── Page content ────────────────────────────────────────── */}
             <main style={{ maxWidth: 1200, margin: '0 auto', padding: '28px 24px' }}>
-                <Outlet />
+                {children ?? <Outlet />} {/* [FIX] */}
             </main>
 
-            {/* ── Footer ──────────────────────────────────────────────── */}
             <footer style={{
-                textAlign:    'center',
-                padding:      '16px 24px',
-                color:        '#94a3b8',
-                fontSize:     12,
-                borderTop:    '1px solid #e2e8f0',
-                marginTop:    32,
+                textAlign: 'center', padding: '16px 24px', color: '#94a3b8',
+                fontSize: 12, borderTop: '1px solid #e2e8f0', marginTop: 32,
             }}>
-                Corporate Self-Service Portal · Powered by HMO ERP · {new Date().getFullYear()}
+                Corporate Self-Service Portal · Powered by G8 NEXUM - HMO ERP · {new Date().getFullYear()}
             </footer>
         </div>
     );
 }
 
 const iconBtnStyle = {
-    background:  'none',
-    border:      'none',
-    cursor:      'pointer',
-    padding:     6,
-    borderRadius: 6,
-    display:     'flex',
-    alignItems:  'center',
+    background: 'none', border: 'none', cursor: 'pointer',
+    padding: 6, borderRadius: 6, display: 'flex', alignItems: 'center',
 };

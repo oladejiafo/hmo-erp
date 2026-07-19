@@ -5,10 +5,10 @@ namespace App\Models;
 use Illuminate\Database\Eloquent\Model;
 
 /**
- * LicenseCache — ERP
+ * LicenseCache - ERP
  *
  * Single-row model. Always use LicenseCache::instance() to get the row.
- * Use LicenseService to read and update — don't update this directly.
+ * Use LicenseService to read and update - don't update this directly.
  *
  * FILE: app/Models/LicenseCache.php
  */

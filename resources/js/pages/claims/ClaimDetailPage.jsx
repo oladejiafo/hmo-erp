@@ -369,13 +369,13 @@ export default function ClaimDetailPage() {
                                         <div className="col-md-4 mb-3">
                                             <small className="text-muted d-block">Amount Approved</small>
                                             <h4 className={claim.total_amount_approved ? 'text-success' : 'text-muted'}>
-                                                {claim.total_amount_approved ? formatCurrency(claim.total_amount_approved) : '—'}
+                                                {claim.total_amount_approved ? formatCurrency(claim.total_amount_approved) : '-'}
                                             </h4>
                                         </div>
                                         <div className="col-md-4 mb-3">
                                             <small className="text-muted d-block">Amount Paid</small>
                                             <h4 className={claim.total_amount_paid ? 'text-primary' : 'text-muted'}>
-                                                {claim.total_amount_paid ? formatCurrency(claim.total_amount_paid) : '—'}
+                                                {claim.total_amount_paid ? formatCurrency(claim.total_amount_paid) : '-'}
                                             </h4>
                                         </div>
                                     </div>
@@ -805,7 +805,7 @@ export default function ClaimDetailPage() {
                                         value={assignUserId}
                                         onChange={(e) => setAssignUserId(e.target.value)}
                                     >
-                                        <option value="">— Choose an officer —</option>
+                                        <option value="">- Choose an officer -</option>
                                         {users.length > 0 ? (
                                             users.map(u => (
                                                 <option key={u.id} value={u.id}>{u.name} ({u.email})</option>

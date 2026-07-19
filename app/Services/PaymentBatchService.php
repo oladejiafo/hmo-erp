@@ -131,7 +131,7 @@ class PaymentBatchService
             $bankDetail  = $hcp->activeBankDetail;
 
             if (! $bankDetail) {
-                continue; // Skip HCPs with no bank details — log separately
+                continue; // Skip HCPs with no bank details - log separately
             }
 
             $lines[] = implode(',', [

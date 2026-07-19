@@ -30,7 +30,7 @@ class PAPolicy
     }
 
     /**
-     * View a specific PA — must belong to user's branch.
+     * View a specific PA - must belong to user's branch.
      */
     public function view(User $user, PreAuthorisation $pa): bool
     {

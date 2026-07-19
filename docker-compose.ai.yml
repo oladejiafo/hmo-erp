@@ -1,7 +1,7 @@
-# docker-compose.yml (partial — add to your existing compose file)
+# docker-compose.yml (partial - add to your existing compose file)
 #
 # This shows how to add the AI microservice alongside your existing Laravel app.
-# The ai-service container is NOT exposed to the internet — only the Laravel
+# The ai-service container is NOT exposed to the internet - only the Laravel
 # app can reach it on the internal `hmo_network`.
 
 version: "3.9"
@@ -30,7 +30,7 @@ services:
       AI_MODEL:         "claude-3-5-sonnet-20241022"
       AI_MAX_TOKENS:    "1024"
       LOG_LEVEL:        "info"
-    # DO NOT add 'ports' here — only reachable from Laravel (internal network)
+    # DO NOT add 'ports' here - only reachable from Laravel (internal network)
     # For local dev, you can temporarily add: ports: ["8001:8001"]
     restart: unless-stopped
     healthcheck:
@@ -40,7 +40,7 @@ services:
       retries: 3
     networks:
       - hmo_network
-    # Resource limits — AI calls can be memory-intensive
+    # Resource limits - AI calls can be memory-intensive
     deploy:
       resources:
         limits:

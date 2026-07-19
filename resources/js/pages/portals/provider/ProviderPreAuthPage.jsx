@@ -1,5 +1,5 @@
 /**
- * NEW FILE — resources/js/pages/portals/provider/ProviderPreAuthPage.jsx
+ * NEW FILE - resources/js/pages/portals/provider/ProviderPreAuthPage.jsx
  */
 import React, { useState } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
@@ -71,7 +71,7 @@ export default function ProviderPreAuthPage() {
                                     <StatusBadge status={pa.status} />
                                     {pa.pa_code && <span style={codeStyle}>Code: {pa.pa_code}</span>}
                                 </div>
-                                <div style={amountStyle}>{pa.estimated_amount ? formatCurrency(pa.estimated_amount) : '—'}</div>
+                                <div style={amountStyle}>{pa.estimated_amount ? formatCurrency(pa.estimated_amount) : '-'}</div>
                             </div>
                             <div style={metaStyle}>{pa.enrollee_name} · {pa.service_type} · {pa.urgency}</div>
                             <div style={dateStyle}>Submitted {formatDate(pa.created_at)}</div>

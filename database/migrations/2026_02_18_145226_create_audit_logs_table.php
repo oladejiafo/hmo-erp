@@ -7,7 +7,7 @@ use Illuminate\Support\Facades\Schema;
 /**
  * Migration order: 005
  * Depends on: users, branches
- * audit_logs is a system-wide table — no branch_id constraint,
+ * audit_logs is a system-wide table - no branch_id constraint,
  * it records events from all branches including HQ.
  */
 return new class extends Migration

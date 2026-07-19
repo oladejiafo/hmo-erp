@@ -4,9 +4,9 @@ routers/chat.py
 POST /chat
 
 Multi-turn AI assistant with three personas:
-  staff    — claims officer / operations (default)
-  enrollee — patient-facing HealthBot (plain language)
-  finance  — finance officer (capitation, batches, reconciliation)
+  staff    - claims officer / operations (default)
+  enrollee - patient-facing HealthBot (plain language)
+  finance  - finance officer (capitation, batches, reconciliation)
 
 Input:  { messages: [{role, content}], persona, system_stats? }
 Output: { message: str }
@@ -53,7 +53,7 @@ You have deep knowledge of:
 
 Tone: Professional, precise, practical. Give actionable answers.
 If asked about specific claim IDs or patient data, explain you don't have live database access.
-Keep responses concise — under 200 words unless the question requires more detail.
+Keep responses concise - under 200 words unless the question requires more detail.
 """,
 
     "enrollee": """
@@ -68,7 +68,7 @@ Help enrollees with:
 
 Tone: Warm, simple, non-technical. Avoid medical jargon.
 Always remind enrollees to call the HMO helpline for urgent issues.
-Keep responses short and friendly — under 150 words.
+Keep responses short and friendly - under 150 words.
 """,
 
     "finance": """
@@ -103,7 +103,7 @@ LIVE SYSTEM CONTEXT (as of today {req.system_stats.get('today', 'N/A')}):
 - Active enrollees: {req.system_stats.get('active_enrollees', 'N/A')}
 """
 
-    # Build conversation — take last 10 messages to avoid token overflow
+    # Build conversation - take last 10 messages to avoid token overflow
     conversation = req.messages[-10:]
     user_message = conversation[-1].content
 

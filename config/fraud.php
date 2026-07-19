@@ -12,7 +12,7 @@
  * IMPORTANT: config() is evaluated at boot time, before the service container
  * is fully available, so we cannot call Eloquent directly here. Instead, the
  * services that use these values should call SystemSetting::get() directly
- * rather than config('fraud.*') — see updated service files.
+ * rather than config('fraud.*') - see updated service files.
  *
  * For backwards compatibility, the env-based values remain as fallbacks.
  */
@@ -44,7 +44,7 @@ return [
         'cost_spike'           => env('FRAUD_WEIGHT_COST_SPIKE', 25),
         'pattern_deviation'    => env('FRAUD_WEIGHT_DEVIATION', 10),
         'pre_auth_missing'     => env('FRAUD_WEIGHT_PRE_AUTH', 15),
-        'provider_blacklisted' => 50, // Hard fail — not user-configurable
-        'expired_plan'         => 35, // Hard fail — not user-configurable
+        'provider_blacklisted' => 50, // Hard fail - not user-configurable
+        'expired_plan'         => 35, // Hard fail - not user-configurable
     ],
 ];

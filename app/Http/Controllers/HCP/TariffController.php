@@ -56,7 +56,7 @@ class TariffController extends Controller
 
     public function destroy(HealthCareProvider $hcp, HcpTariff $tariff): JsonResponse
     {
-        // Soft-deactivate instead of hard delete — preserve claim item history
+        // Soft-deactivate instead of hard delete - preserve claim item history
         $tariff->update(['is_active' => false]);
 
         return response()->json(['message' => 'Tariff deactivated.']);

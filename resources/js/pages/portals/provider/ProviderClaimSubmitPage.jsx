@@ -1,5 +1,5 @@
 /**
- * NEW FILE — resources/js/pages/portals/provider/ProviderClaimSubmitPage.jsx
+ * NEW FILE - resources/js/pages/portals/provider/ProviderClaimSubmitPage.jsx
  * Two-step flow: verify member -> build claim with line items.
  */
 import React, { useState } from 'react';
@@ -118,7 +118,7 @@ export default function ProviderClaimSubmitPage() {
                 )}
             </div>
 
-            {/* Step 2: claim details — only once verified */}
+            {/* Step 2: claim details - only once verified */}
             {member && (
                 <>
                     <div style={sectionStyle}>

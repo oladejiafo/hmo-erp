@@ -47,7 +47,7 @@ export default function EnrolleeDetailPage() {
         }
     };
 
-    // ── Early returns FIRST — before any data access ──
+    // ── Early returns FIRST - before any data access ──
     if (isLoading) return <LoadingSpinner />;
     if (error)     return <ErrorAlert message={error.message} />;
 

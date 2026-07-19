@@ -25,7 +25,7 @@ class ClaimValidationService
         $this->validationErrors = [];
         $flags = [];
 
-        // ── HARD CHECKS — these reject the claim outright ──────────────────
+        // ── HARD CHECKS - these reject the claim outright ──────────────────
         $enrolleeCheck = $this->checkEnrolleeEligibility($claim);
         if (! $enrolleeCheck['passed']) {
             return ValidationResult::hardFail($enrolleeCheck['reason']);
@@ -41,7 +41,7 @@ class ClaimValidationService
             return ValidationResult::hardFail($hcpCheck['reason']);
         }
 
-        // ── SOFT CHECKS — these generate fraud flags ────────────────────────
+        // ── SOFT CHECKS - these generate fraud flags ────────────────────────
         $tariffCheck = $this->checkTariffCompliance($claim);
         if (! $tariffCheck['passed']) {
             $flags[] = $this->createFlag($claim, 'tariff_mismatch', $tariffCheck);
@@ -128,7 +128,7 @@ class ClaimValidationService
 
         foreach ($claim->items as $item) {
             if (! $item->tariff_id || ! $item->tariff_unit_price) {
-                // Unmatched tariff — flag for manual check
+                // Unmatched tariff - flag for manual check
                 $violations[] = "{$item->service_name}: no matching tariff found";
                 continue;
             }

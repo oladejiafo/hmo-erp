@@ -55,7 +55,7 @@ PA (Pre-Authorization) is required for:
 - Any claim likely to exceed ₦150,000
 
 Use Nigerian medical terminology and NHIA claim categories.
-Return ONLY valid JSON — no preamble, no markdown fences.
+Return ONLY valid JSON - no preamble, no markdown fences.
 """
 
 

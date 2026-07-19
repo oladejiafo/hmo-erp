@@ -12,17 +12,17 @@ use Illuminate\Support\Facades\Schema;
  * Laravel's built-in `notifications` table from Notifiable trait.
  *
  * Notification types in this system:
- *   sla_breach          — claim passed SLA deadline unresolved
- *   pa_pending          — pre-auth waiting for tier approval
- *   pa_expiring         — approved PA expiring within 48 hrs
- *   fraud_flag          — new high-risk claim flagged
- *   batch_ready         — payment batch ready for approval
- *   capitation_due      — capitation run due for the period
- *   plan_expiring       — corporate plan expiring within 30 days
- *   contract_expiring   — HCP contract expiring within 30 days
- *   compliance_due      — regulatory filing due within 7 days
- *   compliance_overdue  — regulatory filing past deadline
- *   system              — general system-level messages
+ *   sla_breach          - claim passed SLA deadline unresolved
+ *   pa_pending          - pre-auth waiting for tier approval
+ *   pa_expiring         - approved PA expiring within 48 hrs
+ *   fraud_flag          - new high-risk claim flagged
+ *   batch_ready         - payment batch ready for approval
+ *   capitation_due      - capitation run due for the period
+ *   plan_expiring       - corporate plan expiring within 30 days
+ *   contract_expiring   - HCP contract expiring within 30 days
+ *   compliance_due      - regulatory filing due within 7 days
+ *   compliance_overdue  - regulatory filing past deadline
+ *   system              - general system-level messages
  *
  * Depends on: users, branches
  */
@@ -65,7 +65,7 @@ return new class extends Migration
             $table->string('title');
             $table->text('body');
 
-            // Deep-link — where clicking the notification should navigate
+            // Deep-link - where clicking the notification should navigate
             $table->string('action_url')->nullable()
                   ->comment('Frontend path e.g. /claims/123 or /pre-auth/456');
 

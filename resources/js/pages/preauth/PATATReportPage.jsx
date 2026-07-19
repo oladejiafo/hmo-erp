@@ -63,7 +63,7 @@ export default function PATATReportPage() {
     return (
         <div>
             <PageHeader
-                title="PA TAT Report"
+                title="Pre Authorization Code TAT Report"
                 subtitle="Pre-authorisation turnaround time analysis · NHIA compliance"
                 actions={
                     <button className="btn btn-outline-secondary btn-sm d-flex align-items-center gap-2"
@@ -113,7 +113,7 @@ export default function PATATReportPage() {
                         {[
                             {
                                 label:    'Overall TAT Compliance',
-                                value:    stats.overall_compliance != null ? `${stats.overall_compliance}%` : '—',
+                                value:    stats.overall_compliance != null ? `${stats.overall_compliance}%` : '-',
                                 sub:      `${stats.total_within_tat ?? 0} / ${stats.total_resolved ?? 0} within threshold`,
                                 icon:     CheckCircle,
                                 color:    stats.overall_compliance >= 90 ? '#137333' : stats.overall_compliance >= 75 ? '#b45309' : '#c5221f',
@@ -121,16 +121,16 @@ export default function PATATReportPage() {
                                 threshold: 'NHIA target: ≥ 90%',
                             },
                             {
-                                label:    'Avg Response — Standard',
-                                value:    stats.avg_mins_standard != null ? formatMins(stats.avg_mins_standard) : '—',
+                                label:    'Avg Response - Standard',
+                                value:    stats.avg_mins_standard != null ? formatMins(stats.avg_mins_standard) : '-',
                                 sub:      'NHIA limit: 30 minutes',
                                 icon:     Timer,
                                 color:    (stats.avg_mins_standard ?? 0) <= 30 ? '#137333' : '#c5221f',
                                 bg:       (stats.avg_mins_standard ?? 0) <= 30 ? '#e6f4ea' : '#fce8e6',
                             },
                             {
-                                label:    'Avg Response — Urgent',
-                                value:    stats.avg_mins_urgent != null ? formatMins(stats.avg_mins_urgent) : '—',
+                                label:    'Avg Response - Urgent',
+                                value:    stats.avg_mins_urgent != null ? formatMins(stats.avg_mins_urgent) : '-',
                                 sub:      'NHIA limit: 60 minutes',
                                 icon:     AlertTriangle,
                                 color:    (stats.avg_mins_urgent ?? 0) <= 60 ? '#137333' : '#c5221f',
@@ -138,7 +138,7 @@ export default function PATATReportPage() {
                             },
                             {
                                 label:    'Emergency Retro Reviews',
-                                value:    stats.emergency_within_24h != null ? `${stats.emergency_within_24h}%` : '—',
+                                value:    stats.emergency_within_24h != null ? `${stats.emergency_within_24h}%` : '-',
                                 sub:      'Reviewed within 24 hrs',
                                 icon:     TrendingUp,
                                 color:    '#0f4c81',
@@ -177,7 +177,7 @@ export default function PATATReportPage() {
                         <div className="col-lg-8">
                             <div className="card border-0 shadow-sm h-100">
                                 <div className="card-header bg-white border-bottom py-3">
-                                    <h6 className="fw-bold mb-0" style={{ fontSize: 14 }}>Daily PA Volume & Avg Response Time</h6>
+                                    <h6 className="fw-bold mb-0" style={{ fontSize: 14 }}>Daily Pre Authorization Code Volume & Avg Response Time</h6>
                                 </div>
                                 <div className="card-body">
                                     {stats.daily_trend?.length > 0 ? (
@@ -191,7 +191,7 @@ export default function PATATReportPage() {
                                                 <Tooltip
                                                     formatter={(val, name) => [
                                                         name === 'avg_mins' ? formatMins(val) : val,
-                                                        name === 'avg_mins' ? 'Avg Response' : 'PA Count',
+                                                        name === 'avg_mins' ? 'Avg Response' : 'Pre-Auth. Code Count',
                                                     ]}
                                                 />
                                                 <Legend />
@@ -229,7 +229,7 @@ export default function PATATReportPage() {
                                                         {threshold.label}
                                                     </span>
                                                     <span className="fw-bold" style={{ fontSize: 14, color }}>
-                                                        {d != null ? `${pct}%` : '—'}
+                                                        {d != null ? `${pct}%` : '-'}
                                                     </span>
                                                 </div>
                                                 <div className="progress" style={{ height: 8, borderRadius: 4 }}>
@@ -278,7 +278,7 @@ export default function PATATReportPage() {
                                     <table className="table table-hover mb-0">
                                         <thead className="table-light">
                                             <tr>
-                                                {['PA Code', 'Enrollee', 'Urgency', 'Submitted', 'Response Time', 'TAT Limit', 'Overage', 'Reviewer'].map(h => (
+                                                {['Pre-Auth. Code', 'Enrollee', 'Urgency', 'Submitted', 'Response Time', 'TAT Limit', 'Overage', 'Reviewer'].map(h => (
                                                     <th key={h} style={{ fontSize: 11, fontWeight: 600, color: '#718096', padding: '10px 14px', textTransform: 'uppercase', letterSpacing: '0.4px' }}>{h}</th>
                                                 ))}
                                             </tr>
@@ -316,7 +316,7 @@ export default function PATATReportPage() {
                                                             +{formatMins(over)}
                                                         </td>
                                                         <td style={{ fontSize: 12, padding: '10px 14px' }}>
-                                                            {req.reviewed_by_name ?? '—'}
+                                                            {req.reviewed_by_name ?? '-'}
                                                         </td>
                                                     </tr>
                                                 );
@@ -334,7 +334,7 @@ export default function PATATReportPage() {
 }
 
 function formatMins(mins) {
-    if (!mins && mins !== 0) return '—';
+    if (!mins && mins !== 0) return '-';
     const h = Math.floor(mins / 60);
     const m = mins % 60;
     return h > 0 ? `${h}h ${m}m` : `${m}m`;

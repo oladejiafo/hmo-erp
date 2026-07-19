@@ -39,7 +39,7 @@ use Carbon\Carbon;
 class CapitationController extends Controller
 {
     // ─────────────────────────────────────────────────────────────────────────
-    // INDEX — list runs for this branch
+    // INDEX - list runs for this branch
     // GET /finance/capitation
     // ─────────────────────────────────────────────────────────────────────────
 
@@ -68,7 +68,7 @@ class CapitationController extends Controller
     }
 
     // ─────────────────────────────────────────────────────────────────────────
-    // SUMMARY — KPI cards for the capitation list page
+    // SUMMARY - KPI cards for the capitation list page
     // GET /finance/capitation/summary
     // ─────────────────────────────────────────────────────────────────────────
 
@@ -124,7 +124,7 @@ class CapitationController extends Controller
     }
 
     // ─────────────────────────────────────────────────────────────────────────
-    // GENERATE — snapshot headcount and create a draft run
+    // GENERATE - snapshot headcount and create a draft run
     // POST /finance/capitation/generate
     // ─────────────────────────────────────────────────────────────────────────
 
@@ -259,7 +259,7 @@ class CapitationController extends Controller
             }
 
             if (empty($records)) {
-                // Rollback by throwing — no records means no valid HCPs
+                // Rollback by throwing - no records means no valid HCPs
                 throw new \RuntimeException('No active HCPs with enrolled members found. Ensure HCPs have active enrollees before generating a run.');
             }
 
@@ -284,7 +284,7 @@ class CapitationController extends Controller
     }
 
     // ─────────────────────────────────────────────────────────────────────────
-    // SHOW — run detail with all HCP line items (headcount reconciliation)
+    // SHOW - run detail with all HCP line items (headcount reconciliation)
     // GET /finance/capitation/{run}
     // ─────────────────────────────────────────────────────────────────────────
 
@@ -303,7 +303,7 @@ class CapitationController extends Controller
     }
 
     // ─────────────────────────────────────────────────────────────────────────
-    // ADJUST RECORD — edit a single HCP line (add adjustment, change counts)
+    // ADJUST RECORD - edit a single HCP line (add adjustment, change counts)
     // PATCH /finance/capitation/{run}/records/{record}
     // ─────────────────────────────────────────────────────────────────────────
 
@@ -346,7 +346,7 @@ class CapitationController extends Controller
     }
 
     // ─────────────────────────────────────────────────────────────────────────
-    // APPROVE — finalise the run and create a capitation payment batch
+    // APPROVE - finalise the run and create a capitation payment batch
     // POST /finance/capitation/{run}/approve
     // ─────────────────────────────────────────────────────────────────────────
 
@@ -373,7 +373,7 @@ class CapitationController extends Controller
                 'batch_number'      => $batchNumber,
                 'batch_type'        => 'capitation',
                 'capitation_run_id' => $run->id,
-                'description'       => "Capitation — {$run->period_label}",
+                'description'       => "Capitation - {$run->period_label}",
                 'total_amount'      => $run->total_amount,
                 'claim_count'       => $run->total_hcp_count,
                 'provider_count'    => $run->total_hcp_count,
@@ -408,7 +408,7 @@ class CapitationController extends Controller
     }
 
     // ─────────────────────────────────────────────────────────────────────────
-    // RATE INDEX — list capitation rates for HCPs in this branch
+    // RATE INDEX - list capitation rates for HCPs in this branch
     // GET /finance/capitation/rates
     // ─────────────────────────────────────────────────────────────────────────
 
@@ -448,7 +448,7 @@ class CapitationController extends Controller
     }
 
     // ─────────────────────────────────────────────────────────────────────────
-    // RATE STORE — set or update capitation rate for an HCP
+    // RATE STORE - set or update capitation rate for an HCP
     // POST /finance/capitation/rates
     // ─────────────────────────────────────────────────────────────────────────
 

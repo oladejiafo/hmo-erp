@@ -8,15 +8,15 @@ use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 
 /**
- * LicenseController — ERP
+ * LicenseController - ERP
  *
  * Exposes license status to the frontend and handles emergency token submission.
  * Super-admin only for management endpoints; status endpoint is broader.
  *
  * ROUTES (add to routes/api.php):
- *   GET  /settings/license               → status()         — all admins
- *   POST /settings/license/emergency     → applyEmergency() — super_admin only
- *   POST /settings/license/check-in      → forceCheckin()   — super_admin only
+ *   GET  /settings/license               → status()         - all admins
+ *   POST /settings/license/emergency     → applyEmergency() - super_admin only
+ *   POST /settings/license/check-in      → forceCheckin()   - super_admin only
  *
  * FILE: app/Http/Controllers/Settings/LicenseController.php
  */

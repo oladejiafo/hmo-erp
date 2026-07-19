@@ -14,7 +14,7 @@
  *     loading={isLoading}
  *   />
  *
- * IMPORTANT — the `icon` prop must be a React component (e.g. from lucide-react),
+ * IMPORTANT - the `icon` prop must be a React component (e.g. from lucide-react),
  * NOT a JSX element. This component calls it as <Icon size={18} />.
  * Passing <FileText /> (with angle brackets) will cause:
  *   "Objects are not valid as a React child (found: object with keys {$$typeof, render})"
@@ -48,7 +48,7 @@ export default function StatCard({ title, value, subtitle, icon, color = 'primar
                             className="rounded-2 d-flex align-items-center justify-content-center flex-shrink-0"
                             style={{ width: 36, height: 36, background: colors.bg }}
                         >
-                            {/* Call Icon as a component — NOT as {Icon} which renders the object */}
+                            {/* Call Icon as a component - NOT as {Icon} which renders the object */}
                             <Icon size={18} color={colors.icon} />
                         </div>
                     )}
@@ -62,7 +62,7 @@ export default function StatCard({ title, value, subtitle, icon, color = 'primar
                 ) : (
                     <>
                         <div className="fw-bold" style={{ fontSize: 26 }}>
-                            {value ?? '—'}
+                            {value ?? '-'}
                         </div>
                         {subtitle && (
                             <p className="text-muted mb-0 mt-1" style={{ fontSize: 12 }}>

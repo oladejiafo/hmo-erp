@@ -139,7 +139,7 @@ function BatchesTab({ navigate }) {
 
     const kpis = [
         { label: 'Pending Approval', value: batches.filter(b => b.status === 'submitted').length, color: '#b05e00', bg: '#fef7e0', icon: <Clock size={18} /> },
-        { label: 'Approved — Queued', value: batches.filter(b => b.status === 'approved').length, color: '#1967d2', bg: '#e8f0fe', icon: <FileText size={18} /> },
+        { label: 'Approved - Queued', value: batches.filter(b => b.status === 'approved').length, color: '#1967d2', bg: '#e8f0fe', icon: <FileText size={18} /> },
         { label: 'Completed this page', value: batches.filter(b => b.status === 'completed').length, color: '#137333', bg: '#e6f4ea', icon: <TrendingUp size={18} /> },
         { label: 'Total Value (page)', value: formatCurrency(batches.reduce((s, b) => s + parseFloat(b.total_amount ?? 0), 0), false), color: '#5e35b1', bg: '#f3e8fd', icon: <Wallet size={18} /> },
     ];
@@ -218,7 +218,7 @@ function BatchesTab({ navigate }) {
                                             <td className="text-center" style={{ fontSize: 13 }}>{b.provider_count}</td>
                                             <td className="text-end fw-bold" style={{ fontSize: 14 }}>{formatCurrency(b.total_amount)}</td>
                                             <td style={{ fontSize: 12 }}>{formatDateTime(b.created_at)}</td>
-                                            <td style={{ fontSize: 12 }}>{b.approved_by?.name ?? <span className="text-muted">—</span>}</td>
+                                            <td style={{ fontSize: 12 }}>{b.approved_by?.name ?? <span className="text-muted">-</span>}</td>
                                             <td>
                                                 <StatusBadge status={b.status} color={BATCH_STATUS_COLOR[b.status] ?? 'secondary'} label={b.status_label ?? b.status} />
                                             </td>
@@ -308,7 +308,7 @@ function LedgerTab() {
                         </select>
                         <input type="date" className="form-control form-control-sm" style={{ width: 150 }}
                                value={dateFrom} onChange={e => { setDateFrom(e.target.value); setPage(1); }} />
-                        <span className="text-muted">—</span>
+                        <span className="text-muted">-</span>
                         <input type="date" className="form-control form-control-sm" style={{ width: 150 }}
                                value={dateTo} onChange={e => { setDateTo(e.target.value); setPage(1); }} />
                         {(entryType || dateFrom || dateTo) && (
@@ -357,12 +357,12 @@ function LedgerTab() {
                                                 </span>
                                             </td>
                                             <td style={{ fontSize: 12 }}>{e.description}</td>
-                                            <td className="font-monospace" style={{ fontSize: 11 }}>{e.reference_number ?? '—'}</td>
+                                            <td className="font-monospace" style={{ fontSize: 11 }}>{e.reference_number ?? '-'}</td>
                                             <td className="text-end fw-semibold" style={{ fontSize: 13, color: e.entry_type === 'credit' ? '#137333' : '#c5221f' }}>
                                                 {e.entry_type === 'credit' ? '+' : '−'}{formatCurrency(Math.abs(e.amount))}
                                             </td>
                                             <td className="text-end" style={{ fontSize: 12 }}>
-                                                {e.running_balance != null ? formatCurrency(e.running_balance) : <span className="text-muted">—</span>}
+                                                {e.running_balance != null ? formatCurrency(e.running_balance) : <span className="text-muted">-</span>}
                                             </td>
                                         </tr>
                                     ))}
@@ -522,7 +522,7 @@ function HCPPaymentSummaryTab({ navigate }) {
                                                 </td>
                                                 <td>
                                                     <span className="badge" style={{ background: tc.bg, color: tc.text, fontSize: 11, textTransform: 'capitalize' }}>
-                                                        {r.tier ?? '—'}
+                                                        {r.tier ?? '-'}
                                                     </span>
                                                 </td>
                                                 <td>
@@ -533,17 +533,17 @@ function HCPPaymentSummaryTab({ navigate }) {
                                                 <td className="text-end font-monospace">
                                                     {r.capitation_amount > 0
                                                         ? <span style={{ color: '#0f4c81', fontWeight: 600 }}>{formatCurrency(r.capitation_amount)}</span>
-                                                        : <span className="text-muted">—</span>}
+                                                        : <span className="text-muted">-</span>}
                                                 </td>
                                                 <td className="text-center">
                                                     {r.ffs_pending_count > 0
                                                         ? <span className="badge bg-warning-subtle text-warning fw-bold">{r.ffs_pending_count} pending</span>
-                                                        : <span className="text-muted">—</span>}
+                                                        : <span className="text-muted">-</span>}
                                                 </td>
                                                 <td className="text-end font-monospace">
                                                     {r.ffs_pending_amount > 0
                                                         ? <span style={{ color: '#166534', fontWeight: 600 }}>{formatCurrency(r.ffs_pending_amount)}</span>
-                                                        : <span className="text-muted">—</span>}
+                                                        : <span className="text-muted">-</span>}
                                                 </td>
                                                 <td className="text-end">
                                                     <strong style={{ color: '#5e35b1', fontSize: 14 }}>{formatCurrency(r.total_liability)}</strong>

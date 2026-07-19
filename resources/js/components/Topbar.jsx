@@ -26,7 +26,7 @@ export default function Topbar({ onToggleSidebar }) {
         return () => document.removeEventListener('mousedown', handler);
     }, [menuOpen]);
 
-    // HQ branch switcher — only fetch when user is HQ
+    // HQ branch switcher - only fetch when user is HQ
     const { data: branchesData } = useQuery({
         queryKey: ['branches'],
         queryFn:  getBranches,
@@ -35,7 +35,7 @@ export default function Topbar({ onToggleSidebar }) {
     });
     const branches = branchesData?.data ?? [];
 
-    // Notification count — poll every 30s
+    // Notification count - poll every 30s
     const { data: notifData } = useQuery({
         queryKey:        ['notification-count'],
         queryFn:         fetchNotificationCount,
@@ -178,7 +178,7 @@ export default function Topbar({ onToggleSidebar }) {
                 </div>
             )}
 
-            {/* User dropdown — ref-based close, no backdrop div needed */}
+            {/* User dropdown - ref-based close, no backdrop div needed */}
             <div className="position-relative" ref={menuRef}>
                 <button
                     className="btn btn-light btn-sm d-flex align-items-center gap-2"

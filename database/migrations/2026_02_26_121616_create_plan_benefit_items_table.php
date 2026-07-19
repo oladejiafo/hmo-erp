@@ -8,7 +8,7 @@ use Illuminate\Support\Facades\Schema;
  * FILE: database/migrations/2025_07_02_000002_create_plan_benefit_items_table.php
  *
  * Granular per-service benefit definitions for each plan.
- * These drive claim validation — if a service is not in the benefit items
+ * These drive claim validation - if a service is not in the benefit items
  * or is marked 'not_covered', the claim is auto-rejected.
  *
  * Examples:

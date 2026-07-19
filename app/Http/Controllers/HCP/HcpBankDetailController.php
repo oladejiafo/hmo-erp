@@ -56,7 +56,7 @@ class HcpBankDetailController extends Controller
                 'account_type'   => $b->account_type,
                 'sort_code'      => $b->sort_code,
                 'is_verified'    => $b->is_verified,
-                'status_label'   => $b->is_verified ? 'Verified — Active for payments' : 'Pending verification',
+                'status_label'   => $b->is_verified ? 'Verified - Active for payments' : 'Pending verification',
                 'added_by'       => $b->addedBy
                     ? ['id' => $b->addedBy->id, 'name' => $b->addedBy->name]
                     : null,
@@ -93,7 +93,7 @@ class HcpBankDetailController extends Controller
             'verified_at'    => null,
         ]);
 
-        Log::info('HCP bank detail added — pending verification', [
+        Log::info('HCP bank detail added - pending verification', [
             'hcp_id'         => $hcp->id,
             'hcp_name'       => $hcp->name,
             'bank_detail_id' => $bankDetail->id,
@@ -116,7 +116,7 @@ class HcpBankDetailController extends Controller
     }
 
     /**
-     * Verify a bank account (CHECKER step) — requires hcps.bank_details_verify permission.
+     * Verify a bank account (CHECKER step) - requires hcps.bank_details_verify permission.
      *
      * MAKER-CHECKER ENFORCEMENT:
      *   The user calling this endpoint MUST be different from the user who added the record.
@@ -140,7 +140,7 @@ class HcpBankDetailController extends Controller
             ], 403);
         }
 
-        // Already verified — idempotent but informative
+        // Already verified - idempotent but informative
         if ($bankDetail->is_verified) {
             return response()->json([
                 'message'    => 'This bank account is already verified.',
@@ -170,7 +170,7 @@ class HcpBankDetailController extends Controller
             'verified_by' => request()->user()->id,
         ]);
 
-        Log::info('HCP bank detail verified — now active for payments', [
+        Log::info('HCP bank detail verified - now active for payments', [
             'hcp_id'              => $hcp->id,
             'hcp_name'            => $hcp->name,
             'bank_detail_id'      => $bankDetail->id,
@@ -190,7 +190,7 @@ class HcpBankDetailController extends Controller
     /**
      * Delete a bank account from the HCP's records.
      *
-     * Cannot delete the only verified (active) account — doing so would leave
+     * Cannot delete the only verified (active) account - doing so would leave
      * the HCP unable to receive payments. Add and verify a replacement first.
      */
     public function destroy(HealthCareProvider $hcp, HcpBankDetail $bankDetail): JsonResponse

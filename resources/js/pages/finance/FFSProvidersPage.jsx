@@ -86,7 +86,7 @@ export default function FFSProvidersPage() {
         <div>
             <PageHeader
                 title="FFS Providers"
-                subtitle="Fee-for-Service and Hybrid healthcare providers — claim-based payment tracking"
+                subtitle="Fee-for-Service and Hybrid healthcare providers - claim-based payment tracking"
             />
 
             {/* Back button */}
@@ -102,10 +102,10 @@ export default function FFSProvidersPage() {
             {/* KPI Cards */}
             <div className="row g-3 mb-4">
                 {[
-                    { label: 'FFS Providers',       value: summary.ffs_count ?? '—',                          color: '#166534', bg: '#f0fdf4', icon: <Layers size={18} /> },
-                    { label: 'Hybrid Providers',    value: summary.hybrid_count ?? '—',                       color: '#854d0e', bg: '#fef9c3', icon: <Building2 size={18} /> },
-                    { label: 'Approved — Unbatched',value: formatCurrency(summary.total_pending_amount ?? 0), color: '#b45309', bg: '#fef3c7', icon: <FileText size={18} /> },
-                    { label: 'Expiring Contracts',  value: summary.expiring_contracts ?? '—',                 color: '#c5221f', bg: '#fce8e6', icon: <CalendarDays size={18} /> },
+                    { label: 'FFS Providers',       value: summary.ffs_count ?? '-',                          color: '#166534', bg: '#f0fdf4', icon: <Layers size={18} /> },
+                    { label: 'Hybrid Providers',    value: summary.hybrid_count ?? '-',                       color: '#854d0e', bg: '#fef9c3', icon: <Building2 size={18} /> },
+                    { label: 'Approved - Unbatched',value: formatCurrency(summary.total_pending_amount ?? 0), color: '#b45309', bg: '#fef3c7', icon: <FileText size={18} /> },
+                    { label: 'Expiring Contracts',  value: summary.expiring_contracts ?? '-',                 color: '#c5221f', bg: '#fce8e6', icon: <CalendarDays size={18} /> },
                 ].map(k => (
                     <div key={k.label} className="col-md-3 col-6">
                         <div className="card border-0 shadow-sm">
@@ -130,7 +130,7 @@ export default function FFSProvidersPage() {
             {!trendLoading && trend.length > 0 && (
                 <div className="card border-0 shadow-sm mb-4" style={{ borderRadius: 12 }}>
                     <div className="card-body">
-                        <div className="fw-semibold mb-1" style={{ fontSize: 14 }}>FFS vs Capitation Spend — Last 12 Months</div>
+                        <div className="fw-semibold mb-1" style={{ fontSize: 14 }}>FFS vs Capitation Spend - Last 12 Months</div>
                         <div className="text-muted mb-3" style={{ fontSize: 12 }}>Completed batches only</div>
                         <ResponsiveContainer width="100%" height={220}>
                             <BarChart data={trend} margin={{ top: 5, right: 20, left: 10, bottom: 5 }}>
@@ -226,7 +226,7 @@ export default function FFSProvidersPage() {
                                                 </td>
                                                 <td>
                                                     <span className="badge" style={{ background: tc.bg, color: tc.text, fontSize: 11, textTransform: 'capitalize' }}>
-                                                        {p.tier ?? '—'}
+                                                        {p.tier ?? '-'}
                                                     </span>
                                                 </td>
                                                 <td>
@@ -247,14 +247,14 @@ export default function FFSProvidersPage() {
                                                     {p.ffs_pending_amount > 0 ? (
                                                         <strong style={{ color: '#166534' }}>{formatCurrency(p.ffs_pending_amount)}</strong>
                                                     ) : (
-                                                        <span className="text-muted">—</span>
+                                                        <span className="text-muted">-</span>
                                                     )}
                                                 </td>
                                                 <td>
                                                     {p.ffs_contract_ref ? (
                                                         <span className="font-monospace" style={{ fontSize: 11 }}>{p.ffs_contract_ref}</span>
                                                     ) : (
-                                                        <span className="text-muted">—</span>
+                                                        <span className="text-muted">-</span>
                                                     )}
                                                 </td>
                                                 <td>

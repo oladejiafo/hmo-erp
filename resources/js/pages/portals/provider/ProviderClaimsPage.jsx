@@ -1,5 +1,5 @@
 /**
- * NEW FILE — resources/js/pages/portals/provider/ProviderClaimsPage.jsx
+ * NEW FILE - resources/js/pages/portals/provider/ProviderClaimsPage.jsx
  */
 import React, { useState } from 'react';
 import { useQuery } from '@tanstack/react-query';

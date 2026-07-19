@@ -7,7 +7,7 @@ use Illuminate\Support\Facades\DB;
 
 /**
  * Seeds every configurable system setting with sensible defaults.
- * Safe to re-run — uses upsert on the unique `key` column.
+ * Safe to re-run - uses upsert on the unique `key` column.
  *
  * FILE LOCATION: database/seeders/SystemSettingSeeder.php
  *
@@ -21,7 +21,7 @@ class SystemSettingSeeder extends Seeder
         $settings = [
 
             // ═══════════════════════════════════════════════════════════════
-            // GROUP: hmo_info — Organisation identity
+            // GROUP: hmo_info - Organisation identity
             // ═══════════════════════════════════════════════════════════════
             [
                 'key'           => 'hmo_info.name',
@@ -172,7 +172,7 @@ class SystemSettingSeeder extends Seeder
             ],
 
             // ═══════════════════════════════════════════════════════════════
-            // GROUP: financial — Amounts, rates, thresholds
+            // GROUP: financial - Amounts, rates, thresholds
             // ═══════════════════════════════════════════════════════════════
             [
                 'key'              => 'financial.vat_rate',
@@ -297,7 +297,7 @@ class SystemSettingSeeder extends Seeder
             ],
 
             // ═══════════════════════════════════════════════════════════════
-            // GROUP: sla — Per-claim-type processing targets (business days)
+            // GROUP: sla - Per-claim-type processing targets (business days)
             // ═══════════════════════════════════════════════════════════════
             [
                 'key'              => 'sla.emergency',
@@ -402,11 +402,11 @@ class SystemSettingSeeder extends Seeder
             ],
 
             // ═══════════════════════════════════════════════════════════════
-            // GROUP: pre_auth — PA TAT (Turn-Around-Time) thresholds
+            // GROUP: pre_auth - PA TAT (Turn-Around-Time) thresholds
             // ═══════════════════════════════════════════════════════════════
             [
                 'key'              => 'pre_auth.standard_warn_minutes',
-                'label'            => 'Standard PA — Warning at (minutes)',
+                'label'            => 'Standard PA - Warning at (minutes)',
                 'description'      => 'A standard PA pending this long shows a yellow warning.',
                 'group'            => 'pre_auth',
                 'type'             => 'integer',
@@ -417,7 +417,7 @@ class SystemSettingSeeder extends Seeder
             ],
             [
                 'key'              => 'pre_auth.standard_limit_minutes',
-                'label'            => 'Standard PA — Breach at (minutes)',
+                'label'            => 'Standard PA - Breach at (minutes)',
                 'description'      => 'A standard PA pending this long is marked as overdue.',
                 'group'            => 'pre_auth',
                 'type'             => 'integer',
@@ -428,7 +428,7 @@ class SystemSettingSeeder extends Seeder
             ],
             [
                 'key'              => 'pre_auth.urgent_warn_minutes',
-                'label'            => 'Urgent PA — Warning at (minutes)',
+                'label'            => 'Urgent PA - Warning at (minutes)',
                 'group'            => 'pre_auth',
                 'type'             => 'integer',
                 'default_value'    => '30',
@@ -438,7 +438,7 @@ class SystemSettingSeeder extends Seeder
             ],
             [
                 'key'              => 'pre_auth.urgent_limit_minutes',
-                'label'            => 'Urgent PA — Breach at (minutes)',
+                'label'            => 'Urgent PA - Breach at (minutes)',
                 'group'            => 'pre_auth',
                 'type'             => 'integer',
                 'default_value'    => '60',
@@ -448,7 +448,7 @@ class SystemSettingSeeder extends Seeder
             ],
             [
                 'key'              => 'pre_auth.emergency_warn_minutes',
-                'label'            => 'Emergency PA — Warning at (minutes)',
+                'label'            => 'Emergency PA - Warning at (minutes)',
                 'description'      => 'Default is 720 minutes (12 hours).',
                 'group'            => 'pre_auth',
                 'type'             => 'integer',
@@ -459,7 +459,7 @@ class SystemSettingSeeder extends Seeder
             ],
             [
                 'key'              => 'pre_auth.emergency_limit_minutes',
-                'label'            => 'Emergency PA — Breach at (minutes)',
+                'label'            => 'Emergency PA - Breach at (minutes)',
                 'description'      => 'Default is 1440 minutes (24 hours).',
                 'group'            => 'pre_auth',
                 'type'             => 'integer',
@@ -470,7 +470,7 @@ class SystemSettingSeeder extends Seeder
             ],
 
             // ═══════════════════════════════════════════════════════════════
-            // GROUP: fraud — Fraud detection thresholds and score weights
+            // GROUP: fraud - Fraud detection thresholds and score weights
             // ═══════════════════════════════════════════════════════════════
             [
                 'key'              => 'fraud.auto_quarantine_threshold',
@@ -574,7 +574,7 @@ class SystemSettingSeeder extends Seeder
             // Score weights stored individually so each has its own label/description
             [
                 'key'              => 'fraud.weight_duplicate_claim',
-                'label'            => 'Score Weight — Duplicate Claim',
+                'label'            => 'Score Weight - Duplicate Claim',
                 'group'            => 'fraud',
                 'type'             => 'integer',
                 'default_value'    => '40',
@@ -584,7 +584,7 @@ class SystemSettingSeeder extends Seeder
             ],
             [
                 'key'              => 'fraud.weight_tariff_mismatch',
-                'label'            => 'Score Weight — Tariff Mismatch',
+                'label'            => 'Score Weight - Tariff Mismatch',
                 'group'            => 'fraud',
                 'type'             => 'integer',
                 'default_value'    => '25',
@@ -594,7 +594,7 @@ class SystemSettingSeeder extends Seeder
             ],
             [
                 'key'              => 'fraud.weight_over_benefit_limit',
-                'label'            => 'Score Weight — Over Benefit Limit',
+                'label'            => 'Score Weight - Over Benefit Limit',
                 'group'            => 'fraud',
                 'type'             => 'integer',
                 'default_value'    => '20',
@@ -604,7 +604,7 @@ class SystemSettingSeeder extends Seeder
             ],
             [
                 'key'              => 'fraud.weight_frequency_anomaly',
-                'label'            => 'Score Weight — Frequency Anomaly',
+                'label'            => 'Score Weight - Frequency Anomaly',
                 'group'            => 'fraud',
                 'type'             => 'integer',
                 'default_value'    => '20',
@@ -614,7 +614,7 @@ class SystemSettingSeeder extends Seeder
             ],
             [
                 'key'              => 'fraud.weight_cost_spike',
-                'label'            => 'Score Weight — Cost Spike',
+                'label'            => 'Score Weight - Cost Spike',
                 'group'            => 'fraud',
                 'type'             => 'integer',
                 'default_value'    => '25',
@@ -624,7 +624,7 @@ class SystemSettingSeeder extends Seeder
             ],
             [
                 'key'              => 'fraud.weight_pattern_deviation',
-                'label'            => 'Score Weight — Pattern Deviation',
+                'label'            => 'Score Weight - Pattern Deviation',
                 'group'            => 'fraud',
                 'type'             => 'integer',
                 'default_value'    => '10',
@@ -634,7 +634,7 @@ class SystemSettingSeeder extends Seeder
             ],
             [
                 'key'              => 'fraud.weight_pre_auth_missing',
-                'label'            => 'Score Weight — Pre-Auth Missing',
+                'label'            => 'Score Weight - Pre-Auth Missing',
                 'group'            => 'fraud',
                 'type'             => 'integer',
                 'default_value'    => '15',
@@ -644,11 +644,11 @@ class SystemSettingSeeder extends Seeder
             ],
 
             // ═══════════════════════════════════════════════════════════════
-            // GROUP: notifications — Alert trigger thresholds
+            // GROUP: notifications - Alert trigger thresholds
             // ═══════════════════════════════════════════════════════════════
             [
                 'key'              => 'notifications.compliance_critical_days',
-                'label'            => 'Compliance Filing — Critical Alert Window',
+                'label'            => 'Compliance Filing - Critical Alert Window',
                 'description'      => 'Filings due within this many days trigger a "critical" severity notification.',
                 'group'            => 'notifications',
                 'type'             => 'integer',
@@ -659,7 +659,7 @@ class SystemSettingSeeder extends Seeder
             ],
             [
                 'key'              => 'notifications.compliance_warning_days',
-                'label'            => 'Compliance Filing — Warning Alert Window',
+                'label'            => 'Compliance Filing - Warning Alert Window',
                 'description'      => 'Filings due within this many days (but after the critical window) trigger a "warning" notification.',
                 'group'            => 'notifications',
                 'type'             => 'integer',
@@ -681,7 +681,7 @@ class SystemSettingSeeder extends Seeder
             ],
 
             // ═══════════════════════════════════════════════════════════════
-            // GROUP: operational — System behaviour settings
+            // GROUP: operational - System behaviour settings
             // ═══════════════════════════════════════════════════════════════
             [
                 'key'              => 'operational.token_lifetime_hours',
@@ -729,7 +729,7 @@ class SystemSettingSeeder extends Seeder
             ],
         ];
 
-        // Upsert — safe to re-run; only updates non-value columns on conflict
+        // Upsert - safe to re-run; only updates non-value columns on conflict
         // (never overwrites a live value that an admin has changed)
         foreach ($settings as $setting) {
             DB::table('system_settings')->upsert(

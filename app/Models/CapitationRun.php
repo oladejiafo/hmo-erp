@@ -15,9 +15,9 @@ use Carbon\Carbon;
  * Groups all capitation_records (per-HCP lines) for a given period.
  *
  * Status lifecycle:
- *   draft   — generated, under review. Records can be edited.
- *   approved — Finance approved. Payment batch created/pending.
- *   paid    — Payment batch completed, HCPs have been paid.
+ *   draft   - generated, under review. Records can be edited.
+ *   approved - Finance approved. Payment batch created/pending.
+ *   paid    - Payment batch completed, HCPs have been paid.
  *
  * @property int         $id
  * @property int         $branch_id

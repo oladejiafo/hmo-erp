@@ -131,7 +131,7 @@ class ClaimController extends Controller
     }
 
     /**
-     * Review a claim — officer approves/adjusts individual items.
+     * Review a claim - officer approves/adjusts individual items.
      * Route: POST /claims/{claim}/process
      */
     public function process(ProcessClaimRequest $request, Claim $claim): JsonResponse
@@ -190,6 +190,8 @@ class ClaimController extends Controller
 
         $claim->enrollee->deductBenefit($request->approved_amount);
 
+        app(\App\Services\NotificationService::class)->providerClaimDecision($claim);
+
         return response()->json([
             'message' => 'Claim approved and added to payment queue.',
             'data'    => new ClaimResource($claim->fresh(['items', 'statusLogs'])),
@@ -203,6 +205,8 @@ class ClaimController extends Controller
     public function reject(RejectClaimRequest $request, Claim $claim): JsonResponse
     {
         $this->stateService->reject($claim, $request->reason);
+
+        app(\App\Services\NotificationService::class)->providerClaimDecision($claim);
 
         return response()->json([
             'message' => 'Claim rejected.',

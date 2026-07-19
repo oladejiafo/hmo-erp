@@ -21,10 +21,12 @@ trait HasAuditLog
 
     public static function bootHasAuditLog(): void
     {
+        /** @disregard P1013 */
         static::created(function ($model) {
             static::writeAudit('created', $model, [], $model->getAttributes());
         });
 
+        /** @disregard P1013 */
         static::updated(function ($model) {
             $dirty = $model->getDirty();
             if (empty($dirty)) {
@@ -34,6 +36,7 @@ trait HasAuditLog
             static::writeAudit('updated', $model, $original, $dirty);
         });
 
+        /** @disregard P1013 */
         static::deleted(function ($model) {
             static::writeAudit('deleted', $model, $model->getOriginal(), []);
         });

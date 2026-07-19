@@ -71,13 +71,13 @@ class ContractResource extends JsonResource
 
             'created_at'       => $this->created_at?->toISOString(),
 
-            // Who signed the contract — loaded on demand
+            // Who signed the contract - loaded on demand
             'signed_by'        => $this->whenLoaded('signedBy', fn () => $this->signedBy ? [
                 'id'   => $this->signedBy->id,
                 'name' => $this->signedBy->name,
             ] : null),
 
-            // Parent HCP — loaded on demand
+            // Parent HCP - loaded on demand
             'hcp'              => $this->whenLoaded('hcp', fn () => [
                 'id'       => $this->hcp->id,
                 'hcp_code' => $this->hcp->hcp_code,

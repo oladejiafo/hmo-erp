@@ -6,7 +6,7 @@ use Illuminate\Support\Facades\Schema;
 
 /**
  * Migration order: 003
- * Depends on: users (morphs — no hard FK but user must exist)
+ * Depends on: users (morphs - no hard FK but user must exist)
  * This is the standard Sanctum migration.
  */
 return new class extends Migration

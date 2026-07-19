@@ -1,7 +1,7 @@
 /**
  * FILE LOCATION: resources/js/pages/alerts/AlertsPage.jsx
  * ROUTE:         /alerts
- * PERMISSION:    authenticated (no extra permission — all staff see their own)
+ * PERMISSION:    authenticated (no extra permission - all staff see their own)
  *
  * In-app notification centre. Shows all notifications for the logged-in user,
  * filterable by type and read state. Clicking a notification marks it read
@@ -26,8 +26,8 @@ import { PageHeader, LoadingSpinner, Pagination } from '../../components/ui/inde
 
 const TYPE_META = {
     sla_breach:         { icon: Clock,        label: 'SLA Breach',       color: '#dc2626', bg: '#fef2f2' },
-    pa_pending:         { icon: ShieldAlert,   label: 'PA Approval',      color: '#7c3aed', bg: '#f5f3ff' },
-    pa_expiring:        { icon: ShieldAlert,   label: 'PA Expiring',      color: '#d97706', bg: '#fffbeb' },
+    pa_pending:         { icon: ShieldAlert,   label: 'Pre-Auth. Approval',      color: '#7c3aed', bg: '#f5f3ff' },
+    pa_expiring:        { icon: ShieldAlert,   label: 'Pre-Auth. Expiring',      color: '#d97706', bg: '#fffbeb' },
     fraud_flag:         { icon: AlertTriangle, label: 'Fraud Alert',      color: '#dc2626', bg: '#fef2f2' },
     batch_ready:        { icon: DollarSign,    label: 'Batch Ready',      color: '#2563eb', bg: '#eff6ff' },
     capitation_due:     { icon: Activity,      label: 'Capitation Due',   color: '#0f4c81', bg: '#e8f0fe' },

@@ -36,39 +36,62 @@ class RolePermissionSeeder extends Seeder
         'hcps.view', 'hcps.create', 'hcps.edit', 'hcps.delete',
         'hcps.accredit', 'hcps.blacklist', 'hcps.tariffs', 'hcps.contracts',
         'hcps.bank_details',
+        'hcps.suspend', // ADDED - HCP suspend/reactivate
 
         // ── Claims ────────────────────────────────────────────────────────────
         'claims.view', 'claims.submit', 'claims.process',
         'claims.approve', 'claims.reject', 'claims.assign',
         'claims.fraud_view', 'claims.fraud_review', 'claims.reverse',
+        'claims.import', // ADDED - Bulk claims import
 
         // ── Finance ───────────────────────────────────────────────────────────
         'finance.view', 'finance.batch_create', 'finance.batch_approve',
         'finance.ledger_view', 'finance.remittance', 'finance.capitation',
+        'finance.ffs', // ADDED - Finance FFS
+
         // ── Reimbursements ────────────────────────────────────────────────────
         'reimbursements.view',     // See reimbursement request queue
         'reimbursements.review',   // Approve/reject/mark-paid
+
+        // ── Ticketing - Phase 3 ────────────────────────────────────────────────
+        'tickets.view',
+        'tickets.manage',
 
         // ── Reports ───────────────────────────────────────────────────────────
         'reports.branch', 'reports.all_branches', 'reports.audit_logs',
         'reports.export', 'reports.fraud_heatmap',
 
-        // ── Pre-Authorisation (PA) — Phase 2 ─────────────────────────────────
+        // ── Pre-Authorisation (PA) - Phase 2 ─────────────────────────────────
         'pa.view',               // See PA queue, detail, TAT report
         'pa.request',            // Submit a new PA request
-        'pa.approve_standard',   // Desk Officer — first step for all tiers
-        'pa.approve_high_value', // Medical Director — ₦500k–₦2M tier
-        'pa.approve_critical',   // CEO — above ₦2M tier
+        'pa.approve_standard',   // Desk Officer - first step for all tiers
+        'pa.approve_high_value', // Medical Director - ₦500k–₦2M tier
+        'pa.approve_critical',   // CEO - above ₦2M tier
         'pa.decline',            // Decline any active PA / revoke approved code
 
-        // ── Compliance Calendar — Phase 4 ─────────────────────────────────────
+        // ── Compliance Calendar - Phase 4 ─────────────────────────────────────
         'compliance.view',       // See filings, calendar
         'compliance.manage',     // Create/update filings, mark complete, upload docs
+
+        // ── Plans ─────────────────────────────────────────────────────────────
+        'plans.view', 'plans.create', 'plans.edit',
+
+        // ── Corporate Plan Requests ────────────────────────────────
+        'plan_requests.view', 'plan_requests.review',
 
         // ── Portal Self-Service Access ─────────────────────────────────────────
         'portal.enrollee.access',
         'portal.corporate.access',
-        'portal.provider.access', 
+        'portal.provider.access',
+
+        // ── AI Tools ──────────────────────────────────────────────────────────
+        'ai.tools', // ADDED
+
+        // ── Help Centre admin ─────────────────────────────────────────────────
+        'help.admin', // ADDED
+
+        // ── Bulk import (enrollees/tariffs/hcps) ─────────────────────────────
+        'import.enrollees', // ADDED
 
     ];
 
@@ -90,12 +113,19 @@ class RolePermissionSeeder extends Seeder
                 'corporates.view', 'corporates.create', 'corporates.edit', 'corporates.invoices', 'corporates.suspend',
                 'enrollees.view', 'enrollees.create', 'enrollees.edit', 'enrollees.transfer', 'enrollees.suspend',
                 'hcps.view', 'hcps.create', 'hcps.edit', 'hcps.accredit', 'hcps.blacklist',
-                'hcps.tariffs', 'hcps.contracts', 'hcps.bank_details',
+                'hcps.tariffs', 'hcps.contracts', 'hcps.bank_details', 'hcps.suspend', // ADDED
                 'claims.view', 'claims.process', 'claims.approve', 'claims.reject',
-                'claims.assign', 'claims.fraud_view', 'claims.fraud_review',
+                'claims.assign', 'claims.fraud_view', 'claims.fraud_review', 'claims.import', // ADDED
                 'finance.view', 'finance.batch_create', 'finance.batch_approve',
-                'finance.ledger_view', 'finance.remittance', 'finance.capitation', 'reimbursements.view', 'reimbursements.review',  
+                'finance.ledger_view', 'finance.remittance', 'finance.capitation', 'finance.ffs', // ADDED
+                'reimbursements.view', 'reimbursements.review',
                 'reports.branch', 'reports.all_branches', 'reports.export', 'reports.fraud_heatmap',
+                'tickets.view', 'tickets.manage',
+                'plans.view', 'plans.create', 'plans.edit',
+                'plan_requests.view', 'plan_requests.review',
+                'ai.tools', // ADDED
+                'help.admin', // ADDED
+                'import.enrollees', // ADDED
             ],
         ],
         'branch_manager' => [
@@ -104,15 +134,19 @@ class RolePermissionSeeder extends Seeder
                 'users.view', 'users.create', 'users.edit', 'users.assign_roles',
                 'corporates.view', 'corporates.create', 'corporates.edit', 'corporates.invoices',
                 'enrollees.view', 'enrollees.create', 'enrollees.edit',
-                'hcps.view', 'hcps.create', 'hcps.edit', 'hcps.tariffs',
-                'claims.view', 'claims.process', 'claims.assign', 'claims.fraud_view',
-                'finance.view', 'finance.ledger_view',  'reimbursements.view', 'reimbursements.review',  
+                'hcps.view', 'hcps.create', 'hcps.edit', 'hcps.tariffs', 'hcps.suspend', // ADDED
+                'claims.view', 'claims.process', 'claims.assign', 'claims.fraud_view', 'claims.import', // ADDED
+                'finance.view', 'finance.ledger_view',
+                'reimbursements.view', 'reimbursements.review',
                 'reports.branch', 'reports.export',
-
-                // PA
                 'pa.view', 'pa.approve_standard', 'pa.approve_high_value', 'pa.decline',
-                // Compliance
                 'compliance.view', 'compliance.manage',
+                'tickets.view', 'tickets.manage',
+                'plans.view', 'plans.create', 'plans.edit',
+                'plan_requests.view', 'plan_requests.review',
+                'ai.tools', // ADDED
+                'help.admin', // ADDED
+                'import.enrollees', // ADDED
             ],
         ],
         'claims_supervisor' => [
@@ -120,10 +154,12 @@ class RolePermissionSeeder extends Seeder
                 'enrollees.view',
                 'hcps.view', 'hcps.tariffs',
                 'claims.view', 'claims.process', 'claims.approve', 'claims.reject',
-                'claims.assign', 'claims.fraud_view', 'claims.fraud_review',
-                'finance.view', 'reimbursements.view', 
+                'claims.assign', 'claims.fraud_view', 'claims.fraud_review', 'claims.import', // ADDED
+                'finance.view', 'reimbursements.view',
                 'reports.branch', 'reports.fraud_heatmap',
                 'pa.view', 'pa.approve_standard', 'pa.decline',
+                'tickets.view', 'tickets.manage',
+                'ai.tools', // ADDED
             ],
         ],
         'claims_officer' => [
@@ -133,6 +169,8 @@ class RolePermissionSeeder extends Seeder
                 'claims.view', 'claims.process', 'claims.reject',
                 'reports.branch',
                 'pa.view', 'pa.request', 'pa.approve_standard', 'pa.decline',
+                'tickets.view',
+                'ai.tools', // ADDED
             ],
         ],
         'finance_officer' => [
@@ -141,7 +179,8 @@ class RolePermissionSeeder extends Seeder
                 'hcps.view', 'hcps.bank_details',
                 'claims.view',
                 'finance.view', 'finance.batch_create', 'finance.batch_approve',
-                'finance.ledger_view', 'finance.remittance', 'finance.capitation', 'reimbursements.view', 'reimbursements.review', 
+                'finance.ledger_view', 'finance.remittance', 'finance.capitation', 'finance.ffs', // ADDED
+                'reimbursements.view', 'reimbursements.review',
                 'reports.branch', 'reports.export',
                 'pa.view',
             ],
@@ -150,9 +189,12 @@ class RolePermissionSeeder extends Seeder
             'permissions' => [
                 'corporates.view', 'corporates.create', 'corporates.edit',
                 'enrollees.view', 'enrollees.create', 'enrollees.edit',
-                'hcps.view',
+                'hcps.view', 
+                'plans.view', 'plans.create', 'plan_requests.view',
                 'reports.branch',
-                'pa.view',
+                'pa.view', 
+                'tickets.view',
+                'import.enrollees', // ADDED
             ],
         ],
         'auditor' => [
@@ -163,11 +205,13 @@ class RolePermissionSeeder extends Seeder
                 'corporates.view',
                 'enrollees.view',
                 'hcps.view',
+                'plans.view', 'plan_requests.view',
                 'claims.view', 'claims.fraud_view',
                 'finance.view', 'finance.ledger_view',
                 'reports.branch', 'reports.all_branches',
                 'reports.audit_logs', 'reports.export', 'reports.fraud_heatmap',
-                'pa.view', 'compliance.view', 'reimbursements.view',
+                'pa.view', 'compliance.view', 'reimbursements.view', 'tickets.view',
+                'plans.view', // ADDED (was missing)
             ],
         ],
         'medical_director' => [
@@ -176,8 +220,8 @@ class RolePermissionSeeder extends Seeder
                 'hcps.view',
                 'claims.view', 'claims.fraud_view',
                 'reports.branch',
-                // PA — can view queue, do Desk Officer first step, and full MD sign-off
                 'pa.view', 'pa.approve_standard', 'pa.approve_high_value', 'pa.decline',
+                'ai.tools', // ADDED
             ],
         ],
         'ceo' => [
@@ -189,7 +233,6 @@ class RolePermissionSeeder extends Seeder
                 'claims.view',
                 'finance.view', 'finance.ledger_view',
                 'reports.branch', 'reports.all_branches', 'reports.export',
-                // PA — CEO final approval tier only
                 'pa.view', 'pa.approve_critical', 'pa.decline',
             ],
         ],
@@ -203,7 +246,7 @@ class RolePermissionSeeder extends Seeder
             'guard_name'  => 'sanctum',
             'description' => 'Self-service portal access for corporate HR contacts.',
         ],
-        'hcp_user' => [   // [PHASE 2]
+        'hcp_user' => [
             'permissions' => ['portal.provider.access'],
             'guard_name'  => 'sanctum',
             'description' => 'Self-service portal access for healthcare providers.',

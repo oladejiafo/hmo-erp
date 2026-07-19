@@ -53,10 +53,10 @@ You are a claims routing engine for a Nigerian HMO. Based on the provided claim 
 recommend the appropriate processing queue and priority level.
 
 Queue definitions:
-- auto_approve:   Low-value, low-risk, clean claim — approve without human review
+- auto_approve:   Low-value, low-risk, clean claim - approve without human review
 - standard:       Normal claims officer queue (24-48 hour SLA)
 - medical_review: Requires medical director sign-off (PA issues, complex diagnosis)
-- supervisor:     Elevated risk score or fraud flags — supervisor must review
+- supervisor:     Elevated risk score or fraud flags - supervisor must review
 - finance:        High-value claims exceeding major financial thresholds
 
 Priority levels: low | normal | high | urgent
@@ -70,7 +70,7 @@ Return ONLY a JSON object:
   "flags":     ["list any risk factors that influenced routing"]
 }
 
-Return ONLY valid JSON — no preamble, no markdown.
+Return ONLY valid JSON - no preamble, no markdown.
 """
 
 
@@ -104,7 +104,7 @@ Route this claim:
             queue=queue,
             priority="normal",
             eta="24-48 hours",
-            reasoning="AI unavailable — rule-based routing applied.",
+            reasoning="AI unavailable - rule-based routing applied.",
             flags=["ai_fallback"],
         )
 

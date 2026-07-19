@@ -67,7 +67,7 @@ export default function EnrolleeListPage() {
     // ── BUG FIX 2 ────────────────────────────────────────────────────────────
     // Show the error component instead of a blank screen.
     // Note: if the 401 fires, clearSession() will update React state and
-    // ProtectedRoute will redirect to /login automatically — this ErrorAlert
+    // ProtectedRoute will redirect to /login automatically - this ErrorAlert
     // will only be visible for a brief moment (if at all) before the redirect.
     if (error) return <ErrorAlert error={error} onRetry={refetch} />;
 
@@ -157,8 +157,8 @@ export default function EnrolleeListPage() {
                                                 </div>
                                             </td>
                                             <td className="font-monospace" style={{ fontSize: 12 }}>{e.enrollee_id}</td>
-                                            <td style={{ fontSize: 12 }}>{e.corporate?.name ?? '—'}</td>
-                                            <td style={{ fontSize: 12 }}>{e.plan?.plan_name ?? '—'}</td>
+                                            <td style={{ fontSize: 12 }}>{e.corporate?.name ?? '-'}</td>
+                                            <td style={{ fontSize: 12 }}>{e.plan?.plan_name ?? '-'}</td>
                                             <td style={{ fontSize: 12 }}>
                                                 <span className={e.is_expired ? 'text-danger' : ''}>
                                                     {formatDate(e.expiry_date)}

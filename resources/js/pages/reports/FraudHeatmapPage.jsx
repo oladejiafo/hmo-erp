@@ -23,7 +23,7 @@ const FLAG_LABELS = {
     pattern_deviation:      'Pattern Deviation',
     provider_blacklisted:   'Provider Blacklisted',
     invalid_diagnosis_code: 'Invalid Diagnosis',
-    pre_auth_missing:       'PA Missing',
+    pre_auth_missing:       'Pre Authorization Code Missing',
 };
 
 function riskLevel(avgScore) {
@@ -147,7 +147,7 @@ export default function FraudHeatmapPage() {
         <div>
             <PageHeader
                 title="Fraud Heatmap"
-                subtitle="HCP-level fraud flag analysis — identify patterns and high-risk providers"
+                subtitle="HCP-level fraud flag analysis - identify patterns and high-risk providers"
             />
             {/* Back to Reports Button */}
             <div className="d-flex align-items-center gap-2 mb-3">
@@ -338,7 +338,7 @@ export default function FraudHeatmapPage() {
                                                                     {h.flag_types[t]}
                                                                 </span>
                                                             ) : (
-                                                                <span className="text-muted">—</span>
+                                                                <span className="text-muted">-</span>
                                                             )}
                                                         </td>
                                                     ))}

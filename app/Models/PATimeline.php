@@ -9,7 +9,7 @@ use Illuminate\Database\Eloquent\Relations\BelongsTo;
  * FILE LOCATION: app/Models/PATimeline.php
  *
  * Append-only audit trail for PA events.
- * No updated_at column — rows are never modified after insert.
+ * No updated_at column - rows are never modified after insert.
  *
  * @property int         $id
  * @property int         $pre_authorisation_id

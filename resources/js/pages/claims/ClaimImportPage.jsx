@@ -2,10 +2,10 @@
  * FILE: resources/js/pages/claims/ClaimImportPage.jsx
  *
  * 4-step bulk claims import wizard:
- *   Step 1 — Upload (drag-drop, select HCP + period)
- *   Step 2 — Map Columns (auto-suggested, manual override)
- *   Step 3 — Review Rows (fix errors, approve/skip, bulk-approve valid)
- *   Step 4 — Confirm & Push
+ *   Step 1 - Upload (drag-drop, select HCP + period)
+ *   Step 2 - Map Columns (auto-suggested, manual override)
+ *   Step 3 - Review Rows (fix errors, approve/skip, bulk-approve valid)
+ *   Step 4 - Confirm & Push
  */
 import React, { useState, useCallback, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
@@ -118,7 +118,7 @@ export default function ClaimImportPage() {
                                     <div className="text-center text-muted">
                                         <Upload size={36} className="mb-2 opacity-50" />
                                         <div className="fw-semibold">Drag &amp; drop your file here</div>
-                                        <div style={{fontSize:12}}>or click to browse — .xlsx and .csv supported</div>
+                                        <div style={{fontSize:12}}>or click to browse - .xlsx and .csv supported</div>
                                     </div>
                                 )}
                             </div>
@@ -195,14 +195,14 @@ export default function ClaimImportPage() {
                                     return (
                                         <tr key={header}>
                                             <td className="ps-3 fw-semibold font-monospace" style={{fontSize:12}}>{header}</td>
-                                            <td className="text-muted" style={{fontSize:11,maxWidth:200,overflow:'hidden',textOverflow:'ellipsis',whiteSpace:'nowrap'}}>{samples || '—'}</td>
+                                            <td className="text-muted" style={{fontSize:11,maxWidth:200,overflow:'hidden',textOverflow:'ellipsis',whiteSpace:'nowrap'}}>{samples || '-'}</td>
                                             <td>
                                                 <select
                                                     className={`form-select form-select-sm ${currentMap ? 'border-success' : 'border-secondary'}`}
                                                     value={currentMap || ''}
                                                     onChange={e => setLocalMapping(prev => ({ ...prev, [header]: e.target.value || null }))}
                                                 >
-                                                    <option value="">— Skip this column —</option>
+                                                    <option value="">- Skip this column -</option>
                                                     {systemFields.map(f => (
                                                         <option key={f.key} value={f.key}>
                                                             {f.required ? '* ' : ''}{f.label}
@@ -320,11 +320,11 @@ export default function ClaimImportPage() {
                                             return (
                                                 <tr key={row.id}>
                                                     <td className="font-monospace text-muted">{row.row_number}</td>
-                                                    <td className="font-monospace">{row.enrollee_id_raw || '—'}</td>
-                                                    <td>{row.enrollee_name_raw || row.enrollee?.full_name || '—'}</td>
-                                                    <td>{row.service_date || '—'}</td>
-                                                    <td>{row.service_type || '—'}</td>
-                                                    <td className="text-end font-monospace">{row.amount_submitted ? Number(row.amount_submitted).toLocaleString('en-NG',{minimumFractionDigits:2}) : '—'}</td>
+                                                    <td className="font-monospace">{row.enrollee_id_raw || '-'}</td>
+                                                    <td>{row.enrollee_name_raw || row.enrollee?.full_name || '-'}</td>
+                                                    <td>{row.service_date || '-'}</td>
+                                                    <td>{row.service_type || '-'}</td>
+                                                    <td className="text-end font-monospace">{row.amount_submitted ? Number(row.amount_submitted).toLocaleString('en-NG',{minimumFractionDigits:2}) : '-'}</td>
                                                     <td>
                                                         <span className="badge" style={{background:ss.bg,color:ss.color,fontSize:10}}>{ss.label}</span>
                                                     </td>

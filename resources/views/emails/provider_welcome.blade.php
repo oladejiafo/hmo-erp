@@ -1,5 +1,5 @@
-{{-- NEW FILE — resources/views/emails/provider_welcome.blade.php --}}
-{{-- Deliberately plain — swap for your real branded template once you --}}
+{{-- NEW FILE - resources/views/emails/provider_welcome.blade.php --}}
+{{-- Deliberately plain - swap for your real branded template once you --}}
 {{-- send over EnrolleeWelcomeMail's view so this matches its style. --}}
 <!DOCTYPE html>
 <html>

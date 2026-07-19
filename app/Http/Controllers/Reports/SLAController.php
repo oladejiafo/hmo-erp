@@ -13,7 +13,7 @@ use App\Models\SystemSetting;
 /**
  * FILE LOCATION: app/Http/Controllers/Reports/SLAController.php
  *
- * SLA monitoring — how well the branch is meeting NHIS processing targets.
+ * SLA monitoring - how well the branch is meeting NHIS processing targets.
  *
  * SLA TARGETS (business days):
  *   emergency   → 2  days
@@ -73,7 +73,7 @@ class SLAController extends Controller
 
 
     // ─────────────────────────────────────────────────────────────────────────
-    // DASHBOARD — KPIs and trend data for the SLA page
+    // DASHBOARD - KPIs and trend data for the SLA page
     // GET /reports/sla-dashboard
     // ─────────────────────────────────────────────────────────────────────────
 
@@ -96,7 +96,7 @@ class SLAController extends Controller
         $resolvedThisMonth = (clone $base)->whereIn('status', ['paid', 'approved', 'rejected'])
                                            ->whereMonth('updated_at', now()->month)->count();
 
-        // Compliance rate — % of claims resolved within SLA
+        // Compliance rate - % of claims resolved within SLA
         $resolvedInSLA = (clone $base)->whereIn('status', ['paid', 'approved', 'rejected'])
                                        ->where('sla_breached', false)
                                        ->whereMonth('updated_at', now()->month)->count();
@@ -147,7 +147,7 @@ class SLAController extends Controller
                     : 0,
             ]);
 
-        // ── Worst offenders — top 5 oldest open claims ────────────────────────
+        // ── Worst offenders - top 5 oldest open claims ────────────────────────
         $oldestOpen = (clone $base)
             ->with(['hcp:id,name,hcp_code', 'enrollee:id,first_name,last_name'])
             ->whereNotIn('status', ['paid', 'rejected', 'reversed'])
@@ -178,7 +178,7 @@ class SLAController extends Controller
     }
 
     // ─────────────────────────────────────────────────────────────────────────
-    // OVERDUE CLAIMS — paginated list of breached/at-risk claims
+    // OVERDUE CLAIMS - paginated list of breached/at-risk claims
     // GET /reports/overdue-claims
     // ─────────────────────────────────────────────────────────────────────────
 
@@ -234,7 +234,7 @@ class SLAController extends Controller
     }
 
     // ─────────────────────────────────────────────────────────────────────────
-    // BREACH SCAN — manually trigger SLA breach detection
+    // BREACH SCAN - manually trigger SLA breach detection
     // POST /reports/sla/breach-scan
     // In production this runs via a scheduled Laravel command instead.
     // ─────────────────────────────────────────────────────────────────────────

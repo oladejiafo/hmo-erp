@@ -10,9 +10,9 @@ use Illuminate\Http\Request;
  * FILE LOCATION: app/Http/Controllers/NotificationController.php
  *
  * Manages the in-app notification centre for the authenticated user.
- * All endpoints are scoped to the authenticated user — no cross-user access.
+ * All endpoints are scoped to the authenticated user - no cross-user access.
  *
- * ROUTES (add to routes/api.php, no extra permission needed — auth:sanctum is enough):
+ * ROUTES (add to routes/api.php, no extra permission needed - auth:sanctum is enough):
  *   GET    /notifications                → index()
  *   GET    /notifications/unread-count   → unreadCount()
  *   PATCH  /notifications/{id}/read      → markRead()
@@ -21,7 +21,7 @@ use Illuminate\Http\Request;
 class NotificationController extends Controller
 {
     // ─────────────────────────────────────────────────────────────────────────
-    // INDEX — paginated notification list for the authenticated user
+    // INDEX - paginated notification list for the authenticated user
     // GET /notifications
     // ─────────────────────────────────────────────────────────────────────────
 
@@ -49,7 +49,7 @@ class NotificationController extends Controller
     }
 
     // ─────────────────────────────────────────────────────────────────────────
-    // UNREAD COUNT — lightweight poll for the topbar bell badge
+    // UNREAD COUNT - lightweight poll for the topbar bell badge
     // GET /notifications/unread-count
     // ─────────────────────────────────────────────────────────────────────────
 
@@ -69,7 +69,7 @@ class NotificationController extends Controller
     }
 
     // ─────────────────────────────────────────────────────────────────────────
-    // MARK READ — mark a single notification as read
+    // MARK READ - mark a single notification as read
     // PATCH /notifications/{id}/read
     // ─────────────────────────────────────────────────────────────────────────
 
@@ -86,7 +86,7 @@ class NotificationController extends Controller
     }
 
     // ─────────────────────────────────────────────────────────────────────────
-    // MARK ALL READ — mark every unread notification as read for this user
+    // MARK ALL READ - mark every unread notification as read for this user
     // POST /notifications/mark-all-read
     // ─────────────────────────────────────────────────────────────────────────
 

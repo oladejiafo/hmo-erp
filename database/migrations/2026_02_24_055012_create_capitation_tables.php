@@ -9,10 +9,10 @@ use Illuminate\Support\Facades\Schema;
  *
  * Creates and enhances tables for the Capitation module:
  *
- *   1. hcp_capitation_rates  — agreed monthly rate per HCP (set once, used each run)
- *   2. capitation_runs       — one record per monthly run (the "batch header")
- *   3. Alter capitation_records — add run_id, reconciliation columns
- *   4. Alter payment_batches  — add batch_type (claims | capitation)
+ *   1. hcp_capitation_rates  - agreed monthly rate per HCP (set once, used each run)
+ *   2. capitation_runs       - one record per monthly run (the "batch header")
+ *   3. Alter capitation_records - add run_id, reconciliation columns
+ *   4. Alter payment_batches  - add batch_type (claims | capitation)
  *
  * Capitation lifecycle:
  *   HQ/Finance generates a run for a period (e.g. June 2025)
@@ -45,11 +45,11 @@ return new class extends Migration
             $table->decimal('rate_per_principal', 12, 2)
                   ->comment('Monthly capitation per primary enrollee (₦)');
 
-            // Dependant rate — often same as principal, sometimes lower
+            // Dependant rate - often same as principal, sometimes lower
             $table->decimal('rate_per_dependent', 12, 2)
                   ->comment('Monthly capitation per dependant (₦)');
 
-            // HCP tier at time of rate agreement (snapshot — HCP tier can change)
+            // HCP tier at time of rate agreement (snapshot - HCP tier can change)
             $table->enum('tier', ['primary', 'secondary', 'tertiary'])->default('primary');
 
             // Validity window for this rate
@@ -135,7 +135,7 @@ return new class extends Migration
             $table->unsignedInteger('dependent_count')->default(0)->after('principal_count')
                   ->comment('Active dependants of those principals');
 
-            // Reconciliation — previous month's headcount for this HCP
+            // Reconciliation - previous month's headcount for this HCP
             $table->unsignedInteger('previous_member_count')->default(0)->after('dependent_count')
                   ->comment('Total members (principals+dependants) from the prior month run');
             $table->integer('member_variance')->default(0)->after('previous_member_count')

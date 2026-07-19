@@ -123,7 +123,7 @@ class FraudScoringService
         $annualTotal += $claim->total_amount_claimed;
 
         if ($annualTotal < ($highCostThreshold * 0.8)) {
-            return 0; // Under 80% of threshold — no flag
+            return 0; // Under 80% of threshold - no flag
         }
 
         // Scale 0–weight based on how far over they are

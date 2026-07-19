@@ -7,7 +7,7 @@ use Illuminate\Support\Facades\Schema;
 /**
  * Migration order: 001
  * No foreign key dependencies.
- * Must run FIRST — users, corporates, enrollees, hcps, claims all reference this.
+ * Must run FIRST - users, corporates, enrollees, hcps, claims all reference this.
  */
 return new class extends Migration
 {

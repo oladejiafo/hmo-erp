@@ -12,7 +12,7 @@ class ClaimStateService
 {
     /**
      * Transition a claim to a new status.
-     * Enforces the state machine — throws if the transition is invalid.
+     * Enforces the state machine - throws if the transition is invalid.
      * Records every transition in claim_status_logs.
      *
      * @param  Claim        $claim
@@ -48,7 +48,7 @@ class ClaimStateService
 
             $claim->update(array_merge(['status' => $newStatus], $timestamps));
 
-            // Log the transition — always
+            // Log the transition - always
             ClaimStatusLog::create([
                 'claim_id'     => $claim->id,
                 'user_id'      => Auth::id(),

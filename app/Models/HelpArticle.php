@@ -2,7 +2,7 @@
 /**
  * FILE: app/Models/HelpArticle.php
  * 
- * CHANGE: getExcerptAttribute() — added null guard on content.
+ * CHANGE: getExcerptAttribute() - added null guard on content.
  * preg_replace() throws TypeError (PHP 8.2) or returns null (8.1) when
  * $this->content is null, which happens when content is not in the SELECT.
  */
@@ -79,7 +79,7 @@ class HelpArticle extends Model
         return self::CATEGORIES[$this->category]['icon'] ?? '📄';
     }
 
-    // FIX: null guard — content is not always loaded (not in SELECT on list queries)
+    // FIX: null guard - content is not always loaded (not in SELECT on list queries)
     public function getExcerptAttribute(): string
     {
         $raw = $this->attributes['content'] ?? null;

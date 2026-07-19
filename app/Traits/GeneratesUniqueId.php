@@ -35,6 +35,7 @@ trait GeneratesUniqueId
         $basePrefix = "{$prefix}{$branchPart}-{$year}-";
 
         // Find the highest existing number with this prefix
+        /** @disregard P1013 */
         $last = static::withoutGlobalScopes()
             ->where($column, 'like', "{$basePrefix}%")
             ->orderByDesc($column)

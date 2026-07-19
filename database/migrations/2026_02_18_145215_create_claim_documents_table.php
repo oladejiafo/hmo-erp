@@ -32,7 +32,7 @@ return new class extends Migration
             ])->default('invoice');
             $table->text('ocr_extracted_text')
                   ->nullable()
-                  ->comment('Text extracted by OCR pipeline — used by fraud AI');
+                  ->comment('Text extracted by OCR pipeline - used by fraud AI');
             $table->boolean('ocr_processed')->default(false);
             $table->timestamp('ocr_processed_at')->nullable();
             $table->foreignId('uploaded_by')

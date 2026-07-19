@@ -19,8 +19,10 @@ trait BelongsToBranch
 {
     public static function bootBelongsToBranch(): void
     {
+        /** @disregard P1013 */
         static::addGlobalScope(new BranchScope());
 
+        /** @disregard P1013 */
         static::creating(function ($model) {
             if (empty($model->branch_id) && Auth::check()) {
                 $model->branch_id = Auth::user()->branch_id;

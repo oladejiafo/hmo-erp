@@ -67,7 +67,7 @@ export default function LoginPage() {
             </p>
 
             <form onSubmit={handleSubmit(onSubmit)} noValidate>
-                {/* Email — hidden after 2FA step */}
+                {/* Email - hidden after 2FA step */}
                 {!requires2FA && (
                     <>
                         <div className="mb-3">

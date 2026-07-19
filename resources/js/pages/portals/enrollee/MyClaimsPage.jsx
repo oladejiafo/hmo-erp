@@ -9,14 +9,14 @@
  * below are written to match the naming pattern of the one fetcher I've
  * actually seen (`fetchEnrolleePortalClaims`). I have not seen
  * resources/js/api/index.js, so the exact export names/signatures there
- * need to match what's added — see PHASE1_API_ADDITIONS.js in this same
+ * need to match what's added - see PHASE1_API_ADDITIONS.js in this same
  * folder for what I'm assuming needs to exist.
  */
 import React, { useState } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'; // [PHASE 1] added useMutation, useQueryClient
 import {
     fetchEnrolleePortalClaims,
-    confirmEnrolleeClaimUtilization as confirmClaimUtilization,   // [PHASE 1] — matches real api/index.js naming
+    confirmEnrolleeClaimUtilization as confirmClaimUtilization,   // [PHASE 1] - matches real api/index.js naming
     disputeEnrolleeClaimUtilization as disputeClaimUtilization,   // [PHASE 1]
 } from '../../../api/index';
 import { formatCurrency, formatDate } from '../../../utils/format';
@@ -47,13 +47,13 @@ export default function MyClaimsPage() {
         keepPreviousData: true,
     });
 
-    // [PHASE 1] — confirm mutation
+    // [PHASE 1] - confirm mutation
     const confirmMutation = useMutation({
         mutationFn: (claimId) => confirmClaimUtilization(claimId),
         onSuccess: () => queryClient.invalidateQueries({ queryKey: ['enrollee-claims'] }),
     });
 
-    // [PHASE 1] — dispute mutation
+    // [PHASE 1] - dispute mutation
     const disputeMutation = useMutation({
         mutationFn: ({ claimId, reason }) => disputeClaimUtilization(claimId, reason),
         onSuccess: () => {
@@ -135,7 +135,7 @@ export default function MyClaimsPage() {
                                 </div>
                             </div>
 
-                            {/* [PHASE 1] — payment transparency: what HMO paid the hospital */}
+                            {/* [PHASE 1] - payment transparency: what HMO paid the hospital */}
                             {c.provider_payment && (
                                 <div style={paymentTransparencyStyle}>
                                     HMO paid <strong>{formatCurrency(c.provider_payment.amount)}</strong> to
@@ -158,7 +158,7 @@ export default function MyClaimsPage() {
                                 </div>
                             )}
 
-                            {/* [PHASE 1] — utilization confirmation actions */}
+                            {/* [PHASE 1] - utilization confirmation actions */}
                             {c.enrollee_confirmation?.can_act && (
                                 <div style={confirmActionsStyle}>
                                     <p style={confirmPromptStyle}>Did you receive this service?</p>
@@ -183,7 +183,7 @@ export default function MyClaimsPage() {
                                             <textarea
                                                 value={disputeReason}
                                                 onChange={e => setDisputeReason(e.target.value)}
-                                                placeholder="Tell us what's wrong — wrong amount, service you didn't receive, wrong date…"
+                                                placeholder="Tell us what's wrong - wrong amount, service you didn't receive, wrong date…"
                                                 style={disputeTextareaStyle}
                                                 rows={3}
                                             />
@@ -199,7 +199,7 @@ export default function MyClaimsPage() {
                                 </div>
                             )}
 
-                            {/* [PHASE 1] — already-disputed note */}
+                            {/* [PHASE 1] - already-disputed note */}
                             {c.enrollee_confirmation?.status === 'disputed' && c.enrollee_confirmation.dispute_reason && (
                                 <div style={disputedNoteStyle}>
                                     <strong>You reported:</strong> {c.enrollee_confirmation.dispute_reason}

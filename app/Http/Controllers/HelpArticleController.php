@@ -7,12 +7,12 @@
  *   The excerpt accessor reads $this->content. Without it in SELECT, content
  *   is null → preg_replace crashes inside through() → articles list returns [].
  *   The featured and categories queries are separate (no through/excerpt) so
- *   they kept working — that's why 6 featured cards showed but articles didn't.
+ *   they kept working - that's why 6 featured cards showed but articles didn't.
  *
  * CHANGE 2: through() now returns an explicit array excluding 'content' from
- *   the payload — we only needed it to build the excerpt string.
+ *   the payload - we only needed it to build the excerpt string.
  *
- * CHANGE 3: Route order note — in routes/api.php, move /{slug} to LAST.
+ * CHANGE 3: Route order note - in routes/api.php, move /{slug} to LAST.
  *   It currently catches /for-page and /admin/list (treating them as slugs).
  */
 
@@ -49,7 +49,7 @@ class HelpArticleController extends Controller
             $query->forPage($request->page_context);
         }
 
-        // CHANGE: 'content' added — required by getExcerptAttribute()
+        // CHANGE: 'content' added - required by getExcerptAttribute()
         // Without it, $this->content is null inside through() → TypeError → empty list
         $articles = $query->select([
             'id',
@@ -64,7 +64,7 @@ class HelpArticleController extends Controller
             'updated_at',
         ])->paginate((int) ($request->per_page ?? 20));
 
-        // CHANGE: explicit output array — content excluded from API response
+        // CHANGE: explicit output array - content excluded from API response
         $items = $articles->through(fn(HelpArticle $a) => [
             'id'             => $a->id,
             'title'          => $a->title,
@@ -72,7 +72,7 @@ class HelpArticleController extends Controller
             'category'       => $a->category,
             'category_label' => $a->category_label,
             'category_icon'  => $a->category_icon,
-            'excerpt'        => $a->excerpt,   // now safe — content is loaded
+            'excerpt'        => $a->excerpt,   // now safe - content is loaded
             'is_featured'    => $a->is_featured,
             'sort_order'     => $a->sort_order,
             'view_count'     => $a->view_count,

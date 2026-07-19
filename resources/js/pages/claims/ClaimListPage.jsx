@@ -222,7 +222,7 @@ export default function ClaimListPage() {
 }
 
 function RiskBadge({ score }) {
-    if (score == null || score === 0) return <span className="text-muted" style={{ fontSize: 11 }}>—</span>;
+    if (score == null || score === 0) return <span className="text-muted" style={{ fontSize: 11 }}>-</span>;
     const color = score >= 70 ? '#c5221f' : score >= 40 ? '#e65100' : '#137333';
     const bg    = score >= 70 ? '#fce8e6' : score >= 40 ? '#fef7e0' : '#e6f4ea';
     return (

@@ -94,7 +94,7 @@ export function StatCard({ title, value, subtitle, icon: Icon, color = 'primary'
                         <span className="placeholder col-5 rounded" style={{ height: 28 }} />
                     </div>
                 ) : (
-                    <div className="fw-bold" style={{ fontSize: 26 }}>{value ?? '—'}</div>
+                    <div className="fw-bold" style={{ fontSize: 26 }}>{value ?? '-'}</div>
                 )}
                 {subtitle && (
                     <p className="text-muted mb-0 mt-1" style={{ fontSize: 12 }}>{subtitle}</p>

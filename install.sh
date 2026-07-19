@@ -1,5 +1,5 @@
 #!/bin/bash
-# HMO ERP — Installation Script
+# HMO ERP - Installation Script
 # Run: bash install.sh
 
 # Color codes for output

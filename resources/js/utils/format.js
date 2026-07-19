@@ -86,10 +86,10 @@ export const formatNumber = (value) => {
  * Now uses dynamic currency symbol from settings.
  */
 export const compactCurrency = (value) => {
-    if (value === null || value === undefined) return '—';
+    if (value === null || value === undefined) return '-';
     
     const num = parseFloat(value);
-    if (isNaN(num)) return '—';
+    if (isNaN(num)) return '-';
     
     const { currency_symbol } = getSettings();
     
@@ -112,7 +112,7 @@ export const compactCurrency = (value) => {
  * e.g. '2024-01-15' → '15 Jan 2024'
  */
 export const formatDateWithLocale = (dateStr) => {
-    if (!dateStr) return '—';
+    if (!dateStr) return '-';
     const { locale } = getSettings();
     return new Date(dateStr).toLocaleDateString(locale, {
         day:   '2-digit',
@@ -126,7 +126,7 @@ export const formatDateWithLocale = (dateStr) => {
  * e.g. '2024-01-15T09:32:00Z' → '15 Jan 2024, 09:32'
  */
 export const formatDateTimeWithLocale = (isoStr) => {
-    if (!isoStr) return '—';
+    if (!isoStr) return '-';
     const { locale } = getSettings();
     return new Date(isoStr).toLocaleString(locale, {
         day:    '2-digit',
@@ -141,7 +141,7 @@ export const formatDateTimeWithLocale = (isoStr) => {
  * Return relative time, e.g. "3 days ago", "in 2 hours".
  */
 export const timeAgo = (isoStr) => {
-    if (!isoStr) return '—';
+    if (!isoStr) return '-';
     const diff    = Date.now() - new Date(isoStr).getTime();
     const minutes = Math.floor(diff / 60000);
     const hours   = Math.floor(diff / 3600000);

@@ -197,7 +197,7 @@ export default function PlanDetailPage() {
                                 <div key={label} className="d-flex justify-content-between mb-1" style={{ fontSize: 12 }}>
                                     <span className="text-muted">{label}</span>
                                     <span className="fw-semibold font-monospace">
-                                        {value ? formatCurrency(value) : <span className="text-muted">—</span>}
+                                        {value ? formatCurrency(value) : <span className="text-muted">-</span>}
                                     </span>
                                 </div>
                             ))}
@@ -306,7 +306,7 @@ export default function PlanDetailPage() {
                                                             <th>Coverage</th>
                                                             <th className="text-end">Annual Limit</th>
                                                             <th className="text-end">Per Visit</th>
-                                                            <th className="text-center">PA Required</th>
+                                                            <th className="text-center">Pre-Auth. Required</th>
                                                         </tr>
                                                     </thead>
                                                     <tbody>
@@ -322,15 +322,15 @@ export default function PlanDetailPage() {
                                                                         </span>
                                                                     </td>
                                                                     <td className="text-end font-monospace">
-                                                                        {item.annual_limit ? formatCurrency(item.annual_limit) : <span className="text-muted">—</span>}
+                                                                        {item.annual_limit ? formatCurrency(item.annual_limit) : <span className="text-muted">-</span>}
                                                                     </td>
                                                                     <td className="text-end font-monospace">
-                                                                        {item.per_visit_limit ? formatCurrency(item.per_visit_limit) : <span className="text-muted">—</span>}
+                                                                        {item.per_visit_limit ? formatCurrency(item.per_visit_limit) : <span className="text-muted">-</span>}
                                                                     </td>
                                                                     <td className="text-center">
                                                                         {item.requires_preauth
                                                                             ? <AlertCircle size={13} color="#1e40af" />
-                                                                            : <span className="text-muted">—</span>}
+                                                                            : <span className="text-muted">-</span>}
                                                                     </td>
                                                                 </tr>
                                                             );
@@ -401,9 +401,9 @@ function BenefitItemsEditor({ initialItems, onSave, isSaving, onCancel }) {
                                     </select>
                                 </td>
                                 <td><input className="form-control form-control-sm" type="number" value={item.annual_limit}
-                                           onChange={e => update(idx, 'annual_limit', e.target.value)} placeholder="—" /></td>
+                                           onChange={e => update(idx, 'annual_limit', e.target.value)} placeholder="-" /></td>
                                 <td><input className="form-control form-control-sm" type="number" value={item.per_visit_limit}
-                                           onChange={e => update(idx, 'per_visit_limit', e.target.value)} placeholder="—" /></td>
+                                           onChange={e => update(idx, 'per_visit_limit', e.target.value)} placeholder="-" /></td>
                                 <td className="text-center">
                                     <input type="checkbox" className="form-check-input"
                                            checked={item.requires_preauth}

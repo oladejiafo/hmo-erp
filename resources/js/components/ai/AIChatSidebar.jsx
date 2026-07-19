@@ -6,7 +6,7 @@ export default function AIChatSidebar({ isOpen, onClose }) {
     const [messages, setMessages] = useState([
         {
             role: 'assistant',
-            content: "Hello! I'm your AI assistant. Ask me about claims, PA rules, NHIA regulations, or any HMO processes.",
+            content: "Hello! I'm your AI assistant. Ask me about claims, Pre-Auth. rules, NHIA regulations, or any HMO processes.",
         },
     ]);
     const [input, setInput]     = useState('');
@@ -139,7 +139,7 @@ export default function AIChatSidebar({ isOpen, onClose }) {
                     <input
                         type="text"
                         className="form-control form-control-sm"
-                        placeholder="Ask about claims, PA rules, NHIA..."
+                        placeholder="Ask about claims, Pre-Auth. rules, NHIA..."
                         value={input}
                         onChange={(e) => setInput(e.target.value)}
                         onKeyPress={(e) => e.key === 'Enter' && sendMessage()}

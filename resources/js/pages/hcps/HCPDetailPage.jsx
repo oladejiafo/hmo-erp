@@ -181,7 +181,7 @@ export default function HCPDetailPage() {
         mutationFn: (bankDetailId) => 
             client.patch(`/hcps/${id}/bank-details/${bankDetailId}/verify`),
         onSuccess: () => {
-            toast.success('Bank account verified — now active for payments.');
+            toast.success('Bank account verified - now active for payments.');
             qc.invalidateQueries({ queryKey: ['hcp', id] });
         },
         onError: (err) => {
@@ -303,7 +303,7 @@ export default function HCPDetailPage() {
                     </p>
                 </div>
 
-                {/* ── Action buttons — context-aware by status ── */}
+                {/* ── Action buttons - context-aware by status ── */}
                 <div className="d-flex gap-2 flex-wrap flex-shrink-0">
                     {canEdit && (
                         <button className="btn btn-outline-secondary btn-sm d-flex align-items-center gap-1"
@@ -368,15 +368,15 @@ export default function HCPDetailPage() {
                             </div>
                         </div>
                         {[
-                            ['NHIS No.',        hcp.nhis_accreditation_no ?? '—'],
-                            ['Accredited',      hcp.accredited_at ? formatDate(hcp.accredited_at) : '—'],
-                            ['Contract Expiry', hcp.contract_expiry_date ? formatDate(hcp.contract_expiry_date) : '—'],
-                            ['Payment Model',   hcp.payment_model?.replace(/_/g, ' ') ?? '—'],
+                            ['NHIS No.',        hcp.nhis_accreditation_no ?? '-'],
+                            ['Accredited',      hcp.accredited_at ? formatDate(hcp.accredited_at) : '-'],
+                            ['Contract Expiry', hcp.contract_expiry_date ? formatDate(hcp.contract_expiry_date) : '-'],
+                            ['Payment Model',   hcp.payment_model?.replace(/_/g, ' ') ?? '-'],
                             ['FFS Tariff',      hcp.ffs_tariff_enforced ? '✓ Strict' : 'Flexible'],
                         ].map(([l, v]) => (
                             <div key={l} className="col-auto text-center border-start ps-4">
                                 <div className="text-muted" style={{ fontSize: 10, textTransform: 'uppercase', letterSpacing: 0.5 }}>{l}</div>
-                                <div className="fw-semibold" style={{ fontSize: 13 }}>{v || '—'}</div>
+                                <div className="fw-semibold" style={{ fontSize: 13 }}>{v || '-'}</div>
                             </div>
                         ))}
                     </div>
@@ -590,7 +590,7 @@ export default function HCPDetailPage() {
                                                 {/* Message when user added their own record */}
                                                 {canVerifyBank && !detail.is_verified && detail.added_by?.id === user?.id && (
                                                     <span className="text-muted fst-italic" style={{ fontSize: 12 }}>
-                                                        You added this — another user must verify
+                                                        You added this - another user must verify
                                                     </span>
                                                 )}
 
@@ -625,7 +625,7 @@ export default function HCPDetailPage() {
                             <div className="alert alert-warning d-flex align-items-center gap-2 mt-3">
                                 <AlertTriangle size={16} />
                                 <span style={{ fontSize: 13 }}>
-                                    ⚠️ No verified bank account — this HCP will be skipped in payment batches until a bank account is verified.
+                                    ⚠️ No verified bank account - this HCP will be skipped in payment batches until a bank account is verified.
                                 </span>
                             </div>
                         )}
@@ -668,7 +668,7 @@ export default function HCPDetailPage() {
                                                 <td style={{ fontSize: 13 }}>{t.service_name}</td>
                                                 <td><span className="badge bg-light text-dark border" style={{ fontSize: 10 }}>{t.category}</span></td>
                                                 <td className="text-end fw-semibold" style={{ fontSize: 13 }}>{formatCurrency(t.agreed_price)}</td>
-                                                <td className="text-end text-muted" style={{ fontSize: 12 }}>{t.nhis_price ? formatCurrency(t.nhis_price) : '—'}</td>
+                                                <td className="text-end text-muted" style={{ fontSize: 12 }}>{t.nhis_price ? formatCurrency(t.nhis_price) : '-'}</td>
                                                 <td style={{ fontSize: 11 }}>{formatDate(t.effective_from)}{t.effective_to && <> – {formatDate(t.effective_to)}</>}</td>
                                                 <td>
                                                     <span className={`badge ${t.is_active ? 'bg-success-subtle text-success' : 'bg-secondary-subtle text-secondary'}`} style={{ fontSize: 10 }}>
@@ -732,7 +732,7 @@ export default function HCPDetailPage() {
                                                 </span>
                                             </div>
                                             <div className="text-muted" style={{ fontSize: 12 }}>
-                                                {formatDate(c.start_date)} — {formatDate(c.end_date)}
+                                                {formatDate(c.start_date)} - {formatDate(c.end_date)}
                                             </div>
                                         </div>
                                         <div className="row g-3" style={{ fontSize: 13 }}>
@@ -880,7 +880,7 @@ export default function HCPDetailPage() {
                                 </div>
                                 <div className="modal-body">
                                     <p className="text-muted" style={{ fontSize: 13 }}>
-                                        Suspending <strong>{hcp.name}</strong> will prevent new PA requests and claims. This is temporary — use Blacklist for confirmed fraud.
+                                        Suspending <strong>{hcp.name}</strong> will prevent new Pre-Auth. requests and claims. This is temporary - use Blacklist for confirmed fraud.
                                     </p>
                                     <label className="form-label fw-semibold" style={{ fontSize: 13 }}>
                                         Reason <span className="text-danger">*</span>

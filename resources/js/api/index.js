@@ -299,14 +299,14 @@ export const fetchPARequest = (id) => apiClient.get(`/pre-auth/${id}`).then(r =>
 // export const submitPARequest = (data) => apiClient.post('/pre-auth', data);
 
 export const submitPARequest = (data) => {
-    console.log('📝 Submitting PA data:', data);
+    console.log('📝 Submitting Pre-Auth. data:', data);
     return apiClient.post('/pre-auth', data)
         .then(response => {
-            console.log('✅ PA submit response:', response);
+            console.log('✅ Pre-Auth. submit response:', response);
             return response.data;
         })
         .catch(error => {
-            console.error('❌ PA submit error:', {
+            console.error('❌ Pre-Auth. submit error:', {
                 status: error.response?.status,
                 data: error.response?.data,
                 message: error.message
@@ -385,6 +385,62 @@ export const corpPortalBulkUpload = (fd) => apiClient.post('/portal/corporate/en
 export const fetchCorpPortalProfile = () => apiClient.get('/portal/corporate/profile').then(r => r.data);
 export const updateCorpPortalProfile = (data) => apiClient.put('/portal/corporate/profile', data);
 
+
+export const fetchCorpAvailablePlans = () =>
+    apiClient.get('/portal/corporate/available-plans').then(r => r.data);
+
+// RENAMED: upgradeEnrolleeTier → corpPortalUpgradeEnrolleeTier (to match CorpEnrolleesPage.jsx)
+export const corpPortalUpgradeEnrolleeTier = (enrolleeId, planId) =>
+    apiClient.patch(`/portal/corporate/enrollees/${enrolleeId}/upgrade-tier`, { plan_id: planId }).then(r => r.data);
+
+// Keep original for backward compatibility if needed
+export const upgradeEnrolleeTier = corpPortalUpgradeEnrolleeTier;
+
+export const fetchCorpPortalBudget = () =>
+    apiClient.get('/portal/corporate/budget').then(r => r.data);
+
+export const estimateCorpPlan = (data) =>
+    apiClient.post('/portal/corporate/plan-requests/estimate', data).then(r => r.data);
+
+export const submitCorpPlanRequest = (data) =>
+    apiClient.post('/portal/corporate/plan-requests', data).then(r => r.data);
+
+export const fetchCorpPlanRequests = () =>
+    apiClient.get('/portal/corporate/plan-requests').then(r => r.data);
+
+export const sendCorpBroadcast = (data) =>
+    apiClient.post('/portal/corporate/broadcast', data).then(r => r.data);
+
+// ── Staff — plan request review ─────────────────────────────────────────────
+export const fetchPlanRequests = (params) =>
+    apiClient.get('/plan-requests', { params }).then(r => r.data);
+
+export const fetchPlanRequest = (id) =>
+    apiClient.get(`/plan-requests/${id}`).then(r => r.data);
+
+export const approvePlanRequest = (id, data) =>
+    apiClient.post(`/plan-requests/${id}/approve`, data).then(r => r.data);
+
+export const rejectPlanRequest = (id, notes) =>
+    apiClient.post(`/plan-requests/${id}/reject`, { notes }).then(r => r.data);
+
+// ============= 🆕 PHASE 7 - CORPORATE PORTAL ADDITIONS =============
+export const corpPortalReactivateEnrollee = (id) =>
+    apiClient.post(`/portal/corporate/enrollees/${id}/reactivate`).then(r => r.data);
+
+export const corpPortalBulkUpdateEnrolleeStatus = (ids, status) =>
+    apiClient.post('/portal/corporate/enrollees/bulk-status', { enrollee_ids: ids, status }).then(r => r.data);
+
+export const exportCorpUtilizationReport = () => {
+    window.open('/api/v1/portal/corporate/utilization-report/export', '_blank');
+};
+
+export const fetchCorpRenewalStatus = () =>
+    apiClient.get('/portal/corporate/renewal-status').then(r => r.data);
+
+export const corpPortalRequestRenewal = (notes) =>
+    apiClient.post('/portal/corporate/request-renewal', { notes }).then(r => r.data);
+
 // ============= 🆕 ENROLLEE SELF-SERVICE PORTAL =============
 export const fetchEnrolleePortalDashboard = () => apiClient.get('/portal/enrollee/dashboard').then(r => r.data);
 export const fetchEnrolleePortalIDCard = () => apiClient.get('/portal/enrollee/id-card').then(r => r.data);
@@ -408,34 +464,9 @@ export const submitEnrolleePortalReimbursement = (formData) =>
     }).then(r => r.data);
 
 
-// // ========== PROVIDER SELF-SERVICE PORTAL =============
-// export const fetchProviderDashboard = () =>
-//     apiClient.get('/portal/provider/dashboard').then(r => r.data);
-// export const verifyProviderEnrollee = (memberNumber) =>
-//     apiClient.post('/portal/provider/verify-enrollee', { member_number: memberNumber }).then(r => r.data);
-// export const fetchProviderClaims = (params) =>
-//     apiClient.get('/portal/provider/claims', { params }).then(r => r.data);
-// export const fetchProviderClaim = (id) =>
-//     apiClient.get(`/portal/provider/claims/${id}`).then(r => r.data);
-// export const submitProviderClaim = (data) =>
-//     apiClient.post('/portal/provider/claims', data).then(r => r.data);
-// export const fetchProviderPreAuths = (params) =>
-//     apiClient.get('/portal/provider/pre-auths', { params }).then(r => r.data);
-// export const submitProviderPreAuth = (data) =>
-//     apiClient.post('/portal/provider/pre-auths', data).then(r => r.data);
-
-
 // ========== PROVIDER SELF-SERVICE PORTAL =============
 export const fetchProviderDashboard = () =>
     apiClient.get('/portal/provider/dashboard').then(r => r.data);
-export const fetchProviderCheckins = () =>
-    apiClient.get('/portal/provider/check-ins').then(r => r.data);
-// Add these missing functions
-// export const fetchProviderCheckins = () =>
-//     apiClient.get('/portal/provider/checkins').then(r => r.data);
-
-export const acknowledgeProviderCheckin = (checkinId) =>
-    apiClient.post(`/portal/provider/checkins/${checkinId}/acknowledge`).then(r => r.data);
 
 export const verifyProviderEnrollee = (memberNumber) =>
     apiClient.post('/portal/provider/verify-enrollee', { member_number: memberNumber }).then(r => r.data);
@@ -454,6 +485,95 @@ export const fetchProviderPreAuths = (params) =>
 
 export const submitProviderPreAuth = (data) =>
     apiClient.post('/portal/provider/pre-auths', data).then(r => r.data);
+
+export const fetchProviderCheckins = () =>
+    apiClient.get('/portal/provider/check-ins').then(r => r.data);
+
+export const acknowledgeProviderCheckin = (checkinId) =>
+    apiClient.post(`/portal/provider/checkins/${checkinId}/acknowledge`).then(r => r.data);
+
+
+// ── Provider bulk claims import ─────────────────────────────────────────────
+export const uploadProviderClaimImport = (file, claimPeriod) => {
+    const formData = new FormData();
+    formData.append('file', file);
+    formData.append('claim_period', claimPeriod);
+    return apiClient.post('/portal/provider/claims/import/upload', formData, {
+        headers: { 'Content-Type': 'multipart/form-data' }
+    }).then(r => r.data);
+};
+
+export const confirmProviderImportMapping = (batchId, mapping) =>
+    apiClient.post(`/portal/provider/claims/import/${batchId}/map`, { mapping }).then(r => r.data);
+
+export const fetchProviderImportRows = (batchId) =>
+    apiClient.get(`/portal/provider/claims/import/${batchId}/rows`).then(r => r.data);
+
+export const pushProviderImportBatch = (batchId, notes = '') =>
+    apiClient.post(`/portal/provider/claims/import/${batchId}/push`, { notes }).then(r => r.data);
+
+// ── Provider payments & reconciliation ──────────────────────────────────────
+export const fetchProviderPayments = (params) =>
+    apiClient.get('/portal/provider/payments', { params }).then(r => r.data);
+
+export const fetchProviderReconciliation = () =>
+    apiClient.get('/portal/provider/reconciliation').then(r => r.data);
+
+// ── Provider tickets ─────────────────────────────────────────────────────────
+export const fetchProviderTickets = () =>
+    apiClient.get('/portal/provider/tickets').then(r => r.data);
+
+export const submitProviderTicket = (data) =>
+    apiClient.post('/portal/provider/tickets', data).then(r => r.data);
+
+export const fetchProviderTicketThread = (ticketId) =>
+    apiClient.get(`/portal/provider/tickets/${ticketId}`).then(r => r.data);
+
+export const replyProviderTicket = (ticketId, message) =>
+    apiClient.post(`/portal/provider/tickets/${ticketId}/reply`, { message }).then(r => r.data);
+
+// ── Enrollee tickets (repointed from complaints) ────────────────────────────
+export const fetchEnrolleeTicketThread = (ticketId) =>
+    apiClient.get(`/portal/enrollee/complaints/${ticketId}`).then(r => r.data);
+
+export const replyEnrolleeTicket = (ticketId, message) =>
+    apiClient.post(`/portal/enrollee/complaints/${ticketId}/reply`, { message }).then(r => r.data);
+
+// ── Corporate tickets ────────────────────────────────────────────────────────
+export const fetchCorpPortalTickets = () =>
+    apiClient.get('/portal/corporate/tickets').then(r => r.data);
+
+export const submitCorpPortalTicket = (data) =>
+    apiClient.post('/portal/corporate/tickets', data).then(r => r.data);
+
+export const fetchCorpPortalTicketThread = (ticketId) =>
+    apiClient.get(`/portal/corporate/tickets/${ticketId}`).then(r => r.data);
+
+export const replyCorpPortalTicket = (ticketId, message) =>
+    apiClient.post(`/portal/corporate/tickets/${ticketId}/reply`, { message }).then(r => r.data);
+
+// ── Staff ticket queue ───────────────────────────────────────────────────────
+export const fetchTickets = (params) =>
+    apiClient.get('/tickets', { params }).then(r => r.data);
+
+export const fetchTicket = (id) =>
+    apiClient.get(`/tickets/${id}`).then(r => r.data);
+
+export const assignTicket = (id, userId) =>
+    apiClient.post(`/tickets/${id}/assign`, { user_id: userId }).then(r => r.data);
+
+export const replyTicket = (id, message, isInternalNote = false) =>
+    apiClient.post(`/tickets/${id}/reply`, { message, is_internal_note: isInternalNote }).then(r => r.data);
+
+export const resolveTicket = (id, resolutionNote) =>
+    apiClient.post(`/tickets/${id}/resolve`, { resolution_note: resolutionNote }).then(r => r.data);
+
+export const closeTicket = (id) =>
+    apiClient.post(`/tickets/${id}/close`).then(r => r.data);
+
+export const reopenTicket = (id, reason) =>
+    apiClient.post(`/tickets/${id}/reopen`, { reason }).then(r => r.data);
+
 
 // ============= USERS =============
 export const fetchUsers = (params) => apiClient.get('/users', { params });
@@ -554,8 +674,8 @@ export default {
     fetchAuditLogs,
     
     // 🆕 Compliance
-    fetchFilings, fetchFiling, fetchComplianceSummary,  // ← add fetchComplianceSummary
-    createFiling, updateFiling, completeFiling, uploadFilingDoc,  // ← add completeFiling
+    fetchFilings, fetchFiling, fetchComplianceSummary,
+    createFiling, updateFiling, completeFiling, uploadFilingDoc,
 
     // 🆕 SYSTEM SETTINGS (ADD THESE)
     fetchSystemSettings, updateSystemSettings, updateSystemSetting, 
@@ -573,6 +693,14 @@ export default {
     fetchCorpPortalClaims, corpPortalAddEnrollee, corpPortalRemoveEnrollee,
     corpPortalBulkUpload, fetchCorpPortalProfile, updateCorpPortalProfile,
     
+    fetchCorpAvailablePlans, corpPortalUpgradeEnrolleeTier, upgradeEnrolleeTier, fetchCorpPortalBudget, estimateCorpPlan,
+    submitCorpPlanRequest, fetchCorpPlanRequests, sendCorpBroadcast, fetchPlanRequests, fetchPlanRequest,
+    approvePlanRequest, rejectPlanRequest,
+
+    // 🆕 PHASE 7 - Corporate Portal
+    corpPortalReactivateEnrollee, corpPortalBulkUpdateEnrolleeStatus, 
+    exportCorpUtilizationReport, fetchCorpRenewalStatus, corpPortalRequestRenewal,
+ 
     // 🆕 Enrollee Portal
     fetchEnrolleePortalDashboard, fetchEnrolleePortalIDCard, fetchEnrolleePortalBenefits,
     fetchEnrolleePortalClaims, fetchEnrolleePortalHCPs, fetchEnrolleePortalComplaints,
@@ -585,6 +713,8 @@ export default {
     fetchProviderClaim, submitProviderClaim, fetchProviderPreAuths,
     submitProviderPreAuth,
   
+    uploadProviderClaimImport, confirmProviderImportMapping, fetchProviderImportRows, pushProviderImportBatch, fetchProviderPayments, fetchProviderReconciliation, fetchProviderTickets, submitProviderTicket, fetchProviderTicketThread, replyProviderTicket,
+
     // Users
     fetchUsers, fetchUser,fetchUserById, createUser, updateUser, deleteUser,
     toggleUserStatus, assignUserRoles,

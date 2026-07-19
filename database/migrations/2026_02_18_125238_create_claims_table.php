@@ -24,7 +24,7 @@ return new class extends Migration
                   ->constrained()
                   ->restrictOnDelete();
 
-            // The enrollee may be a principal or dependent — we track separately
+            // The enrollee may be a principal or dependent - we track separately
             $table->unsignedBigInteger('dependent_id')
                   ->nullable()
                   ->comment('If claim is for a dependent, set this. enrollee_id remains the principal.');
@@ -46,7 +46,7 @@ return new class extends Migration
             $table->decimal('total_amount_claimed', 15, 2)->default(0);
             $table->decimal('total_amount_approved', 15, 2)
                   ->default(0)
-                  ->comment('Set after officer review — may differ from claimed');
+                  ->comment('Set after officer review - may differ from claimed');
             $table->decimal('total_amount_paid', 15, 2)
                   ->default(0)
                   ->comment('Actual amount disbursed after batch processing');

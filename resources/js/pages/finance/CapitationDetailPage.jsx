@@ -30,8 +30,8 @@ import { useAuth } from '../../contexts/AuthContext';
 
 // ─── Status config ───────────────────────────────────────────────────────────
 const RUN_STATUS = {
-    draft:    { label: 'Draft — Pending Approval',  color: '#6b7280', bg: '#f3f4f6', icon: FileText   },
-    approved: { label: 'Approved — Batch Created',  color: '#0f4c81', bg: '#e8f0fe', icon: CheckCircle },
+    draft:    { label: 'Draft - Pending Approval',  color: '#6b7280', bg: '#f3f4f6', icon: FileText   },
+    approved: { label: 'Approved - Batch Created',  color: '#0f4c81', bg: '#e8f0fe', icon: CheckCircle },
     paid:     { label: 'Paid',                       color: '#137333', bg: '#e6f4ea', icon: CheckCircle },
 };
 
@@ -88,7 +88,7 @@ export default function CapitationDetailPage() {
                 <div className="flex-grow-1">
                     <div className="d-flex align-items-center gap-3 flex-wrap">
                         <h4 className="mb-0 fw-bold" style={{ color: '#111' }}>
-                            Capitation Run — {run.period_label}
+                            Capitation Run - {run.period_label}
                         </h4>
                         <span style={{
                             padding: '4px 12px', borderRadius: 12, fontSize: 12, fontWeight: 600,
@@ -142,7 +142,7 @@ export default function CapitationDetailPage() {
                     icon={DollarSign}
                     color="#0f4c81"
                     bg="#e8f0fe"
-                    sub={isDraft ? 'Draft — subject to change' : 'Finalised'}
+                    sub={isDraft ? 'Draft - subject to change' : 'Finalised'}
                 />
                 <KpiCard
                     label="HCPs Included"
@@ -162,7 +162,7 @@ export default function CapitationDetailPage() {
                 />
                 <KpiCard
                     label="Variance vs Prior Month"
-                    value={varZero ? '—' : `${varPositive ? '+' : ''}${run.member_variance}`}
+                    value={varZero ? '-' : `${varPositive ? '+' : ''}${run.member_variance}`}
                     icon={varPositive ? TrendingUp : varZero ? Minus : TrendingDown}
                     color={varZero ? '#6b7280' : varPositive ? '#137333' : '#c5221f'}
                     bg={varZero ? '#f3f4f6' : varPositive ? '#e6f4ea' : '#fce8e6'}
@@ -186,7 +186,7 @@ export default function CapitationDetailPage() {
             <div className="card border-0 shadow-sm" style={{ borderRadius: 12 }}>
                 <div className="card-header bg-white py-3 border-bottom">
                     <div className="fw-semibold" style={{ fontSize: 14 }}>
-                        Headcount Reconciliation — {run.period_label}
+                        Headcount Reconciliation - {run.period_label}
                     </div>
                     <div className="text-muted" style={{ fontSize: 12 }}>
                         Showing all HCPs included in this run. Variance column compares to the previous approved run.
@@ -254,7 +254,7 @@ export default function CapitationDetailPage() {
                                                     {formatCurrency(rec.adjustment_amount)}
                                                 </span>
                                             ) : (
-                                                <span className="text-muted">—</span>
+                                                <span className="text-muted">-</span>
                                             )}
                                         </td>
                                         <td className="text-end">
@@ -372,13 +372,13 @@ function TierBadge({ tier }) {
             padding: '2px 8px', borderRadius: 10, fontSize: 11, fontWeight: 600,
             textTransform: 'capitalize', color: s.color, background: s.bg,
         }}>
-            {tier ?? '—'}
+            {tier ?? '-'}
         </span>
     );
 }
 
 function VariancePill({ variance }) {
-    if (!variance || variance === 0) return <span className="text-muted font-monospace">—</span>;
+    if (!variance || variance === 0) return <span className="text-muted font-monospace">-</span>;
     const pos = variance > 0;
     return (
         <span style={{
@@ -429,7 +429,7 @@ function AdjustRecordModal({ runId, record, onClose, onSuccess }) {
                     <div className="modal-header">
                         <div>
                             <h5 className="modal-title fw-bold mb-0">
-                                Adjust Record — {record.hcp_name}
+                                Adjust Record - {record.hcp_name}
                             </h5>
                             <div className="text-muted" style={{ fontSize: 12 }}>
                                 Current: {record.enrolled_member_count} members · {formatCurrency((record.total_amount ?? 0) + (record.adjustment_amount ?? 0))}

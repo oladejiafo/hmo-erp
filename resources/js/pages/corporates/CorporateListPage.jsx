@@ -181,7 +181,7 @@ export default function CorporateListPage() {
                                                     {corp.code}
                                                 </span>
                                             </td>
-                                            <td style={{ fontSize: 12 }}>{corp.rc_number ?? '—'}</td>
+                                            <td style={{ fontSize: 12 }}>{corp.rc_number ?? '-'}</td>
                                             <td>
                                                 <span className="fw-semibold">
                                                     {corp.active_enrollees_count ?? 0}

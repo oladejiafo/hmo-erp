@@ -11,7 +11,7 @@
  * BUG 2 FIXED: Auth endpoints (/auth/*) are now excluded from the 401 dispatch.
  *   Previously, if `/auth/me` itself returned 401 (expired token), the interceptor
  *   would fire the event AND `fetchUser`'s catch block would call clearSession()
- *   simultaneously — double-handling with unpredictable order. Now only
+ *   simultaneously - double-handling with unpredictable order. Now only
  *   `fetchUser`'s catch block handles auth endpoint 401s.
  *
  * BUG 3 FIXED: Added request ID tracking to prevent the event from firing
@@ -23,7 +23,7 @@
 import axios from 'axios';
 
 const apiClient = axios.create({
-    baseURL: '/api/v1',          // ← Explicit prefix — removes ambiguity on refresh
+    baseURL: '/api/v1',          // ← Explicit prefix - removes ambiguity on refresh
     headers: {
         'Content-Type': 'application/json',
         'Accept':        'application/json',
@@ -45,7 +45,7 @@ apiClient.interceptors.request.use(
 
 // ── Response interceptor ──────────────────────────────────────────────────────
 apiClient.interceptors.response.use(
-    // Success — pass through
+    // Success - pass through
     (response) => response,
 
     // Error handler

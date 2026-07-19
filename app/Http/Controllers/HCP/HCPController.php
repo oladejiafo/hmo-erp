@@ -94,7 +94,7 @@ class HCPController extends Controller
     }
 
     /**
-     * Accredit — pending/suspended → active.
+     * Accredit - pending/suspended → active.
      * PATCH /hcps/{hcp}/accredit
      */
     public function accredit(UpdateHcpStatusRequest $request, HealthCareProvider $hcp): JsonResponse
@@ -239,7 +239,7 @@ class HCPController extends Controller
     }
 
     /**
-     * Blacklist an HCP — requires a documented reason.
+     * Blacklist an HCP - requires a documented reason.
      * PATCH /hcps/{hcp}/blacklist
      */
     public function blacklist(UpdateHcpStatusRequest $request, HealthCareProvider $hcp): JsonResponse
@@ -260,7 +260,7 @@ class HCPController extends Controller
     }
 
     /**
-     * Reverse a blacklist — restores to active.
+     * Reverse a blacklist - restores to active.
      * PATCH /hcps/{hcp}/unblacklist
      */
     public function unblacklist(UpdateHcpStatusRequest $request, HealthCareProvider $hcp): JsonResponse

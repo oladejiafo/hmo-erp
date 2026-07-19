@@ -10,10 +10,15 @@ use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Storage;
 use Illuminate\Support\Facades\Auth;
+use App\Services\PaymentGatewayService;
 
 class PaymentBatchController extends Controller
 {
-    public function __construct(protected PaymentBatchService $batchService) {}
+  
+    public function __construct(
+        protected PaymentBatchService $batchService,
+        protected PaymentGatewayService $gatewayService,
+    ) {}
 
     public function index(Request $request): JsonResponse
     {
@@ -86,6 +91,17 @@ class PaymentBatchController extends Controller
     {
         try {
             $batch = $this->batchService->approveBatch($batch);
+            
+            // 🔔 ADD THIS: Notify all providers in this batch that they've been paid
+            // Get all payments in this batch
+            $payments = $batch->payments()->with('hcp')->get();
+            foreach ($payments as $payment) {
+                // Only notify for payments that have an HCP (provider)
+                if ($payment->hcp && $payment->status === 'paid') {
+                    app(\App\Services\NotificationService::class)->providerPaymentMade($payment);
+                }
+            }
+            
         } catch (\RuntimeException $e) {
             return response()->json(['message' => $e->getMessage()], 422);
         }
@@ -96,6 +112,25 @@ class PaymentBatchController extends Controller
         ]);
     }
 
+    public function disburseViaGateway(Request $request, PaymentBatch $batch): JsonResponse
+    {
+        $request->validate(['gateway' => 'nullable|string|in:flutterwave,interswitch']);
+
+        try {
+            $result = $this->gatewayService->disburseBatch($batch, $request->gateway);
+        } catch (\RuntimeException $e) {
+            return response()->json(['message' => $e->getMessage()], 422);
+        }
+
+        return response()->json([
+            'message' => count($result['initiated']) . ' transfers initiated, '
+                . count($result['skipped']) . ' skipped (missing bank details), '
+                . count($result['immediateFailures']) . ' rejected immediately by gateway.',
+            'data' => $result,
+            'batch' => new PaymentBatchResource($batch->fresh()),
+        ]);
+    }
+    
     public function exportBankFile(PaymentBatch $batch): JsonResponse
     {
         $path = $this->batchService->generateBankExport($batch);

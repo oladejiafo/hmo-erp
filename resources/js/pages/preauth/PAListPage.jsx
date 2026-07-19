@@ -1,7 +1,7 @@
 /**
  * FILE LOCATION: resources/js/pages/preauth/PAListPage.jsx
  *
- * Pre-Authorisation Queue — the central clinical decision workspace.
+ * Pre-Authorisation Queue - the central clinical decision workspace.
  *
  * NHIA TAT standards enforced in this UI:
  *   Standard PA  → respond within 15–30 min  (yellow >15, red >30)
@@ -9,18 +9,18 @@
  *   Emergency PA → auto-approved at admission, retrospective review within 24 hrs
  *
  * Tabs:
- *   Pending    — awaiting first approval decision (TAT clock active)
- *   Awaiting MD — approved at standard level, awaiting Medical Director (>₦500k)
- *   Awaiting CEO— approved at MD level, awaiting CEO sign-off (>₦2M)
- *   All        — full history with filters
+ *   Pending    - awaiting first approval decision (TAT clock active)
+ *   Awaiting MD - approved at standard level, awaiting Medical Director (>₦500k)
+ *   Awaiting CEO- approved at MD level, awaiting CEO sign-off (>₦2M)
+ *   All        - full history with filters
  *
  * Permissions:
- *   pa.view             — see the queue
- *   pa.approve_standard — approve standard-value PAs
- *   pa.approve_high     — approve >₦500k PAs (Medical Director)
- *   pa.approve_critical — approve >₦2M PAs (CEO)
- *   pa.decline          — decline any PA
- *   pa.request          — submit new PA request
+ *   pa.view             - see the queue
+ *   pa.approve_standard - approve standard-value PAs
+ *   pa.approve_high     - approve >₦500k PAs (Medical Director)
+ *   pa.approve_critical - approve >₦2M PAs (CEO)
+ *   pa.decline          - decline any PA
+ *   pa.request          - submit new PA request
  */
 
 import React, { useState, useEffect } from 'react';
@@ -66,7 +66,7 @@ const TAT_STYLE = {
 };
 
 /**
- * Live TAT clock component — re-renders every 30 seconds.
+ * Live TAT clock component - re-renders every 30 seconds.
  */
 function TATClock({ submittedAt, urgency, status }) {
     const [mins, setMins] = useState(minutesElapsed(submittedAt));
@@ -177,7 +177,7 @@ export default function PAListPage() {
         <div>
             <PageHeader
                 title="Pre-Authorisation"
-                subtitle="Clinical PA queue — NHIA TAT standards enforced"
+                subtitle="Clinical PA queue - NHIA TAT standards enforced"
                 actions={
                     <div className="d-flex gap-2">
                         <button
@@ -216,7 +216,7 @@ export default function PAListPage() {
                     { label: 'Overdue',         value: stats.overdue_count    ?? 0, icon: AlertTriangle, color: '#c5221f', bg: '#fce8e6' },
                     { label: 'Approved Today',  value: stats.approved_today   ?? 0, icon: CheckCircle,   color: '#137333', bg: '#e6f4ea' },
                     { label: 'Declined Today',  value: stats.declined_today   ?? 0, icon: XCircle,       color: '#555',    bg: '#f1f5f9' },
-                    { label: 'Avg Response (min)', value: stats.avg_response_mins ?? '—', icon: Timer,   color: '#1967d2', bg: '#e8f0fe' },
+                    { label: 'Avg Response (min)', value: stats.avg_response_mins ?? '-', icon: Timer,   color: '#1967d2', bg: '#e8f0fe' },
                 ].map(s => (
                     <div key={s.label} className="col-6 col-xl">
                         <div className="card border-0 shadow-sm h-100">
@@ -361,7 +361,7 @@ export default function PAListPage() {
                                                     <span className="fw-semibold" style={{ fontSize: 13 }}>
                                                         {req.estimated_amount
                                                             ? formatCurrency(req.estimated_amount)
-                                                            : <span className="text-muted">—</span>}
+                                                            : <span className="text-muted">-</span>}
                                                     </span>
                                                     {req.estimated_amount > 2_000_000 && (
                                                         <div style={{ fontSize: 10, color: '#c5221f', fontWeight: 700 }}>

@@ -11,7 +11,7 @@ export default function Footer() {
             style={{ height: 44, fontSize: 11, color: '#6c757d' }}
         >
             <span>
-                © {year} G8 Nexum - HMO ERP System — All rights reserved.
+                © {year} G8 Nexum - HMO ERP System - All rights reserved.
             </span>
 
             <span className="d-flex align-items-center gap-1">

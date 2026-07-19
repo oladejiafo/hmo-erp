@@ -103,7 +103,7 @@ const navItems = [
         group: "master",
     },
 
-    // Financial — expanded: Finance, Capitation, FFS each get their own row
+    // Financial - expanded: Finance, Capitation, FFS each get their own row
     {
         label: "Finance & Payments",
         icon: CreditCard,

@@ -193,7 +193,7 @@ function ArticleList() {
                 {/* ── Main content ─────────────────────────────────────────── */}
                 <div className="col-md-9">
 
-                    {/* Featured grid — only when no filter active */}
+                    {/* Featured grid - only when no filter active */}
                     {!isFiltered && featured.length > 0 && (
                         <div className="mb-4">
                             <h6 className="fw-semibold mb-3 d-flex align-items-center gap-2">

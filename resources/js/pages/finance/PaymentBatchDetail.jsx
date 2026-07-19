@@ -247,10 +247,10 @@ export default function PaymentBatchDetail() {
                                                             />
                                                         </td>
                                                         <td className="font-monospace text-muted">
-                                                            {p.payment_reference ?? '—'}
+                                                            {p.payment_reference ?? '-'}
                                                         </td>
                                                         <td className="text-muted">
-                                                            {p.paid_at ? formatDateTime(p.paid_at) : '—'}
+                                                            {p.paid_at ? formatDateTime(p.paid_at) : '-'}
                                                         </td>
                                                     </tr>
                                                 ))}
@@ -263,7 +263,7 @@ export default function PaymentBatchDetail() {
                     </div>
                 </div>
 
-                {/* Sidebar — meta */}
+                {/* Sidebar - meta */}
                 <div className="col-md-4">
                     <div className="card border-0 shadow-sm mb-3">
                         <div className="card-header bg-white border-bottom py-3">
@@ -274,15 +274,15 @@ export default function PaymentBatchDetail() {
                                 { label: 'Batch Number',  value: batch.batch_number },
                                 { label: 'Status',        value: <StatusBadge status={status} color={BATCH_STATUS_COLOR[status]} /> },
                                 { label: 'Description',   value: batch.description },
-                                { label: 'Created By',    value: batch.created_by?.name ?? '—' },
+                                { label: 'Created By',    value: batch.created_by?.name ?? '-' },
                                 { label: 'Created At',    value: formatDateTime(batch.created_at) },
-                                { label: 'Approved By',   value: batch.approved_by?.name ?? '—' },
-                                { label: 'Approved At',   value: batch.approved_at ? formatDateTime(batch.approved_at) : '—' },
-                                { label: 'Processed At',  value: batch.processed_at ? formatDateTime(batch.processed_at) : '—' },
+                                { label: 'Approved By',   value: batch.approved_by?.name ?? '-' },
+                                { label: 'Approved At',   value: batch.approved_at ? formatDateTime(batch.approved_at) : '-' },
+                                { label: 'Processed At',  value: batch.processed_at ? formatDateTime(batch.processed_at) : '-' },
                             ].map(({ label, value }) => (
                                 <div key={label} className="d-flex justify-content-between align-items-center mb-2 pb-2 border-bottom">
                                     <small className="text-muted">{label}</small>
-                                    <span style={{ fontSize: 13 }}>{value ?? '—'}</span>
+                                    <span style={{ fontSize: 13 }}>{value ?? '-'}</span>
                                 </div>
                             ))}
                         </div>
@@ -295,9 +295,9 @@ export default function PaymentBatchDetail() {
                         </div>
                         <div className="card-body p-0">
                             {[
-                                { s: 'draft',     label: 'Draft — review claims' },
-                                { s: 'submitted', label: 'Submitted — awaiting approval' },
-                                { s: 'completed', label: 'Completed — claims marked paid' },
+                                { s: 'draft',     label: 'Draft - review claims' },
+                                { s: 'submitted', label: 'Submitted - awaiting approval' },
+                                { s: 'completed', label: 'Completed - claims marked paid' },
                             ].map(({ s, label }) => (
                                 <div key={s} className={`d-flex align-items-center gap-3 px-3 py-2 border-bottom ${status === s ? 'bg-light' : ''}`}>
                                     <div className={`rounded-circle d-flex align-items-center justify-content-center flex-shrink-0`}

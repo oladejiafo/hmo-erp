@@ -7,9 +7,9 @@ use Illuminate\Http\Request;
 use Symfony\Component\HttpFoundation\Response;
 
 /**
- * Route permission gate — wraps Spatie permission check.
+ * Route permission gate - wraps Spatie permission check.
  *
- * Usage in routes (supports multiple permissions — ANY match grants access):
+ * Usage in routes (supports multiple permissions - ANY match grants access):
  *   ->middleware('permission:claims.approve')
  *   ->middleware('permission:claims.approve,claims.process')
  */

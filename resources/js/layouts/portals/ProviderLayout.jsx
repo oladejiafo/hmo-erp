@@ -6,15 +6,20 @@
 import React, { useState } from 'react';
 import { Outlet, NavLink, useNavigate } from 'react-router-dom';
 import {
-    LayoutDashboard, FileText, ShieldCheck,
+    LayoutDashboard, FileText, ShieldCheck, UploadCloud,
+    Wallet, Scale, MessageSquare,
     LogOut, Menu, X, Bell, Stethoscope,
 } from 'lucide-react';
 import { useAuth } from '../../contexts/AuthContext';
 
 const navItems = [
-    { path: '/provider',            label: 'Dashboard',      icon: LayoutDashboard, exact: true },
-    { path: '/provider/claims',     label: 'Claims',         icon: FileText },
-    { path: '/provider/pre-auths',  label: 'Pre-Authorisations', icon: ShieldCheck },
+    { path: '/provider',                label: 'Dashboard',           icon: LayoutDashboard, exact: true },
+    { path: '/provider/claims',         label: 'Claims',              icon: FileText },
+    { path: '/provider/claims/import',  label: 'Bulk Upload',         icon: UploadCloud },
+    { path: '/provider/pre-auths',      label: 'Pre-Authorisations',  icon: ShieldCheck },
+    { path: '/provider/payments',       label: 'Payments',            icon: Wallet },
+    { path: '/provider/reconciliation', label: 'Reconciliation',      icon: Scale },
+    { path: '/provider/tickets',        label: 'Support',             icon: MessageSquare },
 ];
 
 export default function ProviderLayout({ children }) {

@@ -31,7 +31,7 @@ class StoreClaimRequest extends FormRequest
             'is_pre_authorized'    => ['nullable', 'boolean'],
             'pre_auth_code'        => ['nullable', 'required_if:is_pre_authorized,true', 'string', 'max:50'],
 
-            // Claim items — at least one required
+            // Claim items - at least one required
             'items'                    => ['required', 'array', 'min:1'],
             'items.*.service_code'     => ['nullable', 'string', 'max:30'],
             'items.*.service_name'     => ['required', 'string', 'max:200'],

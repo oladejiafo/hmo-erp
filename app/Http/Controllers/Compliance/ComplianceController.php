@@ -65,7 +65,7 @@ class ComplianceController extends Controller
         ]);
     }
 
-    // ── SUMMARY — calendar KPI cards ─────────────────────────────────────────
+    // ── SUMMARY - calendar KPI cards ─────────────────────────────────────────
 
     public function summary(): JsonResponse
     {
@@ -82,7 +82,7 @@ class ComplianceController extends Controller
                                       ->whereMonth('completed_date', now()->month)->count();
         $totalOpen     = (clone $base)->whereNotIn('status', ['completed', 'waived'])->count();
 
-        // Calendar data for the next 3 months — one entry per filing
+        // Calendar data for the next 3 months - one entry per filing
         $calendarItems = (clone $base)
             ->whereNotIn('status', ['completed', 'waived'])
             ->where('due_date', '>=', now()->startOfMonth())

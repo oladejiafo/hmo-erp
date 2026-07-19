@@ -3,14 +3,14 @@
  * Modeled directly on the styling/structure of MyClaimsPage.jsx so it feels
  * like the same product, not a bolt-on.
  *
- * ASSUMPTION FLAGGED: needs a route added to the portal sidebar/router — I
+ * ASSUMPTION FLAGGED: needs a route added to the portal sidebar/router - I
  * haven't seen that file (likely resources/js/layouts/portals/EnrolleeLayout.jsx
  * or a routes config). Wire it in wherever MyClaimsPage.jsx is currently linked.
  */
 import React, { useState } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import {
-    fetchEnrolleePortalReimbursements as fetchEnrolleeReimbursements,   // [PHASE 1] — matches real api/index.js naming
+    fetchEnrolleePortalReimbursements as fetchEnrolleeReimbursements,   // [PHASE 1] - matches real api/index.js naming
     submitEnrolleePortalReimbursement as submitReimbursement,
 } from '../../../api/index';
 import { formatCurrency, formatDate } from '../../../utils/format';

@@ -6,7 +6,7 @@ use Illuminate\Support\Facades\DB;
 /**
  * `fraud_flags.flag_type` is a strict DB-level enum (verified against
  * database/migrations/..._create_fraud_flags_table.php), not a free string.
- * FraudFlagController/Model has no cast enforcing it in PHP — the constraint
+ * FraudFlagController/Model has no cast enforcing it in PHP - the constraint
  * lives entirely in the database. Inserting 'member_disputed_utilization'
  * without this migration would fail at the DB layer on MySQL/Postgres.
  *
@@ -15,7 +15,7 @@ use Illuminate\Support\Facades\DB;
  * MySQL. SQLite doesn't enforce enum constraints at all (stored as TEXT),
  * so this migration only does real work on mysql/pgsql and is a safe no-op
  * elsewhere. Confirm your actual production DB driver before running this
- * against prod — if it's something other than mysql/pgsql/sqlite, this
+ * against prod - if it's something other than mysql/pgsql/sqlite, this
  * needs a fourth branch.
  */
 return new class extends Migration

@@ -44,7 +44,7 @@ return new class extends Migration {
                   ->constrained('corporates')
                   ->nullOnDelete();
 
-            // For FFS remittance — link to payment batch
+            // For FFS remittance - link to payment batch
             $table->foreignId('payment_batch_id')
                   ->nullable()
                   ->constrained('payment_batches')
@@ -62,7 +62,7 @@ return new class extends Migration {
 
             $table->text('error_message')->nullable();
 
-            // Customisation overrides (JSON — which sections to include, date ranges, etc.)
+            // Customisation overrides (JSON - which sections to include, date ranges, etc.)
             $table->json('config')->nullable();
 
             $table->decimal('total_amount', 14, 2)->nullable();   // denormalised for listing

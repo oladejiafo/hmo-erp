@@ -7,18 +7,18 @@ use Illuminate\Database\Seeder;
 class DatabaseSeeder extends Seeder
 {
     /**
-     * ORDER IS CRITICAL — foreign key dependencies must be respected.
+     * ORDER IS CRITICAL - foreign key dependencies must be respected.
      *
-     * 1. BranchSeeder          — no deps
-     * 2. RolePermissionSeeder  — no deps (Spatie)
-     * 3. AdminUserSeeder       — needs: branches, roles
-     * 4. UserSeeder            — needs: branches, roles
-     * 5. CorporateSeeder       — needs: branches, users (created_by)
-     * 6. HCPSeeder             — needs: branches, users
-     * 7. EnrolleeSeeder        — needs: branches, corporates, plans, hcps, users
-     * 8. ClaimSeeder           — needs: branches, hcps, enrollees, users, tariffs
-     * 9. FinanceSeeder         — needs: branches, claims, hcps, users
-     * 10. AuditLogSeeder       — needs: branches, users (references any model IDs)
+     * 1. BranchSeeder          - no deps
+     * 2. RolePermissionSeeder  - no deps (Spatie)
+     * 3. AdminUserSeeder       - needs: branches, roles
+     * 4. UserSeeder            - needs: branches, roles
+     * 5. CorporateSeeder       - needs: branches, users (created_by)
+     * 6. HCPSeeder             - needs: branches, users
+     * 7. EnrolleeSeeder        - needs: branches, corporates, plans, hcps, users
+     * 8. ClaimSeeder           - needs: branches, hcps, enrollees, users, tariffs
+     * 9. FinanceSeeder         - needs: branches, claims, hcps, users
+     * 10. AuditLogSeeder       - needs: branches, users (references any model IDs)
      */
     public function run(): void
     {

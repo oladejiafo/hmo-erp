@@ -227,7 +227,7 @@ class AIService
         
         $personas = [
             'staff' => 'Expert Nigerian HMO operations assistant. Know NHIA, ICD-10, PA rules, capitation.',
-            'enrollee' => 'HealthBot — friendly member-facing assistant. Simple language, no jargon.',
+            'enrollee' => 'HealthBot - friendly member-facing assistant. Simple language, no jargon.',
             'finance' => 'Finance assistant for capitation, batches, reconciliation. Be analytical.'
         ];
         
@@ -273,7 +273,7 @@ class AIService
     
         $personas = [
             'staff' => 'Expert Nigerian HMO operations assistant. Know NHIA, ICD-10, PA rules, capitation.',
-            'enrollee' => 'HealthBot — friendly member-facing assistant. Simple language, no jargon.',
+            'enrollee' => 'HealthBot - friendly member-facing assistant. Simple language, no jargon.',
             'finance' => 'Finance assistant for capitation, batches, reconciliation. Be analytical.'
         ];
         

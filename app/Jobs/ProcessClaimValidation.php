@@ -32,7 +32,7 @@ class ProcessClaimValidation implements ShouldQueue
         ClaimStateService $stateService,
         FraudScoringService $fraudService
     ): void {
-        // Reload fresh from DB — the claim may have been modified since dispatch
+        // Reload fresh from DB - the claim may have been modified since dispatch
         $claim = $this->claim->fresh(['items', 'enrollee', 'hcp']);
 
         if (! $claim) {
@@ -56,7 +56,7 @@ class ProcessClaimValidation implements ShouldQueue
             $result = $validationService->validate($claim);
 
             if ($result->hardFail) {
-                // Hard failure — reject immediately, no human review needed
+                // Hard failure - reject immediately, no human review needed
                 $stateService->reject($claim, $result->reason);
                 Log::info("Claim {$claim->claim_number} hard-failed validation: {$result->reason}");
                 return;
@@ -91,7 +91,7 @@ class ProcessClaimValidation implements ShouldQueue
         $autoQuarantineThreshold = config('fraud.auto_quarantine_threshold', 70);
 
         if ($riskScore >= $autoRejectThreshold) {
-            // Extremely high certainty fraud — auto reject
+            // Extremely high certainty fraud - auto reject
             $stateService->reject(
                 $claim,
                 "Auto-rejected. Risk score {$riskScore}/100 exceeds auto-rejection threshold."
@@ -100,7 +100,7 @@ class ProcessClaimValidation implements ShouldQueue
         }
 
         if ($riskScore >= $autoQuarantineThreshold || $hasSoftFlags) {
-            // High risk or has flags — route to flagged for supervisor review
+            // High risk or has flags - route to flagged for supervisor review
             $stateService->flag(
                 $claim,
                 "Risk score: {$riskScore}/100. Flagged for supervisor review."
@@ -108,7 +108,7 @@ class ProcessClaimValidation implements ShouldQueue
             return;
         }
 
-        // Clean claim — send straight to officer queue
+        // Clean claim - send straight to officer queue
         $stateService->sendToReview($claim, "Auto-validated. Risk score: {$riskScore}/100. Sent for review.");
     }
 
@@ -124,7 +124,7 @@ class ProcessClaimValidation implements ShouldQueue
         try {
             $this->claim->updateQuietly(['status' => ClaimStatus::SUBMITTED->value]);
         } catch (\Throwable $e) {
-            // Do nothing — can't let this crash
+            // Do nothing - can't let this crash
         }
     }
 }

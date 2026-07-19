@@ -1,9 +1,9 @@
 <?php
 /**
- * NEW FILE — app/Http/Controllers/Portal/ProviderPortalController.php
+ * NEW FILE - app/Http/Controllers/Portal/ProviderPortalController.php
  *
  * Mirrors EnrolleePortalController / CorporatePortalController exactly:
- * ownership checked via $user->hcp (not Spatie permissions — portal users
+ * ownership checked via $user->hcp (not Spatie permissions - portal users
  * have no roles). Write endpoints deliberately do NOT reuse
  * ClaimController::store() / PreAuthController::store() directly, because
  * both of those authorize via `hasPermissionTo()` / policies that portal
@@ -13,7 +13,7 @@
  * accepted from the request body. A provider must not be able to submit a
  * claim or PA under a different hospital's name.
  *
- * Scope note: this is the Phase 2 MVP per the roadmap — claims + PA
+ * Scope note: this is the Phase 2 MVP per the roadmap - claims + PA
  * submission/tracking, enrollee verification. Mini-EMR, telemedicine, and
  * PBM dispensing are later phases and deliberately not touched here.
  */
@@ -25,7 +25,8 @@ use App\Jobs\ProcessClaimValidation;
 use App\Models\Claim;
 use App\Models\Enrollee;
 use App\Models\PreAuthorisation;
-use App\Models\HcpCheckin;
+use App\Models\Ticket; // [PHASE 3]
+use App\Services\TicketService; // [PHASE 3]
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
@@ -34,6 +35,9 @@ use Illuminate\Validation\Rule;
 
 class ProviderPortalController extends Controller
 {
+    // [PHASE 3]
+    public function __construct(protected TicketService $ticketService) {}
+
     /**
      * Dashboard summary for the logged-in provider.
      */
@@ -94,7 +98,7 @@ class ProviderPortalController extends Controller
 
     /**
      * Verify/look up an enrollee by member number, for check-in and
-     * claim/PA submission. Deliberately returns a minimal field set —
+     * claim/PA submission. Deliberately returns a minimal field set -
      * providers see enough to confirm identity and coverage, not the
      * enrollee's full record (no NIN, no address, no phone).
      */
@@ -202,7 +206,7 @@ class ProviderPortalController extends Controller
     }
 
     /**
-     * Claim detail — ownership enforced (hcp_id must match own HCP).
+     * Claim detail - ownership enforced (hcp_id must match own HCP).
      */
     public function claimShow(Request $request, Claim $claim): JsonResponse
     {
@@ -221,7 +225,7 @@ class ProviderPortalController extends Controller
      * Submit a new claim as this provider.
      *
      * Mirrors ClaimController::store()'s transaction shape (verified from
-     * the real controller) — same claim_number generation, same item
+     * the real controller) - same claim_number generation, same item
      * creation, same total calculation, same ProcessClaimValidation
      * dispatch. hcp_id is forced server-side, never taken from input.
      */
@@ -350,7 +354,7 @@ class ProviderPortalController extends Controller
      * Submit a new PA request as this provider.
      *
      * Mirrors PreAuthController::store()'s logic (verified from the real
-     * controller) — same tiering, same pa_number generation, same event
+     * controller) - same tiering, same pa_number generation, same event
      * log. hcp_id forced server-side, submission_channel marked distinctly
      * so staff can tell provider-submitted PAs apart from HMO-desk-entered
      * ones in reporting.
@@ -428,13 +432,9 @@ class ProviderPortalController extends Controller
         ], 201);
     }
 
-        /**
-     * [PHASE 2b] — Live-ish feed of members who've checked in, for the
-     * front desk to see. Frontend polls this every ~15s. Auto-marks
-     * anything past 30 minutes as expired at read time rather than needing
-     * a scheduled job for a first pass.
-     */
-    public function checkins(Request $request): JsonResponse
+    // ─── [PHASE 3] Tickets ──────────────────────────────────────────────────
+
+    public function tickets(Request $request): JsonResponse
     {
         $hcp = $request->user()->hcp;
 
@@ -442,50 +442,192 @@ class ProviderPortalController extends Controller
             return response()->json(['data' => []], 200);
         }
 
-        // Sweep expired ones on read — cheap, avoids needing a cron job yet.
-        HcpCheckin::where('hcp_id', $hcp->id)
-            ->where('status', 'pending')
-            ->where('created_at', '<', now()->subMinutes(30))
-            ->update(['status' => 'expired']);
-
-        $checkins = HcpCheckin::where('hcp_id', $hcp->id)
-            ->where('status', 'pending')
-            ->with(['enrollee:id,first_name,last_name,enrollee_id', 'dependent:id,first_name,last_name'])
+        $tickets = Ticket::forHcp($hcp->id)
             ->orderBy('created_at', 'desc')
             ->get();
 
         return response()->json([
-            'data' => $checkins->map(fn($c) => [
-                'id' => $c->id,
-                'member_name' => $c->dependent
-                    ? $c->dependent->first_name . ' ' . $c->dependent->last_name
-                    : $c->enrollee->first_name . ' ' . $c->enrollee->last_name,
-                'member_number' => $c->dependent ? null : $c->enrollee->enrollee_id,
-                'checked_in_at' => $c->created_at->format('H:i'),
-                'minutes_ago' => $c->created_at->diffInMinutes(now()),
+            'data' => $tickets->map(fn($t) => [
+                'id' => $t->id,
+                'ticket_number' => $t->ticket_number,
+                'subject' => $t->subject,
+                'description' => $t->description,
+                'category' => $t->category,
+                'priority' => $t->priority,
+                'status' => $t->status,
+                'created_at' => $t->created_at?->toISOString(),
+                'resolution_note' => $t->resolution_note,
+                'resolved_at' => $t->resolved_at?->format('Y-m-d'),
             ]),
         ]);
     }
 
-    /**
-     * [PHASE 2b] — Front desk acknowledges a check-in (member has been
-     * brought in / seen).
-     */
-    public function acknowledgeCheckin(Request $request, HcpCheckin $checkin): JsonResponse
+    public function submitTicket(Request $request): JsonResponse
+    {
+        $request->validate([
+            'subject' => 'required|string|max:255',
+            'description' => 'required|string|min:20',
+            'category' => 'nullable|string',
+            'priority' => 'nullable|string|in:low,medium,high,urgent',
+        ]);
+
+        $user = $request->user();
+
+        if (!$user->hcp) {
+            return response()->json(['message' => 'Provider account not found'], 404);
+        }
+
+        $ticket = $this->ticketService->createForUser($user, $request->only(['subject', 'description', 'category', 'priority']));
+
+        return response()->json([
+            'message' => 'Ticket submitted successfully',
+            'data' => ['id' => $ticket->id, 'ticket_number' => $ticket->ticket_number, 'status' => $ticket->status],
+        ], 201);
+    }
+
+    public function ticketShow(Request $request, Ticket $ticket): JsonResponse
     {
         $hcp = $request->user()->hcp;
 
-        if (!$hcp || $checkin->hcp_id !== $hcp->id) {
-            return response()->json(['message' => 'Check-in not found'], 404);
+        if (!$hcp || $ticket->hcp_id !== $hcp->id) {
+            return response()->json(['message' => 'Ticket not found'], 404);
         }
 
-        $checkin->update([
-            'status' => 'acknowledged',
-            'acknowledged_by' => $request->user()->id,
-            'acknowledged_at' => now(),
-        ]);
+        $ticket->load('publicMessages.user:id,name,user_type');
 
-        return response()->json(['message' => 'Acknowledged.']);
+        return response()->json([
+            'data' => [
+                'id' => $ticket->id,
+                'ticket_number' => $ticket->ticket_number,
+                'subject' => $ticket->subject,
+                'status' => $ticket->status,
+                'messages' => $ticket->publicMessages->map(fn($m) => [
+                    'id' => $m->id,
+                    'sender_type' => $m->sender_type,
+                    'message' => $m->message,
+                    'created_at' => $m->created_at?->format('Y-m-d H:i'),
+                ]),
+            ],
+        ]);
     }
-    
+
+    public function ticketReply(Request $request, Ticket $ticket): JsonResponse
+    {
+        $request->validate(['message' => 'required|string|min:1|max:2000']);
+
+        $hcp = $request->user()->hcp;
+
+        if (!$hcp || $ticket->hcp_id !== $hcp->id) {
+            return response()->json(['message' => 'Ticket not found'], 404);
+        }
+
+        if (!$ticket->isEditableByRaiser()) {
+            return response()->json(['message' => 'This ticket is closed and can no longer be replied to.'], 422);
+        }
+
+        $this->ticketService->addMessage($ticket, $request->user(), $request->message);
+
+        return response()->json(['message' => 'Reply sent.']);
+    }
+
+    // ─── [PHASE 3] Payments & Reconciliation ────────────────────────────────
+
+    /**
+     * Payment status - every disbursement made to this facility, batch by batch.
+     */
+    public function payments(Request $request): JsonResponse
+    {
+        $hcp = $request->user()->hcp;
+
+        if (!$hcp) {
+            return response()->json(['data' => [], 'meta' => []], 200);
+        }
+
+        $query = \App\Models\ProviderPayment::where('hcp_id', $hcp->id)
+            ->with(['batch:id,batch_number,status,processed_at', 'claim:id,claim_number']);
+
+        if ($status = $request->input('status')) {
+            $query->where('status', $status);
+        }
+
+        $payments = $query->orderByDesc('created_at')->paginate($request->per_page ?? 20);
+
+        return response()->json([
+            'data' => collect($payments->items())->map(fn($p) => [
+                'id' => $p->id,
+                'claim_number' => $p->claim?->claim_number,
+                'batch_number' => $p->batch?->batch_number,
+                'amount' => $p->amount,
+                'status' => $p->status,
+                'payment_reference' => $p->payment_reference,
+                'paid_at' => $p->paid_at?->format('Y-m-d'),
+            ]),
+            'meta' => [
+                'current_page' => $payments->currentPage(),
+                'last_page' => $payments->lastPage(),
+                'total' => $payments->total(),
+            ],
+        ]);
+    }
+
+    /**
+     * Reconciliation dashboard - claimed vs approved vs paid, and the gap
+     * between them. This is the "don't send emails asking where the money
+     * is" screen - every variance is visible and explained by claim status,
+     * not a black box.
+     */
+    public function reconciliation(Request $request): JsonResponse
+    {
+        $hcp = $request->user()->hcp;
+
+        if (!$hcp) {
+            return response()->json(['data' => null], 404);
+        }
+
+        $totals = Claim::where('hcp_id', $hcp->id)
+            ->selectRaw('
+                SUM(total_amount_claimed) as total_claimed,
+                SUM(total_amount_approved) as total_approved,
+                SUM(total_amount_paid) as total_paid,
+                COUNT(*) as claim_count
+            ')
+            ->first();
+
+        $byStatus = Claim::where('hcp_id', $hcp->id)
+            ->selectRaw('status, COUNT(*) as count, SUM(total_amount_claimed) as amount')
+            ->groupBy('status')
+            ->get();
+
+        // Claims approved but not yet paid - the actual "where's my money" list
+        $awaitingPayment = Claim::where('hcp_id', $hcp->id)
+            ->where('status', 'approved')
+            ->whereDoesntHave('payment')
+            ->with('enrollee:id,first_name,last_name')
+            ->orderBy('approved_at')
+            ->limit(50)
+            ->get();
+
+        return response()->json([
+            'data' => [
+                'total_claimed' => $totals->total_claimed ?? 0,
+                'total_approved' => $totals->total_approved ?? 0,
+                'total_paid' => $totals->total_paid ?? 0,
+                'variance_claimed_vs_approved' => ($totals->total_claimed ?? 0) - ($totals->total_approved ?? 0),
+                'variance_approved_vs_paid' => ($totals->total_approved ?? 0) - ($totals->total_paid ?? 0),
+                'claim_count' => $totals->claim_count ?? 0,
+                'by_status' => $byStatus->map(fn($row) => [
+                    'status' => $row->status,
+                    'count' => $row->count,
+                    'amount' => $row->amount,
+                ]),
+                'awaiting_payment' => $awaitingPayment->map(fn($c) => [
+                    'id' => $c->id,
+                    'claim_number' => $c->claim_number,
+                    'enrollee_name' => $c->enrollee ? $c->enrollee->first_name . ' ' . $c->enrollee->last_name : null,
+                    'total_amount_approved' => $c->total_amount_approved,
+                    'approved_at' => $c->approved_at?->format('Y-m-d'),
+                ]),
+            ],
+        ]);
+    }
 }

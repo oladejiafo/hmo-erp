@@ -16,7 +16,7 @@ return new class extends Migration
             $table->foreignId('branch_id')
                   ->constrained()
                   ->restrictOnDelete()
-                  ->comment('Owning branch — usually the branch that signed the corporate');
+                  ->comment('Owning branch - usually the branch that signed the corporate');
             $table->string('name', 150);
             $table->string('code', 30)->unique()->comment('Internal corporate code e.g. CORP-0001');
             $table->string('rc_number', 50)->nullable()->comment('CAC registration number');
