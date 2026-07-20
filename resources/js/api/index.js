@@ -463,6 +463,20 @@ export const submitEnrolleePortalReimbursement = (formData) =>
         headers: { 'Content-Type': 'multipart/form-data' }
     }).then(r => r.data);
 
+// ── Enrollee — check-in ─────────────────────────────────────────────────────
+export const checkInAtProvider = (hcpId, dependentId = null) =>
+    apiClient.post('/portal/enrollee/check-in', { hcp_id: hcpId, dependent_id: dependentId }).then(r => r.data);
+
+// ── Enrollee — appointments ─────────────────────────────────────────────────
+export const bookEnrolleeAppointment = (data) =>
+    apiClient.post('/portal/enrollee/appointments', data).then(r => r.data);
+
+export const fetchEnrolleeAppointments = (upcomingOnly = false) =>
+    apiClient.get('/portal/enrollee/appointments', { params: { upcoming: upcomingOnly ? 1 : 0 } }).then(r => r.data);
+
+export const cancelEnrolleeAppointment = (id) =>
+    apiClient.patch(`/portal/enrollee/appointments/${id}/cancel`).then(r => r.data);
+
 
 // ========== PROVIDER SELF-SERVICE PORTAL =============
 export const fetchProviderDashboard = () =>
@@ -491,6 +505,18 @@ export const fetchProviderCheckins = () =>
 
 export const acknowledgeProviderCheckin = (checkinId) =>
     apiClient.post(`/portal/provider/checkins/${checkinId}/acknowledge`).then(r => r.data);
+
+// ── Provider — appointments + QR verification ───────────────────────────────
+export const fetchProviderAppointments = (status) =>
+    apiClient.get('/portal/provider/appointments', { params: status ? { status } : {} }).then(r => r.data);
+
+export const confirmProviderAppointment = (id, confirmedDate, confirmedTime = null) =>
+    apiClient.post(`/portal/provider/appointments/${id}/confirm`, {
+        confirmed_date: confirmedDate, confirmed_time: confirmedTime,
+    }).then(r => r.data);
+
+export const verifyProviderQrCode = (qrData) =>
+    apiClient.post('/portal/provider/verify-qr', { qr_data: qrData }).then(r => r.data);
 
 
 // ── Provider bulk claims import ─────────────────────────────────────────────
@@ -707,13 +733,14 @@ export default {
     submitEnrolleeComplaint, fetchEnrolleePortalProfile, updateEnrolleePortalProfile,
     confirmEnrolleeClaimUtilization, disputeEnrolleeClaimUtilization,
     fetchEnrolleePortalReimbursements, submitEnrolleePortalReimbursement,
-    
+    checkInAtProvider, bookEnrolleeAppointment, fetchEnrolleeAppointments, cancelEnrolleeAppointment,
+
     // 🆕 Provider Portal
     fetchProviderDashboard, verifyProviderEnrollee, fetchProviderClaims,
     fetchProviderClaim, submitProviderClaim, fetchProviderPreAuths,
     submitProviderPreAuth,
-  
     uploadProviderClaimImport, confirmProviderImportMapping, fetchProviderImportRows, pushProviderImportBatch, fetchProviderPayments, fetchProviderReconciliation, fetchProviderTickets, submitProviderTicket, fetchProviderTicketThread, replyProviderTicket,
+    fetchProviderAppointments, confirmProviderAppointment, verifyProviderQrCode,
 
     // Users
     fetchUsers, fetchUser,fetchUserById, createUser, updateUser, deleteUser,

@@ -7,15 +7,11 @@ import EnrolleeDashboardPage from '../../pages/portals/enrollee/EnrolleeDashboar
 import MyIDCardPage from '../../pages/portals/enrollee/MyIDCardPage';
 import MyBenefitsPage from '../../pages/portals/enrollee/MyBenefitsPage';
 import MyClaimsPage from '../../pages/portals/enrollee/MyClaimsPage';
-import MyReimbursementsPage from '../../pages/portals/enrollee/MyReimbursementsPage'; // [PHASE 1] NEW
+import MyReimbursementsPage from '../../pages/portals/enrollee/MyReimbursementsPage';
 import FindHCPPage from '../../pages/portals/enrollee/FindHCPPage';
 import MyComplaintsPage from '../../pages/portals/enrollee/MyComplaintsPage';
+import MyAppointmentsPage from '../../pages/portals/enrollee/MyAppointmentsPage'; // [PHASE 8] NEW
 
-// After all imports
-console.log('🔍 EnrolleePortal rendering with routes:', {
-    hasReimbursements: !!MyReimbursementsPage,
-    component: MyReimbursementsPage
-});
 export default function EnrolleePortal() {
     return (
         <EnrolleeLayout>
@@ -24,8 +20,9 @@ export default function EnrolleePortal() {
                 <Route path="/id-card" element={<MyIDCardPage />} />
                 <Route path="/benefits" element={<MyBenefitsPage />} />
                 <Route path="/claims" element={<MyClaimsPage />} />
-                <Route path="/reimbursements" element={<MyReimbursementsPage />} /> {/* [PHASE 1] NEW */}
+                <Route path="/reimbursements" element={<MyReimbursementsPage />} />
                 <Route path="/find-hcp" element={<FindHCPPage />} />
+                <Route path="/appointments" element={<MyAppointmentsPage />} /> {/* [PHASE 8] NEW */}
                 <Route path="/complaints" element={<MyComplaintsPage />} />
             </Routes>
         </EnrolleeLayout>

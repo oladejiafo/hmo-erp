@@ -3,14 +3,21 @@
  * Member self-service: search for accredited healthcare providers.
  */
 import React, { useState } from 'react';
-import { useQuery } from '@tanstack/react-query';
-import { fetchEnrolleePortalHCPs } from '../../../api/index';
-import { Search, MapPin, Phone, Star, Building2 } from 'lucide-react';
+import { useQuery, useMutation } from '@tanstack/react-query';
+import { fetchEnrolleePortalHCPs, bookEnrolleeAppointment, checkInAtProvider } from '../../../api/index';
+import { Search, MapPin, Phone, Star, Building2, CalendarPlus, X, CheckCircle, MapPinned } from 'lucide-react';
 
 export default function FindHCPPage() {
     const [search, setSearch] = useState('');
     const [tier, setTier]     = useState('');
     const [type, setType]     = useState('');
+    const [bookingHcp, setBookingHcp] = useState(null);
+    const [checkedInIds, setCheckedInIds] = useState([]); // [PHASE 8] — hcp ids already checked in this session
+
+    const checkInMutation = useMutation({
+        mutationFn: (hcpId) => checkInAtProvider(hcpId),
+        onSuccess: (_, hcpId) => setCheckedInIds(prev => [...prev, hcpId]),
+    });
 
     const { data, isLoading } = useQuery({
         queryKey: ['enrollee-find-hcp', search, tier, type],
@@ -112,10 +119,105 @@ export default function FindHCPPage() {
                                 ))}
                             </div>
                         )}
+
+                        {/* [PHASE 8] */}
+                        <div style={{ display: 'flex', gap: 8 }}>
+                            <button onClick={() => setBookingHcp(hcp)} style={bookButtonStyle}>
+                                <CalendarPlus size={14} /> Book appointment
+                            </button>
+                            {checkedInIds.includes(hcp.id) ? (
+                                <span style={checkedInBadgeStyle}><CheckCircle size={13} /> Checked in</span>
+                            ) : (
+                                <button
+                                    onClick={() => checkInMutation.mutate(hcp.id)}
+                                    disabled={checkInMutation.isPending}
+                                    style={checkInButtonStyle}
+                                >
+                                    <MapPinned size={13} /> I'm here
+                                </button>
+                            )}
+                        </div>
                     </div>
                 ))}
             </div>
+
+            {bookingHcp && (
+                <BookAppointmentModal hcp={bookingHcp} onClose={() => setBookingHcp(null)} />
+            )}
         </div>
+    );
+}
+
+// [PHASE 8]
+function BookAppointmentModal({ hcp, onClose }) {
+    const [date, setDate] = useState('');
+    const [timeSlot, setTimeSlot] = useState('morning');
+    const [reason, setReason] = useState('');
+    const [done, setDone] = useState(false);
+
+    const bookMutation = useMutation({
+        mutationFn: () => bookEnrolleeAppointment({
+            hcp_id: hcp.id, preferred_date: date, preferred_time_slot: timeSlot, reason,
+        }),
+        onSuccess: () => setDone(true),
+    });
+
+    const canBook = date && reason.trim().length > 0;
+
+    return (
+        <>
+            <div style={modalBackdropStyle} onClick={onClose} />
+            <div style={modalStyle}>
+                <div style={modalHeaderStyle}>
+                    <h3 style={{ margin: 0, fontSize: 15, fontWeight: 700 }}>
+                        {done ? 'Appointment requested' : `Book at ${hcp.name}`}
+                    </h3>
+                    <button onClick={onClose} style={modalCloseStyle}><X size={16} /></button>
+                </div>
+
+                {done ? (
+                    <div style={{ textAlign: 'center', padding: '20px 0' }}>
+                        <CheckCircle size={36} color="#137333" style={{ marginBottom: 10 }} />
+                        <p style={{ fontSize: 13, color: '#4a5568' }}>
+                            {hcp.name} will confirm your slot. You'll see it under My Appointments.
+                        </p>
+                    </div>
+                ) : (
+                    <>
+                        <label style={modalLabelStyle}>Preferred date</label>
+                        <input
+                            type="date" value={date} onChange={e => setDate(e.target.value)}
+                            min={new Date().toISOString().split('T')[0]}
+                            style={modalInputStyle}
+                        />
+                        <label style={modalLabelStyle}>Preferred time</label>
+                        <select value={timeSlot} onChange={e => setTimeSlot(e.target.value)} style={modalInputStyle}>
+                            <option value="morning">Morning</option>
+                            <option value="afternoon">Afternoon</option>
+                            <option value="evening">Evening</option>
+                        </select>
+                        <label style={modalLabelStyle}>Reason for visit</label>
+                        <input
+                            value={reason} onChange={e => setReason(e.target.value)}
+                            placeholder="e.g. General checkup"
+                            style={modalInputStyle}
+                        />
+                        <button
+                            onClick={() => bookMutation.mutate()}
+                            disabled={!canBook || bookMutation.isPending}
+                            style={modalSubmitStyle}
+                        >
+                            {bookMutation.isPending ? 'Requesting…' : 'Request appointment'}
+                        </button>
+                        {bookMutation.isError && (
+                            <div style={{ marginTop: 8, fontSize: 12, color: '#c5221f' }}>
+                                {bookMutation.error?.response?.data?.message || 'Something went wrong.'}
+                            </div>
+                        )}
+                    </>
+                )}
+            </div>
+        </>
     );
 }
 
@@ -312,3 +414,16 @@ const serviceTagStyle = {
     padding: '2px 8px',
     borderRadius: 6,
 };
+// [PHASE 8]
+const bookButtonStyle = { display: 'flex', alignItems: 'center', gap: 6, marginTop: 12, padding: '7px 14px', borderRadius: 8, border: '1px solid #0f4c81', background: '#fff', color: '#0f4c81', fontSize: 12, fontWeight: 600, cursor: 'pointer' };
+const modalBackdropStyle = { position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.45)', zIndex: 1000 };
+const modalStyle = { position: 'fixed', top: '50%', left: '50%', transform: 'translate(-50%,-50%)', background: '#fff', borderRadius: 14, padding: 20, width: 380, maxWidth: '90vw', zIndex: 1001, boxShadow: '0 20px 60px rgba(0,0,0,0.2)' };
+const modalHeaderStyle = { display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 14 };
+const modalCloseStyle = { background: 'none', border: 'none', cursor: 'pointer', color: '#718096' };
+const modalLabelStyle = { display: 'block', fontSize: 11, fontWeight: 600, color: '#4a5568', marginTop: 10, marginBottom: 4 };
+const modalInputStyle = { width: '100%', padding: '8px 12px', border: '1px solid #e2e8f0', borderRadius: 8, fontSize: 13, boxSizing: 'border-box', background: '#f7fafc' };
+const modalSubmitStyle = { width: '100%', marginTop: 16, padding: '9px 0', borderRadius: 8, border: 'none', background: '#137333', color: '#fff', fontSize: 13, fontWeight: 700, cursor: 'pointer' };
+
+// [PHASE 8] check-in styles
+const checkInButtonStyle = { display: 'flex', alignItems: 'center', gap: 5, marginTop: 12, padding: '7px 14px', borderRadius: 8, border: '1px solid #137333', background: '#fff', color: '#137333', fontSize: 12, fontWeight: 600, cursor: 'pointer' };
+const checkedInBadgeStyle = { display: 'flex', alignItems: 'center', gap: 5, marginTop: 12, padding: '7px 14px', fontSize: 12, fontWeight: 600, color: '#137333' };

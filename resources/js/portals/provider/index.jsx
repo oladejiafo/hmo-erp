@@ -1,6 +1,5 @@
 /**
- * NEW FILE - resources/js/portals/provider/index.jsx
- * Mirrors resources/js/portals/corporate/index.jsx exactly.
+ * FILE LOCATION: resources/js/portals/provider/index.jsx
  */
 import React from 'react';
 import { Routes, Route } from 'react-router-dom';
@@ -14,12 +13,14 @@ import ProviderPreAuthPage from '../../pages/portals/provider/ProviderPreAuthPag
 import ProviderPaymentsPage from '../../pages/portals/provider/ProviderPaymentsPage';
 import ProviderReconciliationPage from '../../pages/portals/provider/ProviderReconciliationPage';
 import ProviderTicketsPage from '../../pages/portals/provider/ProviderTicketsPage';
+import ProviderVerifyPage from '../../pages/portals/provider/ProviderVerifyPage'; // [PHASE 8] NEW
 
 export default function ProviderPortal() {
     return (
         <ProviderLayout>
             <Routes>
                 <Route path="/" element={<ProviderDashboardPage />} />
+                <Route path="/verify" element={<ProviderVerifyPage />} /> {/* [PHASE 8] NEW */}
                 <Route path="/claims" element={<ProviderClaimsPage />} />
                 <Route path="/claims/new" element={<ProviderClaimSubmitPage />} />
                 <Route path="/claims/import" element={<ProviderClaimImportPage />} />

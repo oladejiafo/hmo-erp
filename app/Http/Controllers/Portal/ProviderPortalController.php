@@ -630,4 +630,174 @@ class ProviderPortalController extends Controller
             ],
         ]);
     }
+    
+    /**
+     * [PHASE 8] Verify a member by scanning their ID card QR code instead
+     * of typing a member number. The QR payload (base64 JSON, built by
+     * EnrolleeCardService::buildQrPayload()) includes a checksum keyed by
+     * config('app.key') — a server-only secret, so it CANNOT be verified
+     * client-side. This endpoint decodes it and recomputes the checksum
+     * server-side using the identical formula, then re-fetches the LIVE
+     * enrollee record rather than trusting any cached field in the QR
+     * payload itself (plan, status, expiry could all be stale if anything
+     * changed since the card was printed).
+     */
+    public function verifyQrCode(Request $request): JsonResponse
+    {
+        $request->validate(['qr_data' => 'required|string']);
+
+        $decoded = base64_decode($request->qr_data, true);
+        $payload = $decoded ? json_decode($decoded, true) : null;
+
+        if (!$payload || !isset($payload['enrollee_id'], $payload['card_number'], $payload['chk'])) {
+            return response()->json(['message' => 'Invalid or unreadable QR code.'], 422);
+        }
+
+        $expectedChk = substr(md5($payload['enrollee_id'] . $payload['card_number'] . config('app.key')), 0, 8);
+
+        if (!hash_equals($expectedChk, $payload['chk'])) {
+            return response()->json(['message' => 'This card could not be verified. Ask the member to check in manually.'], 422);
+        }
+
+        $enrollee = Enrollee::where('enrollee_id', $payload['enrollee_id'])->with('plan')->first();
+
+        if (!$enrollee) {
+            return response()->json(['message' => 'Member record not found.'], 404);
+        }
+
+        $activeCard = $enrollee->activeCard;
+        if (!$activeCard || $activeCard->card_number !== $payload['card_number']) {
+            return response()->json(['message' => 'This card has been replaced and is no longer valid. Ask the member for their current card.'], 422);
+        }
+
+        return response()->json([
+            'data' => [
+                'type' => 'principal',
+                'id' => $enrollee->id,
+                'enrollee_id' => $enrollee->id,
+                'full_name' => $enrollee->first_name . ' ' . $enrollee->last_name,
+                'member_number' => $enrollee->enrollee_id,
+                'plan_name' => $enrollee->plan->plan_name ?? 'N/A',
+                'status' => $enrollee->status,
+                'expiry_date' => $enrollee->expiry_date?->format('Y-m-d'),
+                'benefit_balance' => $enrollee->benefit_balance,
+                'can_make_claim' => $enrollee->canMakeClaim(),
+                'verified_via' => 'qr_scan',
+            ],
+        ]);
+    }
+
+    // ─── [RESTORED — Phase 2b] Check-in feed ────────────────────────────────
+    // Referenced by routes/api.php but missing from this file — the
+    // /check-ins routes were 500ing. Restored here.
+
+    public function checkins(Request $request): JsonResponse
+    {
+        $hcp = $request->user()->hcp;
+
+        if (!$hcp) {
+            return response()->json(['data' => []], 200);
+        }
+
+        \App\Models\HcpCheckin::where('hcp_id', $hcp->id)
+            ->where('status', 'pending')
+            ->where('created_at', '<', now()->subMinutes(30))
+            ->update(['status' => 'expired']);
+
+        $checkins = \App\Models\HcpCheckin::where('hcp_id', $hcp->id)
+            ->where('status', 'pending')
+            ->with(['enrollee:id,first_name,last_name,enrollee_id', 'dependent:id,first_name,last_name'])
+            ->orderBy('created_at', 'desc')
+            ->get();
+
+        return response()->json([
+            'data' => $checkins->map(fn($c) => [
+                'id' => $c->id,
+                'member_name' => $c->dependent
+                    ? $c->dependent->first_name . ' ' . $c->dependent->last_name
+                    : $c->enrollee->first_name . ' ' . $c->enrollee->last_name,
+                'member_number' => $c->dependent ? null : $c->enrollee->enrollee_id,
+                'checked_in_at' => $c->created_at->format('H:i'),
+                'minutes_ago' => $c->created_at->diffInMinutes(now()),
+            ]),
+        ]);
+    }
+
+    public function acknowledgeCheckin(Request $request, \App\Models\HcpCheckin $checkin): JsonResponse
+    {
+        $hcp = $request->user()->hcp;
+
+        if (!$hcp || $checkin->hcp_id !== $hcp->id) {
+            return response()->json(['message' => 'Check-in not found'], 404);
+        }
+
+        $checkin->update([
+            'status' => 'acknowledged',
+            'acknowledged_by' => $request->user()->id,
+            'acknowledged_at' => now(),
+        ]);
+
+        return response()->json(['message' => 'Acknowledged.']);
+    }
+
+    // ─── [PHASE 8] Verification Dashboard — appointments feed ───────────────
+    // Combines with checkins() above to give the front desk one place to
+    // see who's expected AND who's already arrived.
+
+    public function appointments(Request $request): JsonResponse
+    {
+        $hcp = $request->user()->hcp;
+
+        if (!$hcp) {
+            return response()->json(['data' => []], 200);
+        }
+
+        $query = \App\Models\Appointment::where('hcp_id', $hcp->id)
+            ->with(['enrollee:id,first_name,last_name,enrollee_id', 'dependent:id,first_name,last_name']);
+
+        if ($request->status) {
+            $query->where('status', $request->status);
+        } else {
+            $query->whereIn('status', ['requested', 'confirmed', 'rescheduled']);
+        }
+
+        $appointments = $query->orderBy('preferred_date')->get();
+
+        return response()->json([
+            'data' => $appointments->map(fn($a) => [
+                'id' => $a->id,
+                'member_name' => $a->dependent
+                    ? $a->dependent->first_name . ' ' . $a->dependent->last_name
+                    : ($a->enrollee->first_name . ' ' . $a->enrollee->last_name),
+                'member_number' => $a->enrollee->enrollee_id ?? null,
+                'preferred_date' => $a->preferred_date?->format('Y-m-d'),
+                'preferred_time_slot' => $a->preferred_time_slot,
+                'reason' => $a->reason,
+                'status' => $a->status,
+            ]),
+        ]);
+    }
+
+    public function confirmAppointment(Request $request, \App\Models\Appointment $appointment): JsonResponse
+    {
+        $hcp = $request->user()->hcp;
+
+        if (!$hcp || $appointment->hcp_id !== $hcp->id) {
+            return response()->json(['message' => 'Appointment not found'], 404);
+        }
+
+        $request->validate([
+            'confirmed_date' => 'required|date',
+            'confirmed_time' => 'nullable|string|max:10',
+        ]);
+
+        $appointment->update([
+            'status' => 'confirmed',
+            'confirmed_date' => $request->confirmed_date,
+            'confirmed_time' => $request->confirmed_time,
+            'confirmed_by' => $request->user()->id,
+        ]);
+
+        return response()->json(['message' => 'Appointment confirmed.']);
+    }
 }

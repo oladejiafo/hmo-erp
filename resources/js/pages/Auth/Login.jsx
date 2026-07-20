@@ -72,7 +72,7 @@ export default function Login() {
         <div className="login-container">
             <div className="login-card p-4">
                 <h4 className="text-center mb-4">
-                    {requires2FA ? 'Two-Factor Authentication' : 'HMO ERP Login'}
+                    {requires2FA ? 'Two-Factor Authentication' : 'G8 NEXUM - HMO ERP Login'}
                 </h4>
                 
                 {!requires2FA ? (

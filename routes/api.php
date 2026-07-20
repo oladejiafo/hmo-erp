@@ -386,6 +386,9 @@ Route::middleware(['auth:sanctum', 'branch.isolation'])->group(function () {
             Route::get('/complaints', [App\Http\Controllers\Portal\EnrolleePortalController::class, 'complaints']);
             Route::get('/complaints/{ticket}', [App\Http\Controllers\Portal\EnrolleePortalController::class, 'ticketShow']);
             Route::get('/reimbursements', [App\Http\Controllers\Portal\EnrolleePortalController::class, 'reimbursements']);
+
+            Route::get('/appointments', [App\Http\Controllers\Portal\EnrolleePortalController::class, 'appointments']);
+
         });
 
         // Corporate Portal - READ only
@@ -423,6 +426,8 @@ Route::middleware(['auth:sanctum', 'branch.isolation'])->group(function () {
             Route::get('/reconciliation', [App\Http\Controllers\Portal\ProviderPortalController::class, 'reconciliation']);
             Route::get('/tickets', [App\Http\Controllers\Portal\ProviderPortalController::class, 'tickets']);
             Route::get('/tickets/{ticket}', [App\Http\Controllers\Portal\ProviderPortalController::class, 'ticketShow']);
+            
+            Route::get('/appointments', [App\Http\Controllers\Portal\ProviderPortalController::class, 'appointments']);
 
         });
 
@@ -684,6 +689,9 @@ Route::middleware(['auth:sanctum', 'branch.isolation', 'license'])->group(functi
             Route::post('/claims/{claim}/dispute-utilization', [App\Http\Controllers\Portal\EnrolleePortalController::class, 'disputeUtilization']);
             Route::post('/reimbursements', [App\Http\Controllers\Portal\EnrolleePortalController::class, 'submitReimbursement']);
             Route::post('/check-in', [App\Http\Controllers\Portal\EnrolleePortalController::class, 'checkIn']);
+
+            Route::post('/appointments', [App\Http\Controllers\Portal\EnrolleePortalController::class, 'bookAppointment']);
+            Route::patch('/appointments/{appointment}/cancel', [App\Http\Controllers\Portal\EnrolleePortalController::class, 'cancelAppointment']);
         });
 
         // Corporate Portal - WRITE
@@ -722,6 +730,9 @@ Route::middleware(['auth:sanctum', 'branch.isolation', 'license'])->group(functi
             Route::post('/claims/import/{batch}/push', [ProviderClaimImportController::class, 'push']);
             Route::post('/tickets', [App\Http\Controllers\Portal\ProviderPortalController::class, 'submitTicket']);
             Route::post('/tickets/{ticket}/reply', [App\Http\Controllers\Portal\ProviderPortalController::class, 'ticketReply']);
+
+            Route::post('/verify-qr', [App\Http\Controllers\Portal\ProviderPortalController::class, 'verifyQrCode']);
+            Route::post('/appointments/{appointment}/confirm', [App\Http\Controllers\Portal\ProviderPortalController::class, 'confirmAppointment']);
 
         });
 

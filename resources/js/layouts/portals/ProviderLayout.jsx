@@ -7,19 +7,20 @@ import React, { useState } from 'react';
 import { Outlet, NavLink, useNavigate } from 'react-router-dom';
 import {
     LayoutDashboard, FileText, ShieldCheck, UploadCloud,
-    Wallet, Scale, MessageSquare,
+    Wallet, Scale, MessageSquare, ScanLine,
     LogOut, Menu, X, Bell, Stethoscope,
 } from 'lucide-react';
 import { useAuth } from '../../contexts/AuthContext';
 
 const navItems = [
     { path: '/provider',                label: 'Dashboard',           icon: LayoutDashboard, exact: true },
-    { path: '/provider/claims',         label: 'Claims',              icon: FileText },
+    { path: '/provider/verify',         label: 'Verify',              icon: ScanLine, exact: true },
+    { path: '/provider/claims',         label: 'Claims',              icon: FileText, exact: true },  // ← ADD exact: true
     { path: '/provider/claims/import',  label: 'Bulk Upload',         icon: UploadCloud },
-    { path: '/provider/pre-auths',      label: 'Pre-Authorisations',  icon: ShieldCheck },
-    { path: '/provider/payments',       label: 'Payments',            icon: Wallet },
-    { path: '/provider/reconciliation', label: 'Reconciliation',      icon: Scale },
-    { path: '/provider/tickets',        label: 'Support',             icon: MessageSquare },
+    { path: '/provider/pre-auths',      label: 'Pre-Authorisations',  icon: ShieldCheck, exact: true },
+    { path: '/provider/payments',       label: 'Payments',            icon: Wallet, exact: true },
+    { path: '/provider/reconciliation', label: 'Reconciliation',      icon: Scale, exact: true },
+    { path: '/provider/tickets',        label: 'Support',             icon: MessageSquare, exact: true },
 ];
 
 export default function ProviderLayout({ children }) {
@@ -69,16 +70,30 @@ export default function ProviderLayout({ children }) {
                 </button>
             </aside>
 
-            {/* Main */}
+            {/* Main content area */}
             <div style={mainStyle}>
                 <header style={headerStyle}>
                     <button onClick={() => setMenuOpen(true)} style={menuBtnStyle}><Menu size={20} /></button>
                     <div style={headerTitleStyle}>{hcpName}</div>
                     <button style={bellStyle}><Bell size={18} /></button>
                 </header>
-                <main style={contentStyle}>
+
+                {/* Content - flex grow to push footer down */}
+                <div style={{ flex: 1, padding: '24px' }}>
                     {children ?? <Outlet />}
-                </main>
+                </div>
+
+                {/* Footer - stays at bottom */}
+                <footer style={{
+                    textAlign: 'center',
+                    padding: '12px 24px',
+                    color: '#94a3b8',
+                    fontSize: 12,
+                    borderTop: '1px solid #e2e8f0',
+                    flexShrink: 0,
+                }}>
+                    Provider Self-Service Portal · Powered by G8 NEXUM - HMO ERP · {new Date().getFullYear()}
+                </footer>
             </div>
         </div>
     );
@@ -92,8 +107,8 @@ const closeBtnStyle = { marginLeft: 'auto', background: 'none', border: 'none', 
 const navStyle = { display: 'flex', flexDirection: 'column', gap: 4, flex: 1 };
 const navItemStyle = { display: 'flex', alignItems: 'center', gap: 10, padding: '9px 12px', borderRadius: 8, textDecoration: 'none', fontSize: 14 };
 const logoutStyle = { display: 'flex', alignItems: 'center', gap: 8, padding: '9px 12px', borderRadius: 8, border: 'none', background: 'none', color: '#c5221f', fontSize: 14, cursor: 'pointer', marginTop: 12 };
-const mainStyle = { flex: 1, display: 'flex', flexDirection: 'column' };
-const headerStyle = { display: 'flex', alignItems: 'center', gap: 12, padding: '14px 24px', background: '#fff', borderBottom: '1px solid #e8ecf0' };
+const mainStyle = { flex: 1, display: 'flex', flexDirection: 'column', minHeight: '100vh' };
+const headerStyle = { display: 'flex', alignItems: 'center', gap: 12, padding: '14px 24px', background: '#fff', borderBottom: '1px solid #e8ecf0', flexShrink: 0 };
 const menuBtnStyle = { background: 'none', border: 'none', cursor: 'pointer', display: 'none' };
 const headerTitleStyle = { fontWeight: 600, fontSize: 15, color: '#2d3748' };
 const bellStyle = { marginLeft: 'auto', background: 'none', border: 'none', cursor: 'pointer', color: '#4a5568' };

@@ -27,7 +27,7 @@ export default function PrivacyPolicyPage() {
                             <Shield size={20} className="text-primary" /> Introduction
                         </h5>
                         <p className="text-muted" style={{ lineHeight: 1.7 }}>
-                            G8 Brooks ("we," "our," or "us") is committed to protecting your privacy. This Privacy Policy explains how we collect, use, disclose, and safeguard your information when you use our HMO ERP System platform.
+                            G8 Brooks ("we," "our," or "us") is committed to protecting your privacy. This Privacy Policy explains how we collect, use, disclose, and safeguard your information when you use our G8 NEXUM - HMO ERP System platform.
                         </p>
                         <p className="text-muted" style={{ lineHeight: 1.7 }}>
                             Please read this privacy policy carefully. If you do not agree with the terms of this privacy policy, please do not access the platform.
@@ -60,7 +60,7 @@ export default function PrivacyPolicyPage() {
                             <Lock size={20} className="text-primary" /> How We Use Your Information
                         </h5>
                         <ul className="text-muted" style={{ lineHeight: 1.7 }}>
-                            <li>To provide and maintain our HMO ERP services</li>
+                            <li>To provide and maintain our G8 NEXUM - HMO ERP services</li>
                             <li>To process claims and manage healthcare provider networks</li>
                             <li>To communicate with you about your account and updates</li>
                             <li>To improve and personalize user experience</li>

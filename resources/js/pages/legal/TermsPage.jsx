@@ -38,7 +38,7 @@ export default function TermsPage() {
                                 <Scale size={20} className="text-primary" /> 1. Acceptance of Terms
                             </h5>
                             <p className="text-muted" style={{ lineHeight: 1.7 }}>
-                                By accessing or using the G8 Brooks HMO ERP System ("the Platform"), you agree to be bound by these Terms and Conditions. If you do not agree to all terms, you may not access or use the Platform.
+                                By accessing or using the G8 NEXUM - HMO ERP System ("the Platform"), you agree to be bound by these Terms and Conditions. If you do not agree to all terms, you may not access or use the Platform.
                             </p>
                         </div>
 

@@ -118,6 +118,7 @@ import MyIDCardPage from "../pages/portals/enrollee/MyIDCardPage";
 import MyBenefitsPage from "../pages/portals/enrollee/MyBenefitsPage";
 import MyClaimsPage from "../pages/portals/enrollee/MyClaimsPage";
 import MyReimbursementsPage from "../pages/portals/enrollee/MyReimbursementsPage";
+import MyAppointmentsPage from "../pages/portals/enrollee/MyAppointmentsPage"; 
 import FindHCPPage from "../pages/portals/enrollee/FindHCPPage";
 import MyComplaintsPage from "../pages/portals/enrollee/MyComplaintsPage";
 
@@ -126,6 +127,7 @@ import ProviderDashboardPage from "../pages/portals/provider/ProviderDashboardPa
 import ProviderClaimsPage from "../pages/portals/provider/ProviderClaimsPage";
 import ProviderPreAuthPage from "../pages/portals/provider/ProviderPreAuthPage";
 import ProviderClaimSubmitPage from "../pages/portals/provider/ProviderClaimSubmitPage";
+import ProviderVerifyPage from "../pages/portals/provider/ProviderVerifyPage";
 
 import ProviderClaimImportPage from "../pages/portals/provider/ProviderClaimImportPage";      // NEW
 import ProviderPaymentsPage from "../pages/portals/provider/ProviderPaymentsPage";            // NEW
@@ -814,6 +816,7 @@ export default function AppRouter() {
                 <Route path="/enrollee/benefits" element={<MyBenefitsPage />} />
                 <Route path="/enrollee/claims" element={<MyClaimsPage />} />
                 <Route path="/enrollee/reimbursements" element={<MyReimbursementsPage />} />
+                <Route path="/enrollee/appointments" element={<MyAppointmentsPage />} />
                 <Route path="/enrollee/find-hcp" element={<FindHCPPage />} />
                 <Route
                     path="/enrollee/complaints"
@@ -837,7 +840,7 @@ export default function AppRouter() {
                 {/* <Route path="/provider/claims/:id" element={<ProviderClaimDetailPage />} /> */}
                 <Route path="/provider/pre-auths" element={<ProviderPreAuthPage />} />
                 {/* <Route path="/provider/pre-auths/:id" element={<ProviderPreAuthDetailPage />} /> */}
-                {/* <Route path="/provider/verify" element={<ProviderVerifyPage />} /> */}
+                <Route path="/provider/verify" element={<ProviderVerifyPage />} />
 
                 <Route path="/provider/claims/import" element={<ProviderClaimImportPage />} />
                 <Route path="/provider/payments" element={<ProviderPaymentsPage />} />

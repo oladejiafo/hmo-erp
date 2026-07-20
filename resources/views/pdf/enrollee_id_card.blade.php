@@ -173,7 +173,7 @@
             <div class="logo">
                 <div class="logo-icon">🏥</div>
                 <div>
-                    <div class="logo-text">HMO ERP</div>
+                    <div class="logo-text">G8 NEXUM - HMO ERP</div>
                     <div class="logo-subtext">Health Insurance Card</div>
                 </div>
             </div>

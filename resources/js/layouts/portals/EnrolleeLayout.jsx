@@ -10,28 +10,39 @@
  */
 
 import React, { useState } from 'react';
-import { Outlet, NavLink, useNavigate } from 'react-router-dom';
+import { Outlet, NavLink, useNavigate,useLocation } from 'react-router-dom';
 import {
     LayoutDashboard, CreditCard, Activity, FileText,
     MapPin, MessageSquare, LogOut, Menu, X, Bell,
-    Receipt, // [PHASE 1] NEW
+    Receipt, Calendar, ChevronDown,
 } from 'lucide-react';
+
 import { useAuth } from '../../contexts/AuthContext';
 
-const navItems = [
-    { path: '/enrollee',            label: 'Home',          icon: LayoutDashboard, exact: true },
-    { path: '/enrollee/id-card',    label: 'ID Card',       icon: CreditCard },
-    { path: '/enrollee/benefits',   label: 'Benefits',      icon: Activity },
-    { path: '/enrollee/claims',     label: 'Claims',        icon: FileText },
-    { path: '/enrollee/reimbursements', label: 'Reimburse', icon: Receipt }, // Shortened
-    { path: '/enrollee/find-hcp',   label: 'Hospitals',     icon: MapPin },
-    { path: '/enrollee/complaints', label: 'Complaints',    icon: MessageSquare },
+// Primary — used constantly, stays directly on the bar
+const primaryNavItems = [
+    { path: '/enrollee',                 label: 'Home',          icon: LayoutDashboard, exact: true },
+    { path: '/enrollee/id-card',         label: 'ID Card',       icon: CreditCard },
+    { path: '/enrollee/find-hcp',        label: 'Hospitals',     icon: MapPin },
+    { path: '/enrollee/appointments',    label: 'Appointments',  icon: Calendar },
+    { path: '/enrollee/reimbursements',  label: 'Reimburse',     icon: Receipt },
+    { path: '/enrollee/claims',          label: 'Claims',        icon: FileText },
 ];
 
-export default function EnrolleeLayout() {
+// Secondary — grouped under "More" dropdown
+const moreNavItems = [
+    { path: '/enrollee/benefits',       label: 'Benefits',      icon: Activity },
+    { path: '/enrollee/complaints',     label: 'Complaints',    icon: MessageSquare },
+];
+
+const allNavItems = [...primaryNavItems, ...moreNavItems];
+
+export default function EnrolleeLayout({ children }) {
     const { user, logout } = useAuth();
     const navigate = useNavigate();
     const [menuOpen, setMenuOpen] = useState(false);
+    const [moreOpen, setMoreOpen] = useState(false);
+    const location = useLocation();
 
     const handleLogout = async () => {
         await logout();
@@ -45,6 +56,8 @@ export default function EnrolleeLayout() {
         .map(w => w[0])
         .join('')
         .toUpperCase() || '?';
+
+    const isMoreActive = moreNavItems.some(item => location.pathname.startsWith(item.path));
 
     return (
         <div style={{ minHeight: '100vh', background: '#f7fafc' }}>
@@ -68,11 +81,6 @@ export default function EnrolleeLayout() {
                                 background: 'linear-gradient(135deg, #0f4c81, #1a6fad)',
                                 display: 'flex', alignItems: 'center', justifyContent: 'center',
                             }}>
-                                {/* <svg width="18" height="18" viewBox="0 0 32 32" fill="none">
-                                    <path d="M16 2L28 8V16C28 22.6 22.8 28.6 16 30C9.2 28.6 4 22.6 4 16V8L16 2Z"
-                                          fill="white" fillOpacity="0.95"/>
-                                    <path d="M13 16H19M16 13V19" stroke="#0f4c81" strokeWidth="2.5" strokeLinecap="round"/>
-                                </svg> */}
                                 <img 
                                     src="/images/g8-nexum-logo.png"
                                     alt="G8 Nexum"
@@ -94,7 +102,7 @@ export default function EnrolleeLayout() {
 
                         {/* Desktop nav */}
                         <div style={{ display: 'flex', gap: 2, flex: 1 }} className="d-none d-md-flex">
-                            {navItems.map(item => (
+                            {primaryNavItems.map(item => (
                                 <NavLink
                                     key={item.path}
                                     to={item.path}
@@ -116,6 +124,48 @@ export default function EnrolleeLayout() {
                                     {item.label}
                                 </NavLink>
                             ))}
+
+                            {/* More dropdown */}
+                            <div style={{ position: 'relative' }}>
+                                <button
+                                    onClick={() => setMoreOpen(o => !o)}
+                                    onBlur={() => setTimeout(() => setMoreOpen(false), 150)}
+                                    style={{
+                                        display: 'flex', alignItems: 'center', gap: 4,
+                                        padding: '6px 10px', borderRadius: 8, border: 'none',
+                                        cursor: 'pointer', fontSize: 13, fontWeight: 500,
+                                        color: isMoreActive ? '#0f4c81' : '#4a5568',
+                                        background: isMoreActive ? '#e8f0fe' : 'transparent',
+                                    }}
+                                >
+                                    More <ChevronDown size={13} style={{ transform: moreOpen ? 'rotate(180deg)' : 'none', transition: 'transform 0.15s' }} />
+                                </button>
+                                {moreOpen && (
+                                    <div style={{
+                                        position: 'absolute', top: '110%', left: 0, background: '#fff',
+                                        borderRadius: 10, boxShadow: '0 8px 24px rgba(0,0,0,0.15)',
+                                        minWidth: 180, padding: 6, zIndex: 300,
+                                    }}>
+                                        {moreNavItems.map(item => (
+                                            <NavLink
+                                                key={item.path}
+                                                to={item.path}
+                                                onClick={() => setMoreOpen(false)}
+                                                style={({ isActive }) => ({
+                                                    display: 'flex', alignItems: 'center', gap: 8,
+                                                    padding: '8px 12px', borderRadius: 7, textDecoration: 'none',
+                                                    fontSize: 13, fontWeight: 500,
+                                                    color: isActive ? '#0f4c81' : '#4a5568',
+                                                    background: isActive ? '#e8f0fe' : 'transparent',
+                                                })}
+                                            >
+                                                <item.icon size={14} />
+                                                {item.label}
+                                            </NavLink>
+                                        ))}
+                                    </div>
+                                )}
+                            </div>
                         </div>
 
                         {/* Right */}
@@ -164,7 +214,7 @@ export default function EnrolleeLayout() {
                             style={{ borderTop: '1px solid #e8ecf0', padding: '10px 0 12px' }}
                             className="d-md-none"
                         >
-                            {navItems.map(item => (
+                            {allNavItems.map(item => (
                                 <NavLink
                                     key={item.path}
                                     to={item.path}
@@ -193,7 +243,7 @@ export default function EnrolleeLayout() {
 
             {/* ── Content ─────────────────────────────────────────────── */}
             <main style={{ maxWidth: 1100, margin: '0 auto', padding: '24px 20px' }}>
-                <Outlet />
+                {children ?? <Outlet />}
             </main>
 
             {/* ── Mobile bottom nav ────────────────────────────────────── */}
@@ -207,7 +257,7 @@ export default function EnrolleeLayout() {
                 display:    'flex',
                 zIndex:     200,
             }}>
-                {navItems.slice(0, 5).map(item => (
+                {primaryNavItems.concat(moreNavItems.slice(0, 2)).map(item => (
                     <NavLink
                         key={item.path}
                         to={item.path}
@@ -240,7 +290,7 @@ export default function EnrolleeLayout() {
                 fontSize:   11,
                 marginTop:  20,
             }}>
-                Member Self-Service · HMO ERP · {new Date().getFullYear()}
+                Member Self-Service · Powered by G8 NEXUM - HMO ERP · {new Date().getFullYear()}
             </footer>
         </div>
     );
