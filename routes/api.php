@@ -46,6 +46,7 @@ use App\Http\Controllers\TicketController;
 use App\Http\Controllers\Portal\ProviderClaimImportController;
 use App\Http\Controllers\Finance\PaymentGatewayWebhookController;
 use App\Http\Controllers\Corporate\PlanRequestController;
+use App\Http\Controllers\RetailEnrollmentController;
 
 /*
 |--------------------------------------------------------------------------
@@ -69,6 +70,15 @@ Route::prefix('auth')->middleware('throttle:5,1')->group(function () {
     Route::post('reset-password', [AuthController::class, 'resetPassword']);
 });
 Route::middleware('auth:sanctum')->post('auth/set-initial-password', [AuthController::class, 'setInitialPassword']);
+
+Route::prefix('join')->group(function () {
+    Route::get('/plans', [RetailEnrollmentController::class, 'plans']);
+    Route::post('/estimate', [RetailEnrollmentController::class, 'estimatePremium']);
+    Route::post('/register', [RetailEnrollmentController::class, 'register'])->middleware('throttle:5,1');
+    Route::post('/payment-return', [RetailEnrollmentController::class, 'paymentReturn']);
+});
+
+Route::post('webhooks/flutterwave-charge', [App\Http\Controllers\Finance\PaymentGatewayWebhookController::class, 'flutterwaveCharge']);
 
 Route::post('webhooks/flutterwave', [PaymentGatewayWebhookController::class, 'flutterwave']);
 

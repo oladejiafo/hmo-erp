@@ -21,7 +21,10 @@ use Illuminate\Support\Facades\Log;
 
 class PaymentGatewayWebhookController extends Controller
 {
-    public function __construct(private PaymentGatewayService $gatewayService) {}
+    public function __construct(
+        private PaymentGatewayService $gatewayService,
+        private \App\Http\Controllers\RetailEnrollmentController $retailController,
+    ) {}
 
     public function flutterwave(Request $request): JsonResponse
     {
@@ -73,6 +76,73 @@ class PaymentGatewayWebhookController extends Controller
         $failureReason = $success ? null : ($data['complete_message'] ?? 'Transfer failed');
 
         $this->gatewayService->confirmTransaction($transaction, $success, $failureReason);
+
+        return response()->json(['message' => 'Processed']);
+    }
+
+    /**
+     * [RETAIL] Confirms an inbound retail enrolment payment. Same
+     * signature-verification requirement as the transfer webhook. Per
+     * Flutterwave's own guidance, this webhook is a TRIGGER to verify, not
+     * proof by itself, it still calls verifyCharge() server-to-server
+     * before activating anything.
+     */
+    public function flutterwaveCharge(Request $request): JsonResponse
+    {
+        $signature = $request->header('verif-hash');
+
+        if (! FlutterwaveGateway::verifyWebhookSignature($signature)) {
+            Log::warning('Flutterwave charge webhook rejected - signature mismatch', ['ip' => $request->ip()]);
+            return response()->json(['message' => 'Invalid signature'], 401);
+        }
+
+        $payload = $request->all();
+        $event = $payload['event'] ?? null;
+
+        if ($event !== 'charge.completed') {
+            return response()->json(['message' => 'Ignored - not a charge.completed event']);
+        }
+
+        $data = $payload['data'] ?? [];
+        $txRef = $data['tx_ref'] ?? null;
+        $transactionId = (string) ($data['id'] ?? '');
+        $status = strtolower($data['status'] ?? '');
+
+        if (! $txRef || ! $transactionId) {
+            Log::warning('Flutterwave charge webhook missing tx_ref or id', ['payload' => $payload]);
+            return response()->json(['message' => 'Missing reference'], 422);
+        }
+
+        $payment = \App\Models\RetailEnrollmentPayment::where('tx_ref', $txRef)->first();
+
+        if (! $payment) {
+            Log::warning('Flutterwave charge webhook - no matching retail payment found', ['tx_ref' => $txRef]);
+            return response()->json(['message' => 'No matching payment']);
+        }
+
+        if ($payment->status === 'paid') {
+            return response()->json(['message' => 'Already processed']);
+        }
+
+        if ($status !== 'successful') {
+            $payment->update(['status' => 'failed']);
+            return response()->json(['message' => 'Charge was not successful']);
+        }
+
+        $gateway = app(FlutterwaveGateway::class);
+        $verification = $gateway->verifyCharge($transactionId);
+
+        if (! $verification['success'] || $verification['tx_ref'] !== $payment->tx_ref) {
+            Log::warning('Flutterwave charge webhook verification failed', ['tx_ref' => $txRef, 'transaction_id' => $transactionId]);
+            return response()->json(['message' => 'Verification failed']);
+        }
+
+        if ((float) $verification['amount'] < (float) $payment->amount) {
+            Log::warning('Flutterwave charge webhook amount mismatch', ['tx_ref' => $txRef, 'expected' => $payment->amount, 'received' => $verification['amount']]);
+            return response()->json(['message' => 'Amount mismatch']);
+        }
+
+        $this->retailController->confirmPayment($payment, $transactionId);
 
         return response()->json(['message' => 'Processed']);
     }

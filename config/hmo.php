@@ -34,6 +34,6 @@ return [
         'drug', 'surgery', 'dental', 'optical', 'physiotherapy',
         'maternity', 'emergency',
     ],
-
+    'privacy_notice_version' => env('HMO_PRIVACY_NOTICE_VERSION', 'v1'),
     'mandatory_supervisor_claim_types' => ['inpatient', 'surgery', 'maternity'],
 ];

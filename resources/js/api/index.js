@@ -10,6 +10,20 @@ export const setup2FA = () => apiClient.post('/auth/2fa/setup');
 export const confirm2FA = (otp) => apiClient.post('/auth/2fa/confirm', { otp });
 export const disable2FA = (otp) => apiClient.post('/auth/2fa/disable', { otp });
 
+// ============= 🆕 PUBLIC =============
+export const fetchRetailPlans = () =>
+    apiClient.get('/join/plans').then(r => r.data);
+
+export const estimateRetailPremium = (data) =>
+    apiClient.post('/join/estimate', data).then(r => r.data);
+
+export const registerRetailEnrollee = (data) =>
+    apiClient.post('/join/register', data).then(r => r.data);
+
+export const confirmRetailPayment = (data) =>
+    apiClient.post('/join/payment-return', data).then(r => r.data);
+
+
 // ============= 🆕 SYSTEM SETTINGS =============
 export const updateProfile  = (data) => client.patch('/profile', data).then(r => r.data);
 export const changePassword = (data) => client.post('/profile/password', data).then(r => r.data);
@@ -748,4 +762,7 @@ export default {
     
     // Roles
     fetchRoles, fetchRole, fetchPermissions, syncRolePermissions,
+
+    //Public
+    fetchRetailPlans, estimateRetailPremium, registerRetailEnrollee, confirmRetailPayment,
 };

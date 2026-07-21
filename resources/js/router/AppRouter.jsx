@@ -150,6 +150,10 @@ import HelpAdminEditPage from "../pages/help/HelpAdminEditPage";
 import ClaimImportPage from "../pages/claims/ClaimImportPage";
 import ClaimImportHistoryPage from "../pages/claims/ClaimImportHistoryPage";
 
+import PremiumCalculatorPage from '../pages/public/PremiumCalculatorPage';
+import RetailSignupPage from '../pages/public/RetailSignupPage';
+import PaymentReturnPage from '../pages/public/PaymentReturnPage';
+
 // ── Route guards ───────────────────────────────────────────────────────────
 import ProtectedRoute from "./ProtectedRoute";
 import PermissionRoute from "./PermissionRoute";
@@ -258,7 +262,13 @@ export default function AppRouter() {
                     path="/forgot-password"
                     element={<ForgotPasswordPage />}
                 />
+
+                <Route path="/join" element={<PremiumCalculatorPage />} />
+                <Route path="/join/signup" element={<RetailSignupPage />} />
+                <Route path="/join/payment-return" element={<PaymentReturnPage />} />
+                <Route path="*" element={<Navigate to="/login" replace />} />
             </Route>
+
             <Route path="/set-password" element={<SetInitialPasswordPage />} />
             <Route path="/privacy-policy" element={<PrivacyPolicyPage />} />
             <Route path="/support" element={<SupportPage />} />

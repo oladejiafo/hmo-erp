@@ -120,4 +120,83 @@ class FlutterwaveGateway implements PaymentGatewayInterface
         $expected = config('services.flutterwave.webhook_hash');
         return $expected && hash_equals($expected, $signatureHeader ?? '');
     }
+
+    /**
+     * [RETAIL] Flutterwave Standard Checkout, initiates an inbound
+     * payment collection, returns a hosted payment page link to redirect
+     * the customer to.
+     *
+     * NOT TESTED against a live account, same caveat as transfer() above.
+     * Test in sandbox with Flutterwave's published test cards first.
+     */
+    public function initiateCheckout(array $data): array
+    {
+        $payload = [
+            'tx_ref' => $data['tx_ref'],
+            'amount' => $data['amount'],
+            'currency' => $data['currency'] ?? 'NGN',
+            'redirect_url' => $data['redirect_url'],
+            'customer' => [
+                'email' => $data['customer_email'],
+                'name' => $data['customer_name'],
+                'phonenumber' => $data['customer_phone'] ?? null,
+            ],
+            'customizations' => [
+                'title' => $data['title'] ?? 'HMO Plan Enrolment',
+                'description' => $data['description'] ?? 'Annual premium payment',
+            ],
+        ];
+
+        try {
+            $response = \Illuminate\Support\Facades\Http::withToken($this->secretKey)
+                ->timeout(30)
+                ->post("{$this->baseUrl}/payments", $payload);
+
+            $body = $response->json();
+
+            if (! $response->successful() || ($body['status'] ?? null) !== 'success') {
+                return ['success' => false, 'message' => $body['message'] ?? 'Could not start payment.', 'raw' => $body ?? []];
+            }
+
+            return [
+                'success' => true,
+                'payment_link' => $body['data']['link'] ?? null,
+                'raw' => $body,
+            ];
+        } catch (\Exception $e) {
+            \Illuminate\Support\Facades\Log::error('Flutterwave checkout initiation failed', ['tx_ref' => $data['tx_ref'], 'error' => $e->getMessage()]);
+            return ['success' => false, 'message' => 'Network/connection error: ' . $e->getMessage()];
+        }
+    }
+
+    /**
+     * [RETAIL] Verify a charge by transaction ID, Flutterwave requires
+     * this server-side confirmation step even after a successful webhook,
+     * per their own security guidance: never trust the redirect or the
+     * webhook payload alone for a charge, always re-verify by ID against
+     * their API before treating money as received.
+     */
+    public function verifyCharge(string $transactionId): array
+    {
+        try {
+            $response = \Illuminate\Support\Facades\Http::withToken($this->secretKey)
+                ->timeout(30)
+                ->get("{$this->baseUrl}/transactions/{$transactionId}/verify");
+
+            $body = $response->json();
+            $status = strtolower($body['data']['status'] ?? '');
+
+            return [
+                'success' => $status === 'successful',
+                'status' => $status,
+                'amount' => $body['data']['amount'] ?? null,
+                'currency' => $body['data']['currency'] ?? null,
+                'tx_ref' => $body['data']['tx_ref'] ?? null,
+                'raw' => $body,
+            ];
+        } catch (\Exception $e) {
+            \Illuminate\Support\Facades\Log::error('Flutterwave charge verification failed', ['transaction_id' => $transactionId, 'error' => $e->getMessage()]);
+            return ['success' => false, 'status' => 'error'];
+        }
+    }
 }
