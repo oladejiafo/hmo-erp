@@ -72,6 +72,37 @@ class NotificationService
         }
     }
 
+    /**
+     * Notify staff when a new PA needs attention.
+     */
+    public function paSubmitted(PreAuthorisation $pa): void
+    {
+        $permissionNeeded = match ($pa->approval_tier) {
+            'critical' => 'pa.approve_critical',
+            'high_value' => 'pa.approve_high_value',
+            default => 'pa.approve_standard',
+        };
+
+        $recipients = User::whereHas('roles.permissions', fn ($q) => $q->where('name', $permissionNeeded))
+            ->where(function ($q) use ($pa) {
+                $q->where('branch_id', $pa->branch_id)
+                ->orWhereHas('branch', fn ($b) => $b->where('type', 'HQ'));
+            })
+            ->get();
+
+        foreach ($recipients as $user) {
+            $this->create($user->id, $pa->branch_id, [
+                'type'            => 'pa_pending',
+                'severity'        => $pa->urgency === 'emergency' ? 'warning' : 'info',
+                'title'           => "New Pre-Auth: {$pa->pa_number}",
+                'body'            => "{$pa->service_type} - " . ($pa->submission_channel === 'provider_portal' ? "submitted by {$pa->hcp->name}" : 'submitted internally'),
+                'action_url'      => "/pre-auth/{$pa->id}",
+                'notifiable_type' => PreAuthorisation::class,
+                'notifiable_id'   => $pa->id,
+            ]);
+        }
+    }
+
     // ── Fraud ─────────────────────────────────────────────────────────────────
 
     public function fraudFlagged(Claim $claim, FraudFlag $flag): void

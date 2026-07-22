@@ -24,6 +24,10 @@ import CorporatePortal from '../portals/corporate';
 import EnrolleePortal from '../portals/enrollee';
 import ProviderPortal from '../portals/provider'; // [PHASE 2]
 
+import PremiumCalculatorPage from '../pages/public/PremiumCalculatorPage';
+import RetailSignupPage from '../pages/public/RetailSignupPage';
+import PaymentReturnPage from '../pages/public/PaymentReturnPage';
+
 export default function AppRouter() {
     const { user, loading, portalType } = useAuth();
     const navigate = useNavigate();
@@ -56,15 +60,27 @@ export default function AppRouter() {
     // Public routes
     if (!user) {
         return (
-            <Routes>
-                <Route element={<AuthLayout />}>
-                    <Route path="/login" element={<LoginPage />} />
-                    <Route path="/set-password" element={<SetInitialPasswordPage />} />
-                    <Route path="/privacy-policy" element={<PrivacyPolicyPage />} />
-                    <Route path="/support" element={<SupportPage />} />
-                    <Route path="*" element={<Navigate to="/login" replace />} />
-                </Route>
-            </Routes>
+            // <Routes>
+            //     <Route element={<AuthLayout />}>
+            //         <Route path="/login" element={<LoginPage />} />
+            //         <Route path="/set-password" element={<SetInitialPasswordPage />} />
+            //         <Route path="/privacy-policy" element={<PrivacyPolicyPage />} />
+            //         <Route path="/support" element={<SupportPage />} />
+            //         <Route path="*" element={<Navigate to="/login" replace />} />
+            //     </Route>
+            // </Routes>
+
+            <Route element={<AuthLayout />}>
+                <Route path="/login" element={<LoginPage />} />
+                <Route path="/set-password" element={<SetInitialPasswordPage />} />
+                <Route path="/privacy-policy" element={<PrivacyPolicyPage />} />
+                <Route path="/support" element={<SupportPage />} />
+                <Route path="/join" element={<PremiumCalculatorPage />} />
+                <Route path="/join/signup" element={<RetailSignupPage />} />
+                <Route path="/join/payment-return" element={<PaymentReturnPage />} />
+                <Route path="*" element={<Navigate to="/login" replace />} />
+            </Route>
+
         );
     }
 

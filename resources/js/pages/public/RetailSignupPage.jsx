@@ -7,7 +7,8 @@
  * timestamp and notice version.
  */
 import React, { useState } from 'react';
-import { useLocation, useNavigate } from 'react-router-dom';
+import { useNavigate, useLocation, Link } from 'react-router-dom';
+// import { useLocation, useNavigate } from 'react-router-dom';
 import { useQuery, useMutation } from '@tanstack/react-query';
 import { fetchRetailPlans, registerRetailEnrollee } from '../../api/index';
 import { Plus, Trash2, ShieldCheck, Upload } from 'lucide-react';
@@ -128,7 +129,7 @@ export default function RetailSignupPage() {
                 ))}
                 <button onClick={addDependent} style={addButtonStyle}><Plus size={14} /> Add dependent</button>
             </Section>
-
+ 
             <label style={consentRowStyle}>
                 <input type="checkbox" checked={form.consent_given} onChange={e => set('consent_given', e.target.checked)} />
                 <span style={{ fontSize: 12, color: '#4a5568' }}>
@@ -136,10 +137,12 @@ export default function RetailSignupPage() {
                 </span>
             </label>
 
-            <button onClick={() => registerMutation.mutate()} disabled={!canSubmit || registerMutation.isPending} style={submitButtonStyle}>
+            <button className="btn btn-primary w-100" onClick={() => registerMutation.mutate()} disabled={!canSubmit || registerMutation.isPending} style={submitButtonStyle}>
                 <ShieldCheck size={16} /> {registerMutation.isPending ? 'Processing…' : 'Continue to payment'}
             </button>
-
+               <p className="text-center small mt-3">
+                    Registered Already? <Link to="/login" className="fw-semibold text-decoration-none">Sign In</Link>
+                </p>
             {registerMutation.isError && (
                 <div style={errorStyle}>{registerMutation.error?.response?.data?.message || 'Something went wrong. Please try again.'}</div>
             )}
@@ -179,6 +182,6 @@ const dependentRowStyle = { display: 'flex', gap: 6, marginBottom: 8, alignItems
 const removeButtonStyle = { background: '#fff5f5', border: '1px solid #fca5a5', borderRadius: 6, padding: 8, cursor: 'pointer', color: '#c5221f' };
 const addButtonStyle = { display: 'flex', alignItems: 'center', gap: 6, padding: '7px 12px', borderRadius: 8, border: '1px dashed #c5d5e8', background: '#fff', color: '#0f4c81', fontSize: 12, fontWeight: 600, cursor: 'pointer' };
 const consentRowStyle = { display: 'flex', alignItems: 'flex-start', gap: 8, marginBottom: 16 };
-const submitButtonStyle = { width: '100%', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 8, padding: '13px 0', borderRadius: 10, border: 'none', background: '#137333', color: '#fff', fontSize: 15, fontWeight: 700, cursor: 'pointer' };
+const submitButtonStyle = { width: '100%', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 8, padding: '13px 0', borderRadius: 10, border: 'none', color: '#fff', fontSize: 15, fontWeight: 700, cursor: 'pointer' };
 const errorStyle = { marginTop: 12, fontSize: 12, color: '#c5221f', textAlign: 'center' };
 const uploadBoxStyle = { display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', border: '2px dashed #c5d5e8', borderRadius: 10, padding: '16px', cursor: 'pointer', marginTop: 10, background: '#f7fafc' };

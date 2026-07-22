@@ -35,4 +35,9 @@ class ClaimStatusLog extends Model
     {
         return $this->belongsTo(User::class);
     }
+
+    public function changedBy(): \Illuminate\Database\Eloquent\Relations\BelongsTo
+    {
+        return $this->belongsTo(\App\Models\User::class, 'changed_by');
+    }
 }

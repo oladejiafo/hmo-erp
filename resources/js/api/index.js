@@ -232,6 +232,8 @@ export const fetchProviderSummary = (hcpId, period) => apiClient.get(`/ai/provid
 export const fetchClaimRisk = (claimId) => apiClient.get(`/ai/claim-risk/${claimId}`).then(r => r.data);
 export const draftEnrolleeResponse = (enrolleeId, inquiryText) => apiClient.post('/ai/enrollee-response', { enrollee_id: enrolleeId, inquiry_text: inquiryText }).then(r => r.data);
 
+export const fetchClaimPaymentTimeline = (claimId) =>
+    apiClient.get(`/claims/${claimId}/payment-timeline`).then(r => r.data);
 
 export const fetchImportBatches = (params) => 
     apiClient.get('/claims/imports', { params });
@@ -683,6 +685,7 @@ export default {
     // Claims
     fetchClaims, fetchClaim, createClaim, processClaim, approveClaim, rejectClaim, submitClaim,  
     assignClaim, reverseClaim, fetchClaimTimeline, fetchFraudFlags,fetchClaimFraudFlags, reviewFraudFlag,
+    fetchClaimPaymentTimeline,
     
     // Claim Documents
     fetchClaimDocuments, uploadClaimDocument, downloadClaimDocument,

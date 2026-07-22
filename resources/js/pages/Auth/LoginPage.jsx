@@ -226,7 +226,9 @@ export default function LoginPage() {
                         : requires2FA ? 'Verify Code' : 'Sign In'
                     }
                 </button>
-
+                <p className="text-center small mt-3">
+                    New here? <Link to="/join" className="fw-semibold text-decoration-none">Get covered</Link>
+                </p>
                 {/* Terms acceptance text */}
                 <p className="text-center text-muted mt-4 small" style={{ fontSize: 11 }}>
                     By signing in, you agree to our{' '}

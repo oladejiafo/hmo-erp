@@ -421,6 +421,7 @@ class ProviderPortalController extends Controller
                 null,
                 $duplicate ? ['duplicate_warning' => "Open PA #{$duplicate->pa_number} exists for same service."] : null
             );
+            app(\App\Services\NotificationService::class)->paSubmitted($pa);
 
             return $pa;
         });
@@ -630,7 +631,7 @@ class ProviderPortalController extends Controller
             ],
         ]);
     }
-    
+
     /**
      * [PHASE 8] Verify a member by scanning their ID card QR code instead
      * of typing a member number. The QR payload (base64 JSON, built by

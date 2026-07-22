@@ -4,7 +4,7 @@
  */
 import React, { useState, useEffect } from 'react';
 import { useMutation } from '@tanstack/react-query';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, Link } from 'react-router-dom';
 import { estimateRetailPremium } from '../../api/index';
 import { ShieldCheck, ArrowRight } from 'lucide-react';
 
@@ -91,10 +91,12 @@ export default function PremiumCalculatorPage() {
                 </div>
             )}
 
-            <button onClick={() => navigate('/join/signup', { state: { tier, dependents, benefits } })} style={ctaButtonStyle}>
+            <button className="btn btn-primary w-100" onClick={() => navigate('/join/signup', { state: { tier, dependents, benefits } })} style={ctaButtonStyle}>
                 Continue to sign up <ArrowRight size={16} />
             </button>
-
+               <p className="text-center small mt-3">
+                    Registered Already? <Link to="/login" className="fw-semibold text-decoration-none">Sign In</Link>
+                </p>
             <p style={disclaimerStyle}>This is an estimate. The exact amount is confirmed before you pay.</p>
         </div>
     );
@@ -117,7 +119,7 @@ const estimateCardStyle = { background: '#0f4c81', borderRadius: 14, padding: 20
 const estimateLabelStyle = { fontSize: 12, opacity: 0.8 };
 const estimateValueStyle = { fontSize: 28, fontWeight: 800, marginTop: 4 };
 const estimateBreakdownStyle = { fontSize: 12, opacity: 0.85, marginTop: 6 };
-const ctaButtonStyle = { width: '100%', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 8, padding: '13px 0', borderRadius: 10, border: 'none', background: '#137333', color: '#fff', fontSize: 15, fontWeight: 700, cursor: 'pointer' };
+const ctaButtonStyle = { width: '100%', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 8, padding: '13px 0', borderRadius: 10, border: 'none', background: '#2d6a9f;', color: '#fff', fontSize: 15, fontWeight: 700, cursor: 'pointer' };
 const disclaimerStyle = { textAlign: 'center', fontSize: 11, color: '#a0aec0', marginTop: 12 };
 const benefitsRowStyle = { marginBottom: 20 };
 const benefitPillStyle = { padding: '7px 14px', borderRadius: 20, border: '1px solid #e2e8f0', fontSize: 12, fontWeight: 600, cursor: 'pointer' };

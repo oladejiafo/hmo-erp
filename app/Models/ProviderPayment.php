@@ -36,4 +36,9 @@ class ProviderPayment extends Model
     {
         return $this->belongsTo(Claim::class);
     }
+
+    public function gatewayTransactions(): \Illuminate\Database\Eloquent\Relations\HasMany
+    {
+        return $this->hasMany(PaymentGatewayTransaction::class, 'provider_payment_id');
+    }
 }

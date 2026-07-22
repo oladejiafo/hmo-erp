@@ -235,6 +235,9 @@ Route::middleware(['auth:sanctum', 'branch.isolation'])->group(function () {
             // Fraud Flags - READ only
             Route::get('{claim}/fraud-flags', [ClaimController::class, 'fraudFlags'])
                 ->middleware('permission:claims.fraud_view');
+
+            Route::get('{claim}/payment-timeline', [ClaimController::class, 'paymentTimeline']);
+
         });
 
     // ── Claims Import - READ only ────────────────────────────────────────

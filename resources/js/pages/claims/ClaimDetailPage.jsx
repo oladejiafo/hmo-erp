@@ -14,6 +14,7 @@ import { PageHeader, StatusBadge, LoadingSpinner, ErrorAlert } from '../../compo
 import { formatCurrency, formatDate, formatDateTime } from '../../utils/format';
 import { toast } from 'react-toastify';
 import { useAuth } from '../../contexts/AuthContext';
+import PaymentTimeline from '../../components/claims/PaymentTimeline';
 
 const STATUS_COLOR = {
     submitted: 'secondary', auto_validating: 'info', auto_validated: 'info',
@@ -379,6 +380,16 @@ export default function ClaimDetailPage() {
                                             </h4>
                                         </div>
                                     </div>
+                                </div>
+                            </div>
+
+                            {/* Payment Timeline  */}
+                            <div className="card mb-4">
+                                <div className="card-header">
+                                    <h5 className="mb-0">Payment Timeline</h5>
+                                </div>
+                                <div className="card-body">
+                                    <PaymentTimeline claimId={claim.id} />
                                 </div>
                             </div>
 

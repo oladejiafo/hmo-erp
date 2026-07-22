@@ -72,4 +72,4 @@ export default function PaymentReturnPage() {
 const pageStyle = { maxWidth: 420, margin: '80px auto', padding: '20px', textAlign: 'center', display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 10 };
 const titleStyle = { fontSize: 20, fontWeight: 800, color: '#1a202c', margin: '10px 0 0' };
 const textStyle = { fontSize: 13, color: '#718096' };
-const ctaStyle = { marginTop: 10, padding: '10px 24px', borderRadius: 8, background: '#0f4c81', color: '#fff', textDecoration: 'none', fontSize: 13, fontWeight: 700 };
+const ctaStyle = { marginTop: 10, padding: '10px 24px', borderRadius: 8, background: '#2d6a9f;', color: '#fff', textDecoration: 'none', fontSize: 13, fontWeight: 700 };

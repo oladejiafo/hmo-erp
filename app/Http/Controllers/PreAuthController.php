@@ -14,6 +14,8 @@ use App\Models\SystemSetting;
 use Barryvdh\DomPDF\Facade\Pdf;
 use Illuminate\Support\Facades\Log;
 use Carbon\Carbon;
+use App\Models\User;
+
 
 /**
  * FILE LOCATION: app/Http/Controllers/PreAuthController.php
@@ -64,8 +66,13 @@ class PreAuthController extends Controller
             'hcp:id,name,type,tier,city',
             'submittedBy:id,name',
             'reviewedBy:id,name',
-        ])->forBranch(Auth::user()->branch_id);
+        // ])->forBranch(Auth::user()->branch_id);
 
+        ]);
+        /** @disregard P1013 */
+        if (! Auth::user()->isHQ()) {
+            $query->forBranch(Auth::user()->branch_id);
+        }
         // ── Filters ──────────────────────────────────────────────────────
 
         if ($status = $request->input('status')) {
@@ -203,6 +210,8 @@ class PreAuthController extends Controller
                 $duplicate ? ['duplicate_warning' => "Open PA #{$duplicate->pa_number} exists for same service."] : null
             );
 
+            app(\App\Services\NotificationService::class)->paSubmitted($pa);
+
             return $pa;
         });
 
@@ -225,10 +234,15 @@ class PreAuthController extends Controller
     {
         $this->authorize('viewAny', PreAuthorisation::class);
 
-        $branchId = Auth::user()->branch_id;
+        // $branchId = Auth::user()->branch_id;
 
-        $base = PreAuthorisation::forBranch($branchId);
+        // $base = PreAuthorisation::forBranch($branchId);
 
+        /** @disregard P1013 */
+        $base = Auth::user()->isHQ()
+            ? PreAuthorisation::query()
+            : PreAuthorisation::forBranch(Auth::user()->branch_id);
+            
         $pendingCount    = (clone $base)->whereIn('status', PreAuthorisation::ACTIVE_STATUSES)->count();
         $overdueCount    = (clone $base)->overdue()->count();
         $awaitingMdCount = (clone $base)->where('status', 'awaiting_md')->count();

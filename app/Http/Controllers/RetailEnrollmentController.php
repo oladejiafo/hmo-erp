@@ -8,7 +8,7 @@
  * User/Enrollee record being created.
  */
 
-namespace App\Http\Controllers\Public;
+namespace App\Http\Controllers;
 
 use App\Http\Controllers\Controller;
 use App\Models\Corporate;

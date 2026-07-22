@@ -310,4 +310,83 @@ class ClaimController extends Controller
             'data'    => new FraudFlagResource($flag->fresh('reviewedBy')),
         ]);
     }
+
+    public function paymentTimeline(Claim $claim): JsonResponse
+    {
+        $this->authorize('view', $claim);
+
+        $claim->load(['statusLogs.changedBy:id,name', 'payment.batch', 'payment.gatewayTransactions']);
+
+        $events = collect();
+
+        foreach ($claim->statusLogs as $log) {
+            $events->push([
+                'type' => 'status_change',
+                'timestamp' => $log->created_at,
+                'title' => $log->from_status
+                    ? "Status: {$log->from_status} -> {$log->to_status}"
+                    : "Claim submitted",
+                'detail' => $log->reason,
+                'by' => $log->changedBy?->name,
+            ]);
+        }
+
+        if ($claim->payment) {
+            $payment = $claim->payment;
+
+            $events->push([
+                'type' => 'payment_batched',
+                'timestamp' => $payment->created_at,
+                'title' => "Added to payment batch {$payment->batch?->batch_number}",
+                'detail' => "Amount: " . number_format($payment->amount, 2),
+                'by' => null,
+            ]);
+
+            foreach ($payment->gatewayTransactions as $tx) {
+                $events->push([
+                    'type' => 'gateway_' . $tx->status,
+                    'timestamp' => $tx->initiated_at ?? $tx->created_at,
+                    'title' => "Gateway transfer initiated via " . ucfirst($tx->gateway),
+                    'detail' => "Reference: {$tx->reference}",
+                    'by' => null,
+                ]);
+
+                if ($tx->confirmed_at) {
+                    $events->push([
+                        'type' => 'gateway_confirmed_' . $tx->status,
+                        'timestamp' => $tx->confirmed_at,
+                        'title' => $tx->status === 'success' ? 'Payment confirmed by gateway' : 'Payment failed at gateway',
+                        'detail' => $tx->failure_reason,
+                        'by' => null,
+                    ]);
+                }
+            }
+
+            if ($payment->paid_at) {
+                $events->push([
+                    'type' => 'payment_completed',
+                    'timestamp' => $payment->paid_at,
+                    'title' => 'Payment completed',
+                    'detail' => "Reference: {$payment->payment_reference}",
+                    'by' => null,
+                ]);
+            }
+        }
+
+        $sorted = $events->sortBy('timestamp')->values();
+
+        return response()->json([
+            'data' => [
+                'claim_number' => $claim->claim_number,
+                'current_status' => $claim->status,
+                'total_amount_claimed' => $claim->total_amount_claimed,
+                'total_amount_approved' => $claim->total_amount_approved,
+                'total_amount_paid' => $claim->total_amount_paid,
+                'timeline' => $sorted->map(fn ($e) => [
+                    ...$e,
+                    'timestamp' => $e['timestamp']?->format('Y-m-d H:i'),
+                ]),
+            ],
+        ]);
+    }
 }
