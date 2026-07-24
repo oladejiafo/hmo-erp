@@ -51,11 +51,11 @@ export default function CorporateDetailPage() {
         queryFn:  () => fetchCorporate(id),
     });
 
-    // const { data: plansData } = useQuery({
-    //     queryKey: ['corporate-plans', id],
-    //     queryFn:  () => fetchCorporatePlans(id),
-    //     enabled:  activeTab === 'plans',
-    // });
+    const { data: plansData } = useQuery({
+        queryKey: ['corporate-plans', id],
+        queryFn:  () => fetchCorporatePlans(id),
+        enabled:  activeTab === 'plans',
+    });
 
     const { data: invoicesData } = useQuery({
         queryKey: ['corporate-invoices', id],
@@ -80,7 +80,7 @@ export default function CorporateDetailPage() {
 
     const corp     = data?.data?.data;
     const isSuspended = corp.status === 'suspended';
-    // const plans    = plansData?.data?.data ?? plansData?.data ?? [];
+    const plans    = plansData?.data?.data ?? plansData?.data ?? [];
     const invoices = invoicesData?.data?.data ?? invoicesData?.data ?? [];
 
     return (

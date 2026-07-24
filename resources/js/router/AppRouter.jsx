@@ -154,6 +154,14 @@ import PremiumCalculatorPage from '../pages/public/PremiumCalculatorPage';
 import RetailSignupPage from '../pages/public/RetailSignupPage';
 import PaymentReturnPage from '../pages/public/PaymentReturnPage';
 
+// NEW QUEUE PAGES
+import PlanRequestsQueuePage from "../pages/corporates/PlanRequestsQueuePage";
+import TicketsQueuePage from "../pages/help/TicketsQueuePage";
+import ReimbursementsQueuePage from "../pages/finance/ReimbursementsQueuePage";
+import BaseTariffsPage from "../pages/settings/BaseTariffsPage";
+import BasePlansPage from "../pages/settings/BasePlansPage";
+
+
 // ── Route guards ───────────────────────────────────────────────────────────
 import ProtectedRoute from "./ProtectedRoute";
 import PermissionRoute from "./PermissionRoute";
@@ -326,6 +334,53 @@ export default function AppRouter() {
                         <AllPlansPage standalone={true} />
                     </PermissionRoute>
                 } /> */}
+
+                <Route
+                    path="settings/base-plans"
+                    element={
+                        <PermissionRoute permission="plans.view">
+                            <BasePlansPage />
+                        </PermissionRoute>
+                    }
+                />
+                {/* ── Plan Requests Queue ── */}
+                <Route
+                    path="plan-requests"
+                    element={
+                        <PermissionRoute permission="plan_requests.review">
+                            <PlanRequestsQueuePage />
+                        </PermissionRoute>
+                    }
+                />
+
+                {/* ── Tickets Queue ── */}
+                <Route
+                    path="tickets"
+                    element={
+                        <PermissionRoute permission="tickets.view">
+                            <TicketsQueuePage />
+                        </PermissionRoute>
+                    }
+                />
+
+                {/* ── Reimbursements Queue ── */}
+                <Route
+                    path="finance/reimbursements"
+                    element={
+                        <PermissionRoute permission="reimbursements.view">
+                            <ReimbursementsQueuePage />
+                        </PermissionRoute>
+                    }
+                />
+
+                <Route
+                    path="settings/base-tariffs"
+                    element={
+                        <PermissionRoute permission="hcps.tariffs">
+                            <BaseTariffsPage />
+                        </PermissionRoute>
+                    }
+                />
 
                 {/* ── Corporates (HMO staff view - /corporates NOT /corporate) ── */}
                 <Route path="corporates">

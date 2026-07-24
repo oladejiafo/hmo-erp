@@ -164,23 +164,34 @@ export const reactivateHCP = async (id, data = {}) => {
     return response.data;
 };
 
-
 // ============= HCP TARIFFS =============
-export const fetchTariffs = (hcpId, params) => 
-    apiClient.get(`/hcps/${hcpId}/tariffs`, { params });
-export const createTariff = (hcpId, data) => 
-    apiClient.post(`/hcps/${hcpId}/tariffs`, data);
+export const fetchTariffs = (hcpId, params) =>
+    hcpId 
+        ? apiClient.get(`/hcps/${hcpId}/tariffs`, { params }).then(r => r.data)
+        : apiClient.get('/tariffs/base', { params }).then(r => r.data);
+
+export const createTariff = (hcpId, data) =>
+    hcpId 
+        ? apiClient.post(`/hcps/${hcpId}/tariffs`, data).then(r => r.data)
+        : apiClient.post('/tariffs/base', data).then(r => r.data);
+
 export const bulkUploadTariffs = (hcpId, file) => {
     const formData = new FormData();
     formData.append('file', file);
     return apiClient.post(`/hcps/${hcpId}/tariffs/bulk`, formData, {
         headers: { 'Content-Type': 'multipart/form-data' }
-    });
+    }).then(r => r.data);
 };
-export const updateTariff = (hcpId, tariffId, data) => 
-    apiClient.put(`/hcps/${hcpId}/tariffs/${tariffId}`, data);
-export const deleteTariff = (hcpId, tariffId) => 
-    apiClient.delete(`/hcps/${hcpId}/tariffs/${tariffId}`);
+
+export const updateTariff = (hcpId, tariffId, data) =>
+    hcpId 
+        ? apiClient.put(`/hcps/${hcpId}/tariffs/${tariffId}`, data).then(r => r.data)
+        : apiClient.put(`/tariffs/base/${tariffId}`, data).then(r => r.data);
+
+export const deleteTariff = (hcpId, tariffId) =>
+    hcpId 
+        ? apiClient.delete(`/hcps/${hcpId}/tariffs/${tariffId}`).then(r => r.data)
+        : apiClient.delete(`/tariffs/base/${tariffId}`).then(r => r.data);
 
 // ============= HCP CONTRACTS =============
 export const fetchContracts = (hcpId, params) => 
@@ -294,6 +305,19 @@ export const createFFSBatch = async (data) => {
     const response = await apiClient.post('/finance/ffs/batch', data);
     return response.data;
 };
+// ============= REIMBURSEMENTS (Finance Staff) =============
+export const fetchReimbursements = (params) =>
+    apiClient.get('/finance/reimbursements', { params }).then(r => r.data);
+
+export const approveReimbursement = (id, amount_approved, notes) =>
+    apiClient.post(`/finance/reimbursements/${id}/approve`, { amount_approved, notes }).then(r => r.data);
+
+export const rejectReimbursement = (id, notes) =>
+    apiClient.post(`/finance/reimbursements/${id}/reject`, { notes }).then(r => r.data);
+
+export const markReimbursementPaid = (id, payment_reference) =>
+    apiClient.post(`/finance/reimbursements/${id}/mark-paid`, { payment_reference }).then(r => r.data);
+
 
 // ============= REPORTS =============
 export const fetchDashboard = () => apiClient.get('/reports/dashboard');
@@ -493,6 +517,21 @@ export const fetchEnrolleeAppointments = (upcomingOnly = false) =>
 export const cancelEnrolleeAppointment = (id) =>
     apiClient.patch(`/portal/enrollee/appointments/${id}/cancel`).then(r => r.data);
 
+export const searchDoctors = (params) =>
+    apiClient.get('/portal/enrollee/doctors/search', { params }).then(r => r.data);
+
+export const fetchDoctorSlots = (doctorId, date) =>
+    apiClient.get(`/portal/enrollee/doctors/${doctorId}/slots`, { params: { date } }).then(r => r.data);
+
+export const fetchProviderDoctors = () =>
+    apiClient.get('/portal/provider/doctors').then(r => r.data);
+
+export const createProviderDoctor = (data) =>
+    apiClient.post('/portal/provider/doctors', data).then(r => r.data);
+
+export const setDoctorSchedule = (doctorId, slots) =>
+    apiClient.post(`/portal/provider/doctors/${doctorId}/schedule`, { slots }).then(r => r.data);
+
 
 // ========== PROVIDER SELF-SERVICE PORTAL =============
 export const fetchProviderDashboard = () =>
@@ -637,6 +676,24 @@ export const syncRolePermissions = (id, data) =>
 export const fetchHelpArticles = (params) => 
     apiClient.get('/help', { params }).then(r => r.data);
 
+
+export const searchEmployers = (q) =>
+    apiClient.get('/join/employers/search', { params: { q } }).then(r => r.data);
+
+export const verifyEmployeeIdentity = (data) =>
+    apiClient.post('/join/employers/verify-identity', data).then(r => r.data);
+
+export const claimEmployeeAccount = (data) =>
+    apiClient.post('/join/employers/claim-account', data).then(r => r.data);
+
+export const payCorpInvoiceOnline = (invoiceId) =>
+    apiClient.post(`/portal/corporate/invoices/${invoiceId}/pay-online`).then(r => r.data);
+
+export const confirmCorpInvoicePayment = (data) =>
+    apiClient.post('/portal/corporate/invoices/payment-return', data).then(r => r.data);
+
+
+
 export default {
     // Auth
     login, logout, logoutAll, fetchUser, changePassword,
@@ -650,6 +707,8 @@ export default {
     // Corporates
     fetchCorporates, fetchCorporate, createCorporate, updateCorporate, deleteCorporate,
     suspendCorporate, bulkUploadEnrollees,
+
+    searchEmployers,verifyEmployeeIdentity, claimEmployeeAccount, payCorpInvoiceOnline, confirmCorpInvoicePayment,
 
     // Corporate Plans
     fetchPlans, fetchPlan, createPlan, updatePlan, discontinuePlan, 
@@ -693,7 +752,7 @@ export default {
     // Finance
     fetchPaymentBatches, fetchPaymentBatch, createPaymentBatch, submitPaymentBatch,
     approvePaymentBatch, exportBankFile, fetchLedger, fetchLedgerSummary,
-    generateRemittance, downloadRemittance,
+    generateRemittance, downloadRemittance, fetchReimbursements,
     
     // 🆕 Capitation (runs)
     fetchCapitationRuns, fetchCapitationRun, generateCapitationRun, approveCapitationRun,
@@ -752,6 +811,8 @@ export default {
     fetchEnrolleePortalReimbursements, submitEnrolleePortalReimbursement,
     checkInAtProvider, bookEnrolleeAppointment, fetchEnrolleeAppointments, cancelEnrolleeAppointment,
 
+    searchDoctors, fetchDoctorSlots, fetchProviderDoctors, createProviderDoctor, setDoctorSchedule,
+    
     // 🆕 Provider Portal
     fetchProviderDashboard, verifyProviderEnrollee, fetchProviderClaims,
     fetchProviderClaim, submitProviderClaim, fetchProviderPreAuths,

@@ -47,6 +47,8 @@ use App\Http\Controllers\Portal\ProviderClaimImportController;
 use App\Http\Controllers\Finance\PaymentGatewayWebhookController;
 use App\Http\Controllers\Corporate\PlanRequestController;
 use App\Http\Controllers\RetailEnrollmentController;
+use App\Http\Controllers\EmployerLinkController;
+use App\Http\Controllers\Portal\ProviderDoctorController;
 
 /*
 |--------------------------------------------------------------------------
@@ -111,6 +113,14 @@ Route::middleware('auth:sanctum')->group(function () {
     Route::patch ('profile',          [ProfileController::class, 'update']);
     Route::post  ('profile/password', [ProfileController::class, 'changePassword']);
 });
+
+
+Route::prefix('join')->group(function () {
+    Route::get('/employers/search', [EmployerLinkController::class, 'searchEmployers']);
+    Route::post('/employers/verify-identity', [EmployerLinkController::class, 'verifyIdentity'])->middleware('throttle:10,1');
+    Route::post('/employers/claim-account', [EmployerLinkController::class, 'claimAccount'])->middleware('throttle:5,1');
+});
+
 // ── License Status (special case - always accessible) ────────────────────
 Route::prefix('settings/license')
     ->middleware('auth:sanctum', 'license')
@@ -402,6 +412,9 @@ Route::middleware(['auth:sanctum', 'branch.isolation'])->group(function () {
 
             Route::get('/appointments', [App\Http\Controllers\Portal\EnrolleePortalController::class, 'appointments']);
 
+            Route::get('/doctors/search', [EnrolleePortalController::class, 'searchDoctors']);
+            Route::get('/doctors/{doctor}/slots', [EnrolleePortalController::class, 'doctorSlots']);
+
         });
 
         // Corporate Portal - READ only
@@ -549,6 +562,14 @@ Route::middleware(['auth:sanctum', 'branch.isolation', 'license'])->group(functi
     Route::middleware('permission:hcps.tariffs')->post('hcps/{hcp}/tariffs/bulk', [TariffController::class, 'bulkUpload']);
     Route::middleware('permission:hcps.tariffs')->put('hcps/{hcp}/tariffs/{tariff}', [TariffController::class, 'update']);
     Route::middleware('permission:hcps.tariffs')->delete('hcps/{hcp}/tariffs/{tariff}', [TariffController::class, 'destroy']);
+
+    // ── HCP Tariffs - Base (HMO-wide) ──────────────────────────────────────────
+    Route::middleware('permission:hcps.tariffs')->prefix('tariffs/base')->group(function () {
+        Route::get('/', [TariffController::class, 'baseIndex']);
+        Route::post('/', [TariffController::class, 'baseStore']);
+        Route::put('/{tariff}', [TariffController::class, 'baseUpdate']);
+        Route::delete('/{tariff}', [TariffController::class, 'baseDestroy']);
+    });
 
     // Contracts - WRITE operations
     Route::middleware('permission:hcps.contracts')->post('hcps/{hcp}/contracts', [ContractController::class, 'store']);
@@ -727,6 +748,9 @@ Route::middleware(['auth:sanctum', 'branch.isolation', 'license'])->group(functi
             Route::post('/enrollees/bulk-status', [App\Http\Controllers\Portal\CorporatePortalController::class, 'bulkUpdateEnrolleeStatus']);
             Route::post('/request-renewal', [App\Http\Controllers\Portal\CorporatePortalController::class, 'requestRenewal']);
 
+            Route::post('/invoices/{invoice}/pay-online', [App\Http\Controllers\Portal\CorporatePortalController::class, 'payInvoiceOnline']);
+            Route::post('/invoices/payment-return', [App\Http\Controllers\Portal\CorporatePortalController::class, 'confirmInvoicePayment']);
+
         });
 
         // Provider Portal - WRITE
@@ -746,6 +770,11 @@ Route::middleware(['auth:sanctum', 'branch.isolation', 'license'])->group(functi
 
             Route::post('/verify-qr', [App\Http\Controllers\Portal\ProviderPortalController::class, 'verifyQrCode']);
             Route::post('/appointments/{appointment}/confirm', [App\Http\Controllers\Portal\ProviderPortalController::class, 'confirmAppointment']);
+
+            Route::get('/doctors', [ProviderDoctorController::class, 'index']);
+            Route::post('/doctors', [ProviderDoctorController::class, 'store']);
+            Route::post('/doctors/{doctor}/schedule', [ProviderDoctorController::class, 'setSchedule']);
+            Route::delete('/doctors/{doctor}', [ProviderDoctorController::class, 'destroy']);
 
         });
 

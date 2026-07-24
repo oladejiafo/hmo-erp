@@ -164,7 +164,7 @@ class ExportController extends Controller
 
     public function tariffs(): StreamedResponse
     {
-        $data = Tariff::with('hcp')
+        $data = \App\Models\HcpTariff::with('hcp')
             ->whereHas('hcp', fn($q) => $q->where('branch_id', Auth::user()->branch_id))
             ->get()
             ->map(fn($t) => [

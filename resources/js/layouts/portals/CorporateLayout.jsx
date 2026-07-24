@@ -23,6 +23,7 @@ const primaryNavItems = [
     { path: '/corporate',            label: 'Dashboard',         icon: LayoutDashboard, exact: true },
     { path: '/corporate/enrollees',  label: 'Staff & Enrollees', icon: Users },
     { path: '/corporate/claims',     label: 'Claims',            icon: FileText },
+    { path: '/plan-requests',        label: 'Plan Requests',     icon: FileCheck }
 ];
 
 // Secondary — grouped under "Manage" so the bar doesn't keep growing every

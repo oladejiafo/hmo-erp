@@ -45,8 +45,10 @@ export default function PlanListPage({ corporateId, corporateName }) {
         staleTime: 60_000,
     });
 
+
     const plans = data?.data?.data ?? data?.data ?? [];
     const meta  = data?.meta ?? {};
+
 
     // ── Discontinue mutation ──────────────────────────────────────────────────
     const discontinueMutation = useMutation({

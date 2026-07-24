@@ -170,7 +170,7 @@ function Field({ label, value, onChange, type = 'text', span }) {
     );
 }
 
-const pageStyle = { maxWidth: 520, margin: '0 auto', padding: '40px 20px' };
+const pageStyle = { maxWidth: 600, margin: '0 auto', padding: '40px 20px' };
 const titleStyle = { fontSize: 22, fontWeight: 800, color: '#1a202c', margin: 0 };
 const subtitleStyle = { fontSize: 13, color: '#718096', margin: '4px 0 24px' };
 const sectionStyle = { background: '#fff', border: '1px solid #e8ecf0', borderRadius: 12, padding: 18, marginBottom: 14 };

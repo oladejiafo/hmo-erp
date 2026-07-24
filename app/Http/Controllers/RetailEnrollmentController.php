@@ -1,6 +1,6 @@
 <?php
 /**
- * NEW FILE — app/Http/Controllers/Public/RetailEnrollmentController.php
+ * NEW FILE — app/Http/Controllers/RetailEnrollmentController.php
  *
  * Entirely public, no auth:sanctum. This is the front door for someone
  * who isn't a member yet. Every write here has to assume a hostile or
@@ -46,14 +46,16 @@ class RetailEnrollmentController extends Controller
             return response()->json(['message' => 'Retail enrolment is not currently available.'], 503);
         }
 
-        $plans = Plan::where('corporate_id', $corporate->id)->where('status', 'active')->get();
+        $plans = Plan::where('corporate_id', $corporate->id)->where('status', 'active')->where('is_public', true)->get();
 
         return response()->json([
             'data' => $plans->map(fn($p) => [
                 'id' => $p->id,
                 'plan_name' => $p->plan_name,
                 'tier' => $p->tier,
+                'annual_premium' => $p->annual_premium,
                 'max_benefit_value' => $p->max_benefit_value,
+                'is_default' => $p->is_default,
                 'dental_covered' => $p->dental_covered,
                 'optical_covered' => $p->optical_covered,
                 'surgery_covered' => $p->surgery_covered,
@@ -71,18 +73,20 @@ class RetailEnrollmentController extends Controller
     public function estimatePremium(Request $request): JsonResponse
     {
         $request->validate([
-            'tier' => 'required|string|in:basic,standard,premium',
+            'tier' => 'required|string',
             'dependents_count' => 'nullable|integer|min:0|max:6',
             'selected_benefits' => 'nullable|array',
         ]);
 
-        $baseRate = match ($request->tier) {
-            'basic' => 45000,
-            'standard' => 85000,
-            'premium' => 160000,
-            default => 85000,
-        };
+        $corporate = $this->retailCorporate();
+        $plan = $corporate ? Plan::where('corporate_id', $corporate->id)->where('tier', $request->tier)->where('status', 'active')->first() : null;
 
+        if (! $plan || ! $plan->annual_premium) {
+            return response()->json(['message' => 'Pricing is not yet configured for this plan. Contact support.'], 503);
+        }
+
+        
+        $baseRate = (float) $plan->annual_premium;
         $baseRate *= (1 + $this->benefitLoadingPercent($request->selected_benefits ?? []) / 100);
 
         $dependentRate = $baseRate * 0.6;
@@ -349,13 +353,15 @@ class RetailEnrollmentController extends Controller
      */
     private function calculateRealPremium(Plan $plan, int $dependentsCount, array $selectedBenefits = []): float
     {
-        $baseRate = match ($plan->tier) {
-            'basic' => 45000,
-            'standard' => 85000,
-            'premium' => 160000,
-            default => 85000,
-        };
+        if (! $plan->annual_premium) {
+            // Should never happen in practice — register() already
+            // requires a plan from the retail corporate, and those are
+            // seeded with pricing. Failing loudly here beats silently
+            // charging 0.
+            throw new \RuntimeException("Plan {$plan->id} has no annual_premium set.");
+        }
 
+        $baseRate = (float) $plan->annual_premium;
         $baseRate *= (1 + $this->benefitLoadingPercent($selectedBenefits) / 100);
         $dependentRate = $baseRate * 0.6;
 

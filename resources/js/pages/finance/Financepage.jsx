@@ -21,10 +21,12 @@ import {
     fetchLedger,
     fetchLedgerSummary,
     fetchHCPPaymentSummary,
+    fetchReimbursements,
 } from '../../api/index';
 import { PageHeader, StatusBadge, Pagination, LoadingSpinner, ErrorAlert } from '../../components/ui/index';
 import { formatCurrency, formatDateTime, formatDate } from '../../utils/format';
 import { useAuth } from '../../contexts/AuthContext';
+import ReimbursementsQueuePage from './ReimbursementsQueuePage';
 
 const BATCH_STATUS_COLOR = {
     draft: 'secondary', submitted: 'warning', approved: 'primary',
@@ -46,11 +48,13 @@ export default function FinancePage() {
     const [activeTab, setActiveTab] = useState('batches');
 
     const tabs = [
-        { key: 'batches',     label: 'Payment Batches',     always: true },
-        { key: 'ledger',      label: 'General Ledger',      perm: 'finance.ledger_view' },
-        { key: 'hcp_summary', label: 'HCP Payment Summary', perm: 'finance.view' },
-        { key: 'capitation',  label: 'Capitation',          perm: 'finance.capitation', navigate: '/finance/capitation' },
-        { key: 'ffs',         label: 'FFS Providers',       perm: 'finance.ffs',        navigate: '/finance/ffs' },
+        { key: 'batches',        label: 'Payment Batches',        always: true, icon: <Wallet size={13} /> },
+        { key: 'ledger',         label: 'General Ledger',         perm: 'finance.ledger_view', icon: <FileText size={13} /> },
+        { key: 'hcp_summary',    label: 'HCP Payment Summary',    perm: 'finance.view', icon: <Building2 size={13} /> },
+        { key: 'capitation',     label: 'Capitation',             perm: 'finance.capitation', navigate: '/finance/capitation', icon: <Activity size={13} /> },
+        { key: 'ffs',            label: 'FFS Providers',          perm: 'finance.ffs', navigate: '/finance/ffs', icon: <Layers size={13} /> },
+        { key: 'reimbursements', label: 'Reimbursement Requests', perm: 'reimbursements.view', icon: <FileText size={13} /> },
+        
     ].filter(t => t.always || !t.perm || hasPermission(t.perm));
 
     return (
@@ -79,9 +83,7 @@ export default function FinancePage() {
                                 }
                             }}
                         >
-                            {tab.key === 'capitation'  && <Activity size={13} />}
-                            {tab.key === 'ffs'         && <Layers size={13} />}
-                            {tab.key === 'hcp_summary' && <Building2 size={13} />}
+                            {tab.icon}
                             {tab.label}
                         </button>
                     </li>
@@ -91,6 +93,7 @@ export default function FinancePage() {
             {activeTab === 'batches'     && <BatchesTab navigate={navigate} />}
             {activeTab === 'ledger'      && <LedgerTab />}
             {activeTab === 'hcp_summary' && <HCPPaymentSummaryTab navigate={navigate} />}
+            {activeTab === 'reimbursements' && <ReimbursementsQueuePage />}
         </div>
     );
 }

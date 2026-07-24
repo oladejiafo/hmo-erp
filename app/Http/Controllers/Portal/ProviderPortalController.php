@@ -278,10 +278,16 @@ class ProviderPortalController extends Controller
             $claim = Claim::create($validated);
 
             foreach ($validated['items'] as $item) {
-                $tariff = $claim->hcp->activeTariffs()
-                    ->where('service_code', $item['service_code'] ?? null)
-                    ->orWhere('service_name', 'like', "%{$item['service_name']}%")
-                    ->first();
+                // $tariff = $claim->hcp->activeTariffs()
+                //     ->where('service_code', $item['service_code'] ?? null)
+                //     ->orWhere('service_name', 'like', "%{$item['service_name']}%")
+                //     ->first();
+
+                $tariff = \App\Models\HcpTariff::findForHcp(
+                    $claim->hcp_id, 
+                    $item['service_code'] ?? null, 
+                    $item['service_name'] ?? null
+                );
 
                 $claim->items()->create([
                     'tariff_id' => $tariff?->id,

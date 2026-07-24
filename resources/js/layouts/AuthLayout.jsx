@@ -32,7 +32,7 @@ export default function AuthLayout() {
 
             <div style={{ 
                 width: '100%', 
-                maxWidth: '500px',
+                maxWidth: '600px',
                 margin: 'auto',
                 position: 'relative',
                 zIndex: 2

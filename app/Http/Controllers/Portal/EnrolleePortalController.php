@@ -33,6 +33,7 @@ use Illuminate\Http\Response;
 use Illuminate\Support\Facades\Log;
 use App\Models\Ticket;
 use App\Services\TicketService;
+use App\Models\Doctor;
 
 class EnrolleePortalController extends Controller
 {
@@ -470,6 +471,33 @@ class EnrolleePortalController extends Controller
         ]);
     }
 
+    public function searchDoctors(Request $request): JsonResponse
+    {
+        $query = Doctor::where('status', 'active')->with('hcp:id,name,city');
+        if ($request->hcp_id) $query->where('hcp_id', $request->hcp_id);
+        if ($request->specialty) $query->where('specialty', 'like', "%{$request->specialty}%");
+        if ($request->search) {
+            $query->where(function($q) use ($request) {
+                $q->where('name', 'like', "%{$request->search}%")
+                ->orWhere('specialty', 'like', "%{$request->search}%");
+            });
+        }
+        $doctors = $query->limit(30)->get();
+        return response()->json([
+            'data' => $doctors->map(fn($d) => [
+                'id' => $d->id, 'name' => $d->name, 'specialty' => $d->specialty,
+                'qualification' => $d->qualification, 'hcp_id' => $d->hcp_id,
+                'hcp_name' => $d->hcp->name, 'hcp_city' => $d->hcp->city,
+            ]),
+        ]);
+    }
+
+    public function doctorSlots(Request $request, Doctor $doctor): JsonResponse
+    {
+        $request->validate(['date' => 'required|date|after_or_equal:today']);
+        return response()->json(['data' => $doctor->availableSlots($request->date)]);
+}
+
     public function complaints(Request $request): JsonResponse
     {
         $user = $request->user();
@@ -756,6 +784,8 @@ class EnrolleePortalController extends Controller
     {
         $request->validate([
             'hcp_id' => 'required|integer|exists:health_care_providers,id',
+            'doctor_id' => 'nullable|integer|exists:doctors,id',
+            'slot_time' => 'nullable|string',
             'dependent_id' => 'nullable|integer|exists:dependents,id',
             'preferred_date' => 'required|date|after_or_equal:today',
             'preferred_time_slot' => 'nullable|string|in:morning,afternoon,evening',
@@ -765,29 +795,38 @@ class EnrolleePortalController extends Controller
 
         $user = $request->user();
         $enrollee = $user->enrollee;
+        if (!$enrollee) return response()->json(['message' => 'Enrollee not found'], 404);
+        if (!$enrollee->canMakeClaim()) return response()->json(['message' => 'Your plan is not currently active for booking.'], 422);
 
-        if (!$enrollee) {
-            return response()->json(['message' => 'Enrollee not found'], 404);
+        $isDoctorSlotBooking = $request->doctor_id && $request->slot_time;
+
+        if ($isDoctorSlotBooking) {
+            $doctor = Doctor::findOrFail($request->doctor_id);
+            $availableSlots = $doctor->availableSlots($request->preferred_date);
+            if (!in_array($request->slot_time, $availableSlots)) {
+                return response()->json(['message' => 'That slot is no longer available. Please pick another.'], 422);
+            }
         }
 
-        if (!$enrollee->canMakeClaim()) {
-            return response()->json(['message' => 'Your plan is not currently active for booking.'], 422);
-        }
-
-        $appointment = Appointment::create([
+        $appointment = \App\Models\Appointment::create([
             'branch_id' => $enrollee->branch_id,
             'enrollee_id' => $enrollee->id,
             'dependent_id' => $request->dependent_id,
             'hcp_id' => $request->hcp_id,
+            'doctor_id' => $request->doctor_id,
             'preferred_date' => $request->preferred_date,
             'preferred_time_slot' => $request->preferred_time_slot,
             'reason' => $request->reason,
             'notes' => $request->notes,
-            'status' => 'requested',
+            'status' => $isDoctorSlotBooking ? 'confirmed' : 'requested',
+            'confirmed_date' => $isDoctorSlotBooking ? $request->preferred_date : null,
+            'confirmed_time' => $isDoctorSlotBooking ? $request->slot_time : null,
         ]);
 
         return response()->json([
-            'message' => 'Appointment requested. The facility will confirm your slot.',
+            'message' => $isDoctorSlotBooking
+                ? "Confirmed for {$request->preferred_date} at {$request->slot_time}."
+                : 'Appointment requested. The facility will confirm your slot.',
             'data' => ['id' => $appointment->id, 'status' => $appointment->status],
         ], 201);
     }

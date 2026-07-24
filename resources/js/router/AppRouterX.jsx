@@ -27,6 +27,7 @@ import ProviderPortal from '../portals/provider'; // [PHASE 2]
 import PremiumCalculatorPage from '../pages/public/PremiumCalculatorPage';
 import RetailSignupPage from '../pages/public/RetailSignupPage';
 import PaymentReturnPage from '../pages/public/PaymentReturnPage';
+import EmployerLinkPage from '../pages/public/EmployerLinkPage';
 
 export default function AppRouter() {
     const { user, loading, portalType } = useAuth();
@@ -78,6 +79,7 @@ export default function AppRouter() {
                 <Route path="/join" element={<PremiumCalculatorPage />} />
                 <Route path="/join/signup" element={<RetailSignupPage />} />
                 <Route path="/join/payment-return" element={<PaymentReturnPage />} />
+                <Route path="/join/find-employer" element={<EmployerLinkPage />} />
                 <Route path="*" element={<Navigate to="/login" replace />} />
             </Route>
 

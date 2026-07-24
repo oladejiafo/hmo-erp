@@ -32,8 +32,9 @@ use Illuminate\Support\Facades\Log;
 class CorporatePortalController extends Controller
 {
     public function __construct(
-        protected BulkEnrolleeImportService $importService, // [FIX]
-        protected TicketService $ticketService, // [PHASE 7]
+        protected BulkEnrolleeImportService $importService, 
+        protected TicketService $ticketService, 
+        protected \App\Services\PaymentGateways\FlutterwaveGateway $gateway, 
     ) {}
 
     /**
@@ -227,7 +228,14 @@ class CorporatePortalController extends Controller
             return response()->json(['message' => 'Corporate not found'], 404);
         }
 
-        $plan = $corporate->plans()->find($request->plan_id);
+        // $plan = $corporate->plans()->find($request->plan_id);
+        // if (!$plan) {
+        //     return response()->json(['message' => 'Invalid plan selected'], 422);
+        // }
+
+        $plan = $corporate->plans()->find($request->plan_id)
+            ?? Plan::whereNull('corporate_id')->where('id', $request->plan_id)->where('status', 'active')->first();
+
         if (!$plan) {
             return response()->json(['message' => 'Invalid plan selected'], 422);
         }
@@ -388,22 +396,23 @@ class CorporatePortalController extends Controller
         ]);
     }
 
-    // [PHASE 5] — available plans for the tier-upgrade dropdown
     public function availablePlans(Request $request): JsonResponse
     {
         $user = $request->user();
         $corporate = $user->corporate;
-
-        if (!$corporate) {
-            return response()->json(['data' => []], 200);
-        }
+        if (!$corporate) return response()->json(['data' => []], 200);
 
         $plans = $corporate->plans()->where('status', 'active')->get();
+
+        if ($plans->isEmpty()) {
+            $plans = \App\Models\Plan::whereNull('corporate_id')->where('status', 'active')->where('is_public', true)->get();
+        }
 
         return response()->json([
             'data' => $plans->map(fn($p) => [
                 'id' => $p->id, 'plan_name' => $p->plan_name, 'tier' => $p->tier,
                 'max_benefit_value' => $p->max_benefit_value,
+                'is_base_plan' => $p->isBasePlan(),
             ]),
         ]);
     }
@@ -666,6 +675,66 @@ class CorporatePortalController extends Controller
         ]);
     }
 
+    public function payInvoiceOnline(Request $request, $invoiceId): JsonResponse
+    {
+        $user = $request->user();
+        $corporate = $user->corporate;
+        if (!$corporate) return response()->json(['message' => 'Corporate not found'], 404);
+
+        $invoice = \App\Models\CorporateInvoice::where('corporate_id', $corporate->id)
+            ->where('id', $invoiceId)->whereIn('status', ['sent', 'overdue'])->first();
+        if (!$invoice) return response()->json(['message' => 'Invoice not found or already paid'], 404);
+
+        $txRef = 'INV-' . $invoice->id . '-' . now()->timestamp;
+
+        $payment = \App\Models\InvoicePayment::create([
+            'corporate_invoice_id' => $invoice->id,
+            'tx_ref' => $txRef,
+            'amount' => $invoice->total_amount,
+            'status' => 'pending',
+        ]);
+
+        $checkout = $this->gateway->initiateCheckout([
+            'tx_ref' => $txRef,
+            'amount' => $invoice->total_amount,
+            'redirect_url' => config('app.frontend_url', config('app.url')) . '/corporate/invoices/payment-return',
+            'customer_email' => $user->email,
+            'customer_name' => $corporate->name,
+            'title' => "Invoice {$invoice->invoice_number}",
+            'description' => 'HMO premium payment',
+        ]);
+
+        if (!$checkout['success']) {
+            return response()->json(['message' => 'Could not start payment.'], 502);
+        }
+
+        $payment->update(['payment_link' => $checkout['payment_link'], 'response_payload' => $checkout['raw']]);
+
+        return response()->json(['data' => ['payment_link' => $checkout['payment_link']]]);
+    }
+
+    public function confirmInvoicePayment(Request $request): JsonResponse
+    {
+        $request->validate(['transaction_id' => 'required|string', 'tx_ref' => 'required|string']);
+
+        $payment = \App\Models\InvoicePayment::where('tx_ref', $request->tx_ref)->first();
+        if (!$payment) return response()->json(['message' => 'Payment not found'], 404);
+        if ($payment->status === 'paid') return response()->json(['data' => ['status' => 'paid']]);
+
+        $verification = $this->gateway->verifyCharge($request->transaction_id);
+        if (!$verification['success'] || $verification['tx_ref'] !== $payment->tx_ref) {
+            return response()->json(['data' => ['status' => 'pending']]);
+        }
+        if ((float) $verification['amount'] < (float) $payment->amount) {
+            return response()->json(['message' => 'Amount mismatch'], 422);
+        }
+
+        $payment->update(['status' => 'paid', 'gateway_reference' => $request->transaction_id, 'paid_at' => now()]);
+        $payment->invoice->update(['status' => 'paid', 'paid_at' => now(), 'payment_reference' => $request->transaction_id]);
+
+        return response()->json(['data' => ['status' => 'paid']]);
+    }
+    
     public function profile(Request $request): JsonResponse
     {
         $user = $request->user();

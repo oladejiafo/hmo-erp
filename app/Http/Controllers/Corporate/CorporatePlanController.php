@@ -47,29 +47,46 @@ class CorporatePlanController extends Controller
     }
 
     // ── Create a plan ─────────────────────────────────────────────────────────
-    public function store(StorePlanRequest $request, Corporate $corporate): JsonResponse
+    public function store(StorePlanRequest $request, Corporate $corporate = null): JsonResponse
     {
         $validated = $request->validated();
 
-        $plan = DB::transaction(function () use ($validated, $corporate) {
+        // Check if this is a base plan (no corporate_id)
+        $isBasePlan = empty($validated['corporate_id']) && !$corporate;
+
+        // Only HQ can create HMO-wide base plans
+        if ($isBasePlan && !$request->user()->hasRole('hq_manager')) {
+            return response()->json([
+                'message' => 'Only HQ can create an HMO-wide base plan.'
+            ], 403);
+        }
+
+        $plan = DB::transaction(function () use ($validated, $corporate, $isBasePlan) {
             // Auto-generate plan code if not provided
             if (empty($validated['plan_code'])) {
-                $validated['plan_code'] = Plan::generateCode(
-                    $corporate->code ?? substr($corporate->name, 0, 4),
-                    $validated['plan_name']
-                );
+                $codePrefix = $isBasePlan 
+                    ? 'HMO' 
+                    : ($corporate->code ?? substr($corporate->name, 0, 4));
+                $validated['plan_code'] = Plan::generateCode($codePrefix, $validated['plan_name']);
             }
 
             // Add default max_dependents from system settings if not provided
-            // This is the only change needed for System Settings integration
             if (!isset($validated['max_dependents'])) {
                 $validated['max_dependents'] = SystemSetting::get('financial.max_dependents', 4);
             }
 
-            $plan = $corporate->plans()->create([
+            // For base plans, corporate_id should be explicitly set to null
+            if ($isBasePlan) {
+                $validated['corporate_id'] = null;
+            }
+
+            $planData = [
                 ...$validated,
                 'created_by' => Auth::id(),
-            ]);
+            ];
+
+            // Remove corporate_id from data if it's null (Laravel handles it)
+            $plan = ($corporate ?? new Corporate())->plans()->create($planData);
 
             // Sync benefit items if provided
             if (!empty($validated['benefit_items'])) {

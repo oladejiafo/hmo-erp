@@ -138,4 +138,54 @@ class TariffController extends Controller
             'errors'  => $errors,
         ]);
     }
+
+    public function baseIndex(): JsonResponse
+    {
+        $tariffs = HcpTariff::whereNull('hcp_id')
+            ->orderBy('category')
+            ->orderBy('service_name')
+            ->get();
+        
+        return response()->json(['data' => $tariffs]);
+    }
+
+    public function baseStore(StoreTariffRequest $request): JsonResponse
+    {
+        $validated = $request->validated();
+        $validated['hcp_id'] = null;
+        $validated['uploaded_by'] = Auth::id();
+
+        $tariff = HcpTariff::create($validated);
+
+        return response()->json([
+            'message' => 'Base tariff created successfully.',
+            'data' => $tariff,
+        ], 201);
+    }
+
+    public function baseUpdate(StoreTariffRequest $request, HcpTariff $tariff): JsonResponse
+    {
+        if ($tariff->hcp_id !== null) {
+            return response()->json(['message' => 'Not a base tariff'], 404);
+        }
+
+        $tariff->update($request->validated());
+
+        return response()->json([
+            'message' => 'Base tariff updated successfully.',
+            'data' => $tariff,
+        ]);
+    }
+
+    public function baseDestroy(HcpTariff $tariff): JsonResponse
+    {
+        if ($tariff->hcp_id !== null) {
+            return response()->json(['message' => 'Not a base tariff'], 404);
+        }
+
+        $tariff->delete();
+
+        return response()->json(['message' => 'Base tariff deleted successfully.']);
+    }
+
 }

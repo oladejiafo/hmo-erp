@@ -277,6 +277,11 @@ class NotificationService
 
     // ── Generic ───────────────────────────────────────────────────────────────
 
+    public function systemNotify(int $userId, ?int $branchId, array $data): void
+    {
+        $this->create($userId, $branchId, $data);
+    }
+
     /**
      * Send a system notification to a specific list of user IDs.
      */

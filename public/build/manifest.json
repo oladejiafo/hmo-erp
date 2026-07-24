@@ -1,6 +1,6 @@
 {
   "node_modules/html5-qrcode/esm/index.js": {
-    "file": "assets/index-2CbALGdG.js",
+    "file": "assets/index-CcEpfLLi.js",
     "name": "index",
     "src": "node_modules/html5-qrcode/esm/index.js",
     "isDynamicEntry": true,
@@ -9,7 +9,7 @@
     ]
   },
   "resources/js/app.jsx": {
-    "file": "assets/app-gkzufHx0.js",
+    "file": "assets/app-BQSzpqVX.js",
     "name": "app",
     "src": "resources/js/app.jsx",
     "isEntry": true,

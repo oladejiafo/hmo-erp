@@ -32,6 +32,8 @@ import {
     Activity,
     Layers,
     Key,
+    MessageSquare,
+    FileCheck,
 } from "lucide-react";
 import { useAuth } from "../contexts/AuthContext";
 import { useQuery } from "@tanstack/react-query";
@@ -80,6 +82,7 @@ const navItems = [
     //     permission: 'plans.view',
     //     group: 'master',
     // },
+
     {
         label: "Corporates/Clients",
         icon: Building2,
@@ -135,6 +138,22 @@ const navItems = [
         group: "financial",
     },
 
+    //Requests
+    {
+        label: "Plan Requests",
+        icon: FileCheck, // Import from lucide-react
+        path: "/plan-requests",
+        permission: "plan_requests.review",
+        group: "requests",
+    },
+    {
+        label: "Support Tickets",
+        icon: MessageSquare,
+        path: "/tickets",
+        permission: "tickets.view",
+        group: "requests",
+    },
+
     // System & Tools
     {
         label: "AI Tools",
@@ -170,6 +189,20 @@ const navItems = [
 ];
 
 const settingsItems = [
+    {
+        label: "Base Tariffs",
+        icon: FileText,
+        path: "/settings/base-tariffs",
+        permission: "hcps.tariffs",
+        group: "admin",
+    },
+    {
+        label: 'Base Plans',
+        icon: ShieldCheck,
+        path: '/settings/base-plans',
+        permission: 'plans.view',
+        group: 'admin',
+    },
     {
         label: "Users",
         icon: Users,
@@ -218,11 +251,12 @@ const groupTitles = {
     core: "Core Operations",
     master: "Master Data",
     financial: "Financial",
+    requests: "Requests & Support",
     system: "System & Tools",
     admin: "Administration",
 };
 
-const groupOrder = ["core", "master", "financial", "system", "admin"];
+const groupOrder = ["core", "master", "financial","requests", "system", "admin"];
 
 // ─── Sidebar ─────────────────────────────────────────────────────────────────
 

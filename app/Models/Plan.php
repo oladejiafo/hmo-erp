@@ -99,6 +99,24 @@ class Plan extends Model
         return $this->hasMany(PlanBenefitItem::class)->orderBy('sort_order')->orderBy('benefit_category');
     }
 
+        public function scopeBaseHmoPlans($query)
+    {
+        return $query->whereNull('corporate_id');
+    }
+
+    public static function baseDefault(): ?self
+    {
+        return static::whereNull('corporate_id')
+            ->where('is_default', true)
+            ->where('status', 'active')
+            ->first();
+    }
+
+    public function isBasePlan(): bool
+    {
+        return $this->corporate_id === null;
+    }
+    
     // ── Scopes ────────────────────────────────────────────────────────────────
 
     public function scopeActive($query)

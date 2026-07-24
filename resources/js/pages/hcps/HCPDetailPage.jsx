@@ -23,6 +23,7 @@ import client from '../../api/client';
 import { PageHeader, StatusBadge, LoadingSpinner, ErrorAlert } from '../../components/ui/index';
 import { useAuth } from '../../contexts/AuthContext';
 import { formatCurrency, formatDate } from '../../utils/format';
+import HcpTariffsPage from './HcpTariffsPage';
 
 const STATUS_COLOR = {
     pending: 'warning', active: 'success', suspended: 'secondary',
@@ -635,68 +636,7 @@ export default function HCPDetailPage() {
 
             {/* ── Tariffs ──────────────────────────────────────────────────── */}
             {tab === 'tariffs' && (
-                <div>
-                    <div className="d-flex justify-content-between align-items-center mb-3">
-                        <span className="text-muted" style={{ fontSize: 13 }}>{tariffs.length} tariff lines</span>
-                        {canTariffs && (
-                            <button className="btn btn-primary btn-sm d-flex align-items-center gap-1"
-                                onClick={() => { setET(null); setTM(true); }}>
-                                <Plus size={14} /> Add Tariff
-                            </button>
-                        )}
-                    </div>
-                    {tLoad ? <div className="text-center py-4"><LoadingSpinner /></div> : (
-                        <div className="card border-0 shadow-sm">
-                            <div className="table-responsive">
-                                <table className="table table-hover mb-0">
-                                    <thead className="table-light">
-                                        <tr>
-                                            <th style={{ fontSize: 11 }}>Code</th>
-                                            <th style={{ fontSize: 11 }}>Service Name</th>
-                                            <th style={{ fontSize: 11 }}>Category</th>
-                                            <th className="text-end" style={{ fontSize: 11 }}>Agreed</th>
-                                            <th className="text-end" style={{ fontSize: 11 }}>NHIS</th>
-                                            <th style={{ fontSize: 11 }}>Effective</th>
-                                            <th style={{ fontSize: 11 }}>Status</th>
-                                            {canTariffs && <th />}
-                                        </tr>
-                                    </thead>
-                                    <tbody>
-                                        {tariffs.map(t => (
-                                            <tr key={t.id}>
-                                                <td className="font-monospace" style={{ fontSize: 10 }}>{t.service_code}</td>
-                                                <td style={{ fontSize: 13 }}>{t.service_name}</td>
-                                                <td><span className="badge bg-light text-dark border" style={{ fontSize: 10 }}>{t.category}</span></td>
-                                                <td className="text-end fw-semibold" style={{ fontSize: 13 }}>{formatCurrency(t.agreed_price)}</td>
-                                                <td className="text-end text-muted" style={{ fontSize: 12 }}>{t.nhis_price ? formatCurrency(t.nhis_price) : '-'}</td>
-                                                <td style={{ fontSize: 11 }}>{formatDate(t.effective_from)}{t.effective_to && <> – {formatDate(t.effective_to)}</>}</td>
-                                                <td>
-                                                    <span className={`badge ${t.is_active ? 'bg-success-subtle text-success' : 'bg-secondary-subtle text-secondary'}`} style={{ fontSize: 10 }}>
-                                                        {t.is_active ? 'Active' : 'Inactive'}
-                                                    </span>
-                                                </td>
-                                                {canTariffs && (
-                                                    <td>
-                                                        <button className="btn btn-sm btn-outline-secondary py-0" style={{ fontSize: 11 }}
-                                                            onClick={() => { setET(t); setTM(true); }}>Edit</button>
-                                                    </td>
-                                                )}
-                                            </tr>
-                                        ))}
-                                        {tariffs.length === 0 && (
-                                            <tr><td colSpan={8} className="text-center text-muted py-4">No tariffs yet.</td></tr>
-                                        )}
-                                    </tbody>
-                                </table>
-                            </div>
-                        </div>
-                    )}
-                    {tariffModal && (
-                        <TariffModal hcpId={id} existing={editingTariff}
-                            onClose={() => { setTM(false); setET(null); }}
-                            onSaved={() => { setTM(false); setET(null); qc.invalidateQueries({ queryKey: ['hcp-tariffs', id] }); }} />
-                    )}
-                </div>
+                <HcpTariffsPage hcpId={id} />
             )}
 
             {/* ── Contracts ────────────────────────────────────────────────── */}

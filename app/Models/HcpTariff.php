@@ -109,4 +109,28 @@ class HcpTariff extends Model
             default => ucfirst($this->category),
         };
     }
+
+    public static function findForHcp(?int $hcpId, ?string $serviceCode, ?string $serviceName = null): ?self
+    {
+        $query = static::where('is_active', true);
+
+        if ($serviceCode) {
+            $hcpSpecific = (clone $query)->where('hcp_id', $hcpId)->where('service_code', $serviceCode)->first();
+            if ($hcpSpecific) return $hcpSpecific;
+        }
+        if ($serviceName) {
+            $hcpSpecific = (clone $query)->where('hcp_id', $hcpId)->where('service_name', 'like', "%{$serviceName}%")->first();
+            if ($hcpSpecific) return $hcpSpecific;
+        }
+
+        if ($serviceCode) {
+            $base = (clone $query)->whereNull('hcp_id')->where('service_code', $serviceCode)->first();
+            if ($base) return $base;
+        }
+        if ($serviceName) {
+            return (clone $query)->whereNull('hcp_id')->where('service_name', 'like', "%{$serviceName}%")->first();
+        }
+
+        return null;
+    }
 }

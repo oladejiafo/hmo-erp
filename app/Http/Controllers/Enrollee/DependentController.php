@@ -54,7 +54,22 @@ class DependentController extends Controller
             ], 422);
         }
 
+        // $dependent = $enrollee->dependents()->create([
+        //     'first_name'    => $request->first_name,
+        //     'middle_name'   => $request->middle_name,
+        //     'last_name'     => $request->last_name,
+        //     'date_of_birth' => $request->date_of_birth,
+        //     'gender'        => $request->gender,
+        //     'relationship'  => $request->relationship,
+        //     'blood_group'   => $request->blood_group,
+        //     'genotype'      => $request->genotype,
+        //     'status'        => 'active',
+        //     'added_by'      => Auth::id(),
+        // ]);
+        $depIndex = $enrollee->dependents()->withTrashed()->count() + 1;
+
         $dependent = $enrollee->dependents()->create([
+            'dependent_id'  => $enrollee->enrollee_id . '-D' . $depIndex,
             'first_name'    => $request->first_name,
             'middle_name'   => $request->middle_name,
             'last_name'     => $request->last_name,
