@@ -265,4 +265,70 @@ class CorporatePlanController extends Controller
             'Plan not found for this corporate.'
         );
     }
+
+    /**
+ * Get all HMO base plans (corporate_id = null)
+ */
+public function baseIndex(): JsonResponse
+{
+    $plans = Plan::whereNull('corporate_id')
+        ->orderBy('tier')
+        ->get();
+
+    return response()->json(['data' => $plans]);
+}
+
+/**
+ * Create a new HMO base plan
+ */
+public function baseStore(StorePlanRequest $request): JsonResponse
+{
+    // Only HQ can create base plans
+    if (!$request->user()->hasRole('hq_manager')) {
+        return response()->json(['message' => 'Only HQ can create HMO-wide base plans.'], 403);
+    }
+
+    $validated = $request->validated();
+    $validated['corporate_id'] = null;
+    $validated['created_by'] = Auth::id();
+
+    $plan = Plan::create($validated);
+
+    return response()->json([
+        'message' => 'Base plan created successfully.',
+        'data' => $plan,
+    ], 201);
+}
+
+/**
+ * Update an HMO base plan
+ */
+public function baseUpdate(StorePlanRequest $request, Plan $plan): JsonResponse
+{
+    if ($plan->corporate_id !== null) {
+        return response()->json(['message' => 'Not a base plan.'], 404);
+    }
+
+    $plan->update($request->validated());
+
+    return response()->json([
+        'message' => 'Base plan updated successfully.',
+        'data' => $plan,
+    ]);
+}
+
+/**
+ * Delete an HMO base plan
+ */
+public function baseDestroy(Plan $plan): JsonResponse
+{
+    if ($plan->corporate_id !== null) {
+        return response()->json(['message' => 'Not a base plan.'], 404);
+    }
+
+    $plan->delete();
+
+    return response()->json(['message' => 'Base plan deleted successfully.']);
+}
+
 }

@@ -571,6 +571,16 @@ Route::middleware(['auth:sanctum', 'branch.isolation', 'license'])->group(functi
         Route::delete('/{tariff}', [TariffController::class, 'baseDestroy']);
     });
 
+    // ── Base Plans (HMO-wide) ────────────────────────────────────────────────────
+    Route::middleware(['auth:sanctum', 'permission:plans.view'])
+        ->prefix('plans/base')
+        ->group(function () {
+            Route::get('/', [CorporatePlanController::class, 'baseIndex']);
+            Route::post('/', [CorporatePlanController::class, 'baseStore'])->middleware('permission:plans.create');
+            Route::put('/{plan}', [CorporatePlanController::class, 'baseUpdate'])->middleware('permission:plans.edit');
+            Route::delete('/{plan}', [CorporatePlanController::class, 'baseDestroy'])->middleware('permission:plans.edit');
+        });
+        
     // Contracts - WRITE operations
     Route::middleware('permission:hcps.contracts')->post('hcps/{hcp}/contracts', [ContractController::class, 'store']);
 
