@@ -168,7 +168,14 @@ function QrScannerModal({ onDecode, onClose }) {
         let html5QrCode;
         // Dynamic import — keeps this dependency out of the main bundle
         // for everyone who never opens this page.
-        import('html5-qrcode').then(({ Html5Qrcode }) => {
+
+                
+        import('html5-qrcode').then((module) => {
+            const Html5Qrcode = module.default || module.Html5Qrcode;
+            if (!Html5Qrcode) {
+                setError('Failed to load QR scanner library');
+                return;
+            }
             html5QrCode = new Html5Qrcode('qr-reader');
             html5QrCode.start(
                 { facingMode: 'environment' },

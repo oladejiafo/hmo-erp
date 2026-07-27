@@ -415,6 +415,10 @@ Route::middleware(['auth:sanctum', 'branch.isolation'])->group(function () {
             Route::get('/doctors/search', [EnrolleePortalController::class, 'searchDoctors']);
             Route::get('/doctors/{doctor}/slots', [EnrolleePortalController::class, 'doctorSlots']);
 
+            // PHASE 1 - Telemedicine
+            Route::get('/telemedicine/encounters', [EnrolleePortalController::class, 'myEncounters']);
+            Route::get('/telemedicine/prescriptions', [EnrolleePortalController::class, 'myPrescriptions']);
+
         });
 
         // Corporate Portal - READ only
@@ -454,6 +458,13 @@ Route::middleware(['auth:sanctum', 'branch.isolation'])->group(function () {
             Route::get('/tickets/{ticket}', [App\Http\Controllers\Portal\ProviderPortalController::class, 'ticketShow']);
             
             Route::get('/appointments', [App\Http\Controllers\Portal\ProviderPortalController::class, 'appointments']);
+
+            // PHASE 1 - Telemedicine
+            Route::get('/telemedicine/queue', [App\Http\Controllers\Portal\ProviderPortalController::class, 'telemedicineQueue']);
+
+            // PHASE 3 - Mini EMR
+            Route::get('/emr/icd10/search', [App\Http\Controllers\Portal\ProviderPortalController::class, 'emrSearchIcd10']);
+            Route::get('/emr/enrollees/{enrollee}/history', [App\Http\Controllers\Portal\ProviderPortalController::class, 'emrEncounterHistory']);
 
         });
 
@@ -736,6 +747,9 @@ Route::middleware(['auth:sanctum', 'branch.isolation', 'license'])->group(functi
 
             Route::post('/appointments', [App\Http\Controllers\Portal\EnrolleePortalController::class, 'bookAppointment']);
             Route::patch('/appointments/{appointment}/cancel', [App\Http\Controllers\Portal\EnrolleePortalController::class, 'cancelAppointment']);
+
+            // PHASE 1 - Telemedicine
+            Route::post('/telemedicine/encounters/{encounter}/join', [App\Http\Controllers\Portal\EnrolleePortalController::class, 'joinTelemedicine']);
         });
 
         // Corporate Portal - WRITE
@@ -780,6 +794,19 @@ Route::middleware(['auth:sanctum', 'branch.isolation', 'license'])->group(functi
 
             Route::post('/verify-qr', [App\Http\Controllers\Portal\ProviderPortalController::class, 'verifyQrCode']);
             Route::post('/appointments/{appointment}/confirm', [App\Http\Controllers\Portal\ProviderPortalController::class, 'confirmAppointment']);
+
+            // PHASE 1 - Telemedicine
+            Route::post('/telemedicine/encounters/{encounter}/join', [App\Http\Controllers\Portal\ProviderPortalController::class, 'joinTelemedicineAsProvider']);
+            Route::post('/telemedicine/encounters/{encounter}/close', [App\Http\Controllers\Portal\ProviderPortalController::class, 'closeTelemedicineEncounter']);
+
+            // PHASE 3 - Mini EMR
+            Route::post('/emr/encounters', [App\Http\Controllers\Portal\ProviderPortalController::class, 'emrCreateEncounter']);
+            Route::post('/emr/encounters/{encounter}/treatment-plan', [App\Http\Controllers\Portal\ProviderPortalController::class, 'emrSaveTreatmentPlan']);
+            // Same handler as the telemedicine close route above - one encounter,
+            // one close method, regardless of type. This alias exists purely so
+            // the EMR frontend doesn't have to call a URL that says "telemedicine"
+            // when closing a physical visit.
+            Route::post('/emr/encounters/{encounter}/close', [App\Http\Controllers\Portal\ProviderPortalController::class, 'closeTelemedicineEncounter']);
 
             Route::get('/doctors', [ProviderDoctorController::class, 'index']);
             Route::post('/doctors', [ProviderDoctorController::class, 'store']);

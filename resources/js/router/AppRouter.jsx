@@ -120,6 +120,8 @@ import MyClaimsPage from "../pages/portals/enrollee/MyClaimsPage";
 import MyReimbursementsPage from "../pages/portals/enrollee/MyReimbursementsPage";
 import MyAppointmentsPage from "../pages/portals/enrollee/MyAppointmentsPage"; 
 import FindHCPPage from "../pages/portals/enrollee/FindHCPPage";
+import MyTelemedicinePage from "../pages/portals/enrollee/MyTelemedicinePage"; // PHASE 1
+import TelemedicineRoomPage from "../pages/portals/enrollee/TelemedicineRoomPage"; // PHASE 1
 import MyComplaintsPage from "../pages/portals/enrollee/MyComplaintsPage";
 
 // ── Provider Portal pages ──────────────────────────────────────────────────
@@ -128,6 +130,8 @@ import ProviderClaimsPage from "../pages/portals/provider/ProviderClaimsPage";
 import ProviderPreAuthPage from "../pages/portals/provider/ProviderPreAuthPage";
 import ProviderClaimSubmitPage from "../pages/portals/provider/ProviderClaimSubmitPage";
 import ProviderVerifyPage from "../pages/portals/provider/ProviderVerifyPage";
+import ProviderTelemedicinePage from "../pages/portals/provider/ProviderTelemedicinePage"; // PHASE 1
+import ProviderConsultRoomPage from "../pages/portals/provider/ProviderConsultRoomPage"; // PHASE 1
 
 import ProviderClaimImportPage from "../pages/portals/provider/ProviderClaimImportPage";      // NEW
 import ProviderPaymentsPage from "../pages/portals/provider/ProviderPaymentsPage";            // NEW
@@ -883,11 +887,24 @@ export default function AppRouter() {
                 <Route path="/enrollee/reimbursements" element={<MyReimbursementsPage />} />
                 <Route path="/enrollee/appointments" element={<MyAppointmentsPage />} />
                 <Route path="/enrollee/find-hcp" element={<FindHCPPage />} />
+                <Route path="/enrollee/telemedicine" element={<MyTelemedicinePage />} /> {/* PHASE 1 */}
                 <Route
                     path="/enrollee/complaints"
                     element={<MyComplaintsPage />}
                 />
             </Route>
+
+            {/* PHASE 1 - Telemedicine video room. Deliberately OUTSIDE
+                EnrolleeLayout - a video call needs the full viewport, not
+                the portal sidebar/header chrome. Still behind ProtectedRoute. */}
+            <Route
+                path="/enrollee/telemedicine/:encounterId/room"
+                element={
+                    <ProtectedRoute>
+                        <TelemedicineRoomPage />
+                    </ProtectedRoute>
+                }
+            />
 
             {/* ══════════════════════════════════════════════════════════════
                 PROVIDER PORTAL - /provider/*
@@ -912,8 +929,20 @@ export default function AppRouter() {
                 <Route path="/provider/reconciliation" element={<ProviderReconciliationPage />} />
                 <Route path="/provider/tickets" element={<ProviderTicketsPage />} />
                 {/* <Route path="/provider/tickets/:id" element={<ProviderTicketDetailPage />} /> */}
+                <Route path="/provider/telemedicine" element={<ProviderTelemedicinePage />} /> {/* PHASE 1 */}
                 
             </Route>
+
+            {/* PHASE 1 - Telemedicine consult room, same reasoning as the
+                enrollee room route above: full viewport, no layout chrome. */}
+            <Route
+                path="/provider/telemedicine/:encounterId/room"
+                element={
+                    <ProtectedRoute>
+                        <ProviderConsultRoomPage />
+                    </ProtectedRoute>
+                }
+            />
 
             <Route
                 path="*"

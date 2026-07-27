@@ -13,9 +13,11 @@
  * accepted from the request body. A provider must not be able to submit a
  * claim or PA under a different hospital's name.
  *
- * Scope note: this is the Phase 2 MVP per the roadmap - claims + PA
- * submission/tracking, enrollee verification. Mini-EMR, telemedicine, and
- * PBM dispensing are later phases and deliberately not touched here.
+ * Scope note: this was the Phase 2 MVP per the roadmap - claims + PA
+ * submission/tracking, enrollee verification. Phase 1 (Telemedicine) and
+ * Phase 3 (Mini EMR) have since landed in this controller too, under the
+ * "PHASE 1" / "PHASE 3" comment markers below. PBM dispensing (Phase 4)
+ * is still not touched here.
  */
 
 namespace App\Http\Controllers\Portal;
@@ -805,6 +807,238 @@ class ProviderPortalController extends Controller
             'confirmed_by' => $request->user()->id,
         ]);
 
+        // PHASE 1 - if this is a video/audio booking being confirmed here
+        // (rather than instant-confirmed at booking time), create its
+        // encounter now that a real confirmed date/time exists.
+        if ($appointment->consultation_type !== 'in_person') {
+            app(\App\Services\Telemedicine\TelemedicineService::class)
+                ->createEncounterForAppointment($appointment);
+        }
+
         return response()->json(['message' => 'Appointment confirmed.']);
+    }
+
+    // ── PHASE 1 - Telemedicine (provider side) ─────────────────────────────
+
+    /**
+     * Today's + upcoming video/audio encounters for this HCP's doctors.
+     * This is the "queue" a doctor works from.
+     */
+    public function telemedicineQueue(Request $request): JsonResponse
+    {
+        $hcp = $request->user()->hcp;
+        if (!$hcp) return response()->json(['data' => []], 200);
+
+        $query = \App\Models\Encounter::where('hcp_id', $hcp->id)
+            ->whereIn('type', ['video', 'audio'])
+            ->with(['enrollee:id,first_name,last_name,enrollee_id', 'dependent:id,first_name,last_name', 'doctor:id,name']);
+
+        if ($request->status) {
+            $query->where('status', $request->status);
+        } else {
+            $query->whereIn('status', ['scheduled', 'waiting', 'in_progress']);
+        }
+
+        $encounters = $query->orderBy('scheduled_at')->get();
+
+        return response()->json([
+            'data' => $encounters->map(fn($e) => [
+                'id' => $e->id,
+                'member_name' => $e->dependent
+                    ? $e->dependent->first_name . ' ' . $e->dependent->last_name
+                    : ($e->enrollee->first_name . ' ' . $e->enrollee->last_name),
+                'member_number' => $e->enrollee->enrollee_id ?? null,
+                'doctor_name' => $e->doctor->name ?? null,
+                'type' => $e->type,
+                'status' => $e->status,
+                'chief_complaint' => $e->chief_complaint,
+                'scheduled_at' => $e->scheduled_at?->toISOString(),
+            ]),
+        ]);
+    }
+
+    /**
+     * Doctor joins the video/audio session as the room owner. Returns a
+     * single-use join URL - fetch this again if the page is refreshed,
+     * don't cache it.
+     */
+    public function joinTelemedicineAsProvider(Request $request, \App\Models\Encounter $encounter): JsonResponse
+    {
+        $hcp = $request->user()->hcp;
+        if (!$hcp || $encounter->hcp_id !== $hcp->id) {
+            return response()->json(['message' => 'Consultation not found'], 404);
+        }
+
+        try {
+            $joinUrl = app(\App\Services\Telemedicine\TelemedicineService::class)
+                ->join($encounter, $encounter->doctor->name ?? 'Doctor', isDoctor: true);
+        } catch (\Throwable $e) {
+            return response()->json(['message' => $e->getMessage()], 422);
+        }
+
+        return response()->json(['data' => ['join_url' => $joinUrl, 'encounter_id' => $encounter->id]]);
+    }
+
+    /**
+     * Doctor closes the consult - notes, follow-up advice, and any
+     * prescriptions, all in one call.
+     */
+    public function closeTelemedicineEncounter(Request $request, \App\Models\Encounter $encounter): JsonResponse
+    {
+        $hcp = $request->user()->hcp;
+        if (!$hcp || $encounter->hcp_id !== $hcp->id) {
+            return response()->json(['message' => 'Consultation not found'], 404);
+        }
+
+        $request->validate([
+            'notes' => 'nullable|string|max:5000',
+            'follow_up_advice' => 'nullable|string|max:2000',
+            'prescriptions' => 'nullable|array',
+            'prescriptions.*.drug_name' => 'required_with:prescriptions|string|max:255',
+            'prescriptions.*.dosage' => 'nullable|string|max:100',
+            'prescriptions.*.frequency' => 'nullable|string|max:100',
+            'prescriptions.*.duration' => 'nullable|string|max:100',
+            'prescriptions.*.instructions' => 'nullable|string|max:1000',
+            'diagnoses' => 'nullable|array', // PHASE 3
+            'diagnoses.*.icd10_code' => 'required_with:diagnoses|string|max:10|exists:icd10_codes,code',
+            'diagnoses.*.type' => 'nullable|string|in:primary,secondary',
+            'diagnoses.*.notes' => 'nullable|string|max:500',
+        ]);
+
+        app(\App\Services\EMR\EmrService::class)->closeEncounter(
+            $encounter,
+            $request->notes,
+            $request->follow_up_advice,
+            $request->input('prescriptions', []),
+            $request->input('diagnoses', []),
+            $request->user()->id,
+        );
+
+        return response()->json(['message' => 'Consultation closed and shared with the member.']);
+    }
+
+    // ── PHASE 3 - Mini EMR ──────────────────────────────────────────────────
+
+    /**
+     * Typeahead search for ICD-10 codes - "E11" or "diabetes" both work.
+     */
+    public function emrSearchIcd10(Request $request): JsonResponse
+    {
+        $term = trim((string) $request->query('q', ''));
+        if (strlen($term) < 2) {
+            return response()->json(['data' => []]);
+        }
+
+        $codes = \App\Models\Icd10Code::search($term)->orderBy('code')->limit(20)->get(['code', 'description', 'category']);
+
+        return response()->json(['data' => $codes]);
+    }
+
+    /**
+     * A member's full clinical history - every completed encounter, any
+     * HCP, any doctor, with diagnoses/treatment plans/prescriptions
+     * eager-loaded. This is the continuity-of-care view: a doctor seeing
+     * this member for the first time can see everything that came before.
+     */
+    public function emrEncounterHistory(Request $request, \App\Models\Enrollee $enrollee): JsonResponse
+    {
+        $hcp = $request->user()->hcp;
+        if (!$hcp) {
+            return response()->json(['message' => 'Not authorized'], 403);
+        }
+
+        $history = app(\App\Services\EMR\EmrService::class)->enrolleeHistory($enrollee->id);
+
+        return response()->json([
+            'data' => $history->map(fn($e) => [
+                'id' => $e->id,
+                'type' => $e->type,
+                'status' => $e->status,
+                'scheduled_at' => $e->scheduled_at?->toISOString(),
+                'hcp_name' => $e->hcp->name ?? null,
+                'doctor_name' => $e->doctor->name ?? null,
+                'chief_complaint' => $e->chief_complaint,
+                'consultation_notes' => $e->consultation_notes,
+                'follow_up_advice' => $e->follow_up_advice,
+                'diagnoses' => $e->diagnoses->map(fn($d) => [
+                    'code' => $d->icd10_code,
+                    'description' => $d->icd10->description ?? null,
+                    'type' => $d->type,
+                ]),
+                'treatment_plans' => $e->treatmentPlans->map(fn($tp) => [
+                    'id' => $tp->id,
+                    'plan_text' => $tp->plan_text,
+                    'target_outcomes' => $tp->target_outcomes,
+                    'review_date' => $tp->review_date?->format('Y-m-d'),
+                    'status' => $tp->status,
+                ]),
+                'prescriptions' => $e->prescriptions->map(fn($rx) => [
+                    'drug_name' => $rx->drug_name,
+                    'dosage' => $rx->dosage,
+                    'issued_at' => $rx->issued_at?->format('Y-m-d'),
+                ]),
+            ]),
+        ]);
+    }
+
+    /**
+     * Starts a walk-in / in-clinic encounter - no appointment needed,
+     * the member is physically present right now.
+     */
+    public function emrCreateEncounter(Request $request): JsonResponse
+    {
+        $hcp = $request->user()->hcp;
+        if (!$hcp) {
+            return response()->json(['message' => 'Not authorized'], 403);
+        }
+
+        $request->validate([
+            'enrollee_id' => 'required|exists:enrollees,id',
+            'dependent_id' => 'nullable|exists:dependents,id',
+            'doctor_id' => 'nullable|exists:doctors,id',
+            'chief_complaint' => 'nullable|string|max:255',
+        ]);
+
+        $doctor = $request->doctor_id ? \App\Models\Doctor::find($request->doctor_id) : null;
+
+        $encounter = app(\App\Services\EMR\EmrService::class)->createAdHocEncounter(
+            $hcp,
+            (int) $request->enrollee_id,
+            $request->dependent_id ? (int) $request->dependent_id : null,
+            $doctor,
+            $request->chief_complaint,
+            $request->user()->id,
+        );
+
+        return response()->json(['data' => ['id' => $encounter->id]], 201);
+    }
+
+    /**
+     * Add or update a treatment plan mid-encounter - doesn't require
+     * closing the encounter first, a doctor should be able to log this
+     * as the visit progresses.
+     */
+    public function emrSaveTreatmentPlan(Request $request, \App\Models\Encounter $encounter): JsonResponse
+    {
+        $hcp = $request->user()->hcp;
+        if (!$hcp || $encounter->hcp_id !== $hcp->id) {
+            return response()->json(['message' => 'Encounter not found'], 404);
+        }
+
+        $request->validate([
+            'plan_text' => 'required|string|max:5000',
+            'target_outcomes' => 'nullable|string|max:2000',
+            'review_date' => 'nullable|date',
+        ]);
+
+        $plan = app(\App\Services\EMR\EmrService::class)->saveTreatmentPlan(
+            $encounter,
+            $request->plan_text,
+            $request->target_outcomes,
+            $request->review_date,
+            $request->user()->id,
+        );
+
+        return response()->json(['data' => ['id' => $plan->id]], 201);
     }
 }

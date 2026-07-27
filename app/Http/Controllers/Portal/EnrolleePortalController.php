@@ -791,6 +791,7 @@ class EnrolleePortalController extends Controller
             'preferred_time_slot' => 'nullable|string|in:morning,afternoon,evening',
             'reason' => 'required|string|max:255',
             'notes' => 'nullable|string|max:1000',
+            'consultation_type' => 'nullable|string|in:in_person,video,audio', // PHASE 1
         ]);
 
         $user = $request->user();
@@ -798,7 +799,17 @@ class EnrolleePortalController extends Controller
         if (!$enrollee) return response()->json(['message' => 'Enrollee not found'], 404);
         if (!$enrollee->canMakeClaim()) return response()->json(['message' => 'Your plan is not currently active for booking.'], 422);
 
+        $consultationType = $request->consultation_type ?? 'in_person';
         $isDoctorSlotBooking = $request->doctor_id && $request->slot_time;
+
+        // PHASE 1 - telemedicine has no facility to "confirm later"; it needs
+        // a real doctor + slot up front, since a video room needs a real,
+        // confirmed appointment to attach an encounter to.
+        if ($consultationType !== 'in_person' && !$isDoctorSlotBooking) {
+            return response()->json([
+                'message' => 'Video and audio consultations require picking a doctor and an available time slot.',
+            ], 422);
+        }
 
         if ($isDoctorSlotBooking) {
             $doctor = Doctor::findOrFail($request->doctor_id);
@@ -818,10 +829,18 @@ class EnrolleePortalController extends Controller
             'preferred_time_slot' => $request->preferred_time_slot,
             'reason' => $request->reason,
             'notes' => $request->notes,
+            'consultation_type' => $consultationType, // PHASE 1
             'status' => $isDoctorSlotBooking ? 'confirmed' : 'requested',
             'confirmed_date' => $isDoctorSlotBooking ? $request->preferred_date : null,
             'confirmed_time' => $isDoctorSlotBooking ? $request->slot_time : null,
         ]);
+
+        // PHASE 1 - instant-confirmed telemedicine bookings get an encounter
+        // right away. The video room itself is still created lazily on join.
+        if ($isDoctorSlotBooking && $consultationType !== 'in_person') {
+            app(\App\Services\Telemedicine\TelemedicineService::class)
+                ->createEncounterForAppointment($appointment);
+        }
 
         return response()->json([
             'message' => $isDoctorSlotBooking
@@ -849,5 +868,83 @@ class EnrolleePortalController extends Controller
         ]);
 
         return response()->json(['message' => 'Appointment cancelled.']);
+    }
+
+    // ── PHASE 1 - Telemedicine (enrollee side) ──────────────────────────────
+
+    public function myEncounters(Request $request): JsonResponse
+    {
+        $enrollee = $request->user()->enrollee;
+        if (!$enrollee) return response()->json(['data' => []], 200);
+
+        $query = \App\Models\Encounter::where('enrollee_id', $enrollee->id)
+            ->whereIn('type', ['video', 'audio'])
+            ->with(['hcp:id,name', 'doctor:id,name,specialty']);
+
+        if ($request->upcoming) {
+            $query->whereIn('status', ['scheduled', 'waiting', 'in_progress']);
+        }
+
+        $encounters = $query->orderByDesc('scheduled_at')->get();
+
+        return response()->json([
+            'data' => $encounters->map(fn($e) => [
+                'id' => $e->id,
+                'hcp_name' => $e->hcp->name ?? null,
+                'doctor_name' => $e->doctor->name ?? null,
+                'doctor_specialty' => $e->doctor->specialty ?? null,
+                'type' => $e->type,
+                'status' => $e->status,
+                'scheduled_at' => $e->scheduled_at?->toISOString(),
+                'is_joinable' => $e->isJoinable(),
+                'consultation_notes' => $e->status === 'completed' ? $e->consultation_notes : null,
+                'follow_up_advice' => $e->status === 'completed' ? $e->follow_up_advice : null,
+            ]),
+        ]);
+    }
+
+    /**
+     * Enrollee joins as a guest participant. Returns a single-use join URL.
+     */
+    public function joinTelemedicine(Request $request, \App\Models\Encounter $encounter): JsonResponse
+    {
+        $enrollee = $request->user()->enrollee;
+        if (!$enrollee || $encounter->enrollee_id !== $enrollee->id) {
+            return response()->json(['message' => 'Consultation not found'], 404);
+        }
+
+        try {
+            $joinUrl = app(\App\Services\Telemedicine\TelemedicineService::class)
+                ->join($encounter, trim($enrollee->first_name . ' ' . $enrollee->last_name), isDoctor: false);
+        } catch (\Throwable $e) {
+            return response()->json(['message' => $e->getMessage()], 422);
+        }
+
+        return response()->json(['data' => ['join_url' => $joinUrl, 'encounter_id' => $encounter->id]]);
+    }
+
+    public function myPrescriptions(Request $request): JsonResponse
+    {
+        $enrollee = $request->user()->enrollee;
+        if (!$enrollee) return response()->json(['data' => []], 200);
+
+        $prescriptions = \App\Models\Prescription::where('enrollee_id', $enrollee->id)
+            ->with('encounter:id,doctor_id,type,scheduled_at', 'encounter.doctor:id,name')
+            ->orderByDesc('issued_at')
+            ->get();
+
+        return response()->json([
+            'data' => $prescriptions->map(fn($p) => [
+                'id' => $p->id,
+                'drug_name' => $p->drug_name,
+                'dosage' => $p->dosage,
+                'frequency' => $p->frequency,
+                'duration' => $p->duration,
+                'instructions' => $p->instructions,
+                'status' => $p->status,
+                'issued_at' => $p->issued_at?->format('Y-m-d'),
+                'doctor_name' => $p->encounter->doctor->name ?? null,
+            ]),
+        ]);
     }
 }

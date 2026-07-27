@@ -8,13 +8,14 @@ import { Outlet, NavLink, useNavigate } from 'react-router-dom';
 import {
     LayoutDashboard, FileText, ShieldCheck, UploadCloud,
     Wallet, Scale, MessageSquare, ScanLine,
-    LogOut, Menu, X, Bell, Stethoscope,
+    LogOut, Menu, X, Bell, Stethoscope, Video,
 } from 'lucide-react';
 import { useAuth } from '../../contexts/AuthContext';
 
 const navItems = [
     { path: '/provider',                label: 'Dashboard',           icon: LayoutDashboard, exact: true },
     { path: '/provider/verify',         label: 'Verify',              icon: ScanLine, exact: true },
+    { path: '/provider/telemedicine',   label: 'Telemedicine',        icon: Video, exact: true }, // PHASE 1
     { path: '/provider/claims',         label: 'Claims',              icon: FileText, exact: true },  // ← ADD exact: true
     { path: '/provider/claims/import',  label: 'Bulk Upload',         icon: UploadCloud },
     { path: '/provider/pre-auths',      label: 'Pre-Authorisations',  icon: ShieldCheck, exact: true },

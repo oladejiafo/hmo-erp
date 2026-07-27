@@ -47,6 +47,12 @@ return [
         'key' => env('OPENAI_API_KEY', ''),
     ],
 
+    'daily' => [
+        'api_key'   => env('DAILY_API_KEY'),
+        'base_url'  => env('DAILY_BASE_URL', 'https://api.daily.co/v1'),
+        'subdomain' => env('DAILY_SUBDOMAIN'), // e.g. "g8nexum" if your rooms URL is g8nexum.daily.co
+    ],
+ 
     'flutterwave' => [
         'secret_key' => env('FLUTTERWAVE_SECRET_KEY'),
         'base_url' => env('FLUTTERWAVE_BASE_URL', 'https://api.flutterwave.com/v3'),

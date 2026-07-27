@@ -517,6 +517,16 @@ export const fetchEnrolleeAppointments = (upcomingOnly = false) =>
 export const cancelEnrolleeAppointment = (id) =>
     apiClient.patch(`/portal/enrollee/appointments/${id}/cancel`).then(r => r.data);
 
+// ── Enrollee — telemedicine (PHASE 1) ────────────────────────────────────────
+export const fetchEnrolleeEncounters = (upcomingOnly = false) =>
+    apiClient.get('/portal/enrollee/telemedicine/encounters', { params: { upcoming: upcomingOnly ? 1 : 0 } }).then(r => r.data);
+
+export const joinEnrolleeTelemedicine = (encounterId) =>
+    apiClient.post(`/portal/enrollee/telemedicine/encounters/${encounterId}/join`).then(r => r.data);
+
+export const fetchEnrolleePrescriptions = () =>
+    apiClient.get('/portal/enrollee/telemedicine/prescriptions').then(r => r.data);
+
 export const searchDoctors = (params) =>
     apiClient.get('/portal/enrollee/doctors/search', { params }).then(r => r.data);
 
@@ -572,6 +582,16 @@ export const confirmProviderAppointment = (id, confirmedDate, confirmedTime = nu
 
 export const verifyProviderQrCode = (qrData) =>
     apiClient.post('/portal/provider/verify-qr', { qr_data: qrData }).then(r => r.data);
+
+// ── Provider — telemedicine (PHASE 1) ────────────────────────────────────────
+export const fetchProviderTelemedicineQueue = (status) =>
+    apiClient.get('/portal/provider/telemedicine/queue', { params: status ? { status } : {} }).then(r => r.data);
+
+export const joinProviderTelemedicine = (encounterId) =>
+    apiClient.post(`/portal/provider/telemedicine/encounters/${encounterId}/join`).then(r => r.data);
+
+export const closeProviderTelemedicineEncounter = (encounterId, payload) =>
+    apiClient.post(`/portal/provider/telemedicine/encounters/${encounterId}/close`, payload).then(r => r.data);
 
 
 // ── Provider bulk claims import ─────────────────────────────────────────────
@@ -810,6 +830,7 @@ export default {
     confirmEnrolleeClaimUtilization, disputeEnrolleeClaimUtilization,
     fetchEnrolleePortalReimbursements, submitEnrolleePortalReimbursement,
     checkInAtProvider, bookEnrolleeAppointment, fetchEnrolleeAppointments, cancelEnrolleeAppointment,
+    fetchEnrolleeEncounters, joinEnrolleeTelemedicine, fetchEnrolleePrescriptions,
 
     searchDoctors, fetchDoctorSlots, fetchProviderDoctors, createProviderDoctor, setDoctorSchedule,
     
@@ -819,6 +840,7 @@ export default {
     submitProviderPreAuth,
     uploadProviderClaimImport, confirmProviderImportMapping, fetchProviderImportRows, pushProviderImportBatch, fetchProviderPayments, fetchProviderReconciliation, fetchProviderTickets, submitProviderTicket, fetchProviderTicketThread, replyProviderTicket,
     fetchProviderAppointments, confirmProviderAppointment, verifyProviderQrCode,
+    fetchProviderTelemedicineQueue, joinProviderTelemedicine, closeProviderTelemedicineEncounter,
 
     // Users
     fetchUsers, fetchUser,fetchUserById, createUser, updateUser, deleteUser,

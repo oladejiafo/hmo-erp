@@ -14,7 +14,7 @@ import { Outlet, NavLink, useNavigate,useLocation } from 'react-router-dom';
 import {
     LayoutDashboard, CreditCard, Activity, FileText,
     MapPin, MessageSquare, LogOut, Menu, X, Bell,
-    Receipt, Calendar, ChevronDown,
+    Receipt, Calendar, ChevronDown, Video,
 } from 'lucide-react';
 
 import { useAuth } from '../../contexts/AuthContext';
@@ -25,12 +25,14 @@ const primaryNavItems = [
     { path: '/enrollee/id-card',         label: 'ID Card',       icon: CreditCard },
     { path: '/enrollee/find-hcp',        label: 'Hospitals',     icon: MapPin },
     { path: '/enrollee/appointments',    label: 'Appointments',  icon: Calendar },
+    { path: '/enrollee/telemedicine',    label: 'Telemedicine',  icon: Video }, // PHASE 1
     { path: '/enrollee/reimbursements',  label: 'Reimburse',     icon: Receipt },
-    { path: '/enrollee/claims',          label: 'Claims',        icon: FileText },
+
 ];
 
 // Secondary — grouped under "More" dropdown
 const moreNavItems = [
+    { path: '/enrollee/claims',          label: 'Claims',        icon: FileText },
     { path: '/enrollee/benefits',       label: 'Benefits',      icon: Activity },
     { path: '/enrollee/complaints',     label: 'Complaints',    icon: MessageSquare },
 ];

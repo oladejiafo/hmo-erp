@@ -159,6 +159,10 @@ function BookAppointmentModal({ hcp, onClose }) {
     const [doctorId, setDoctorId] = useState(null);
     const [slotTime, setSlotTime] = useState(null);
 
+    // PHASE 1 - Telemedicine: only offered once a doctor+slot is picked,
+    // since video/audio consults require instant confirmation.
+    const [consultationType, setConsultationType] = useState('in_person');
+
     const { data: doctorsData } = useQuery({
         queryKey: ['hcp-doctors', hcp.id],
         queryFn: () => searchDoctors({ hcp_id: hcp.id }),
@@ -188,6 +192,7 @@ function BookAppointmentModal({ hcp, onClose }) {
             }
             if (slotTime) {
                 payload.slot_time = slotTime;
+                payload.consultation_type = consultationType; // PHASE 1
             }
             return bookEnrolleeAppointment(payload);
         },
@@ -279,6 +284,35 @@ function BookAppointmentModal({ hcp, onClose }) {
                             <option value="afternoon">Afternoon</option>
                             <option value="evening">Evening</option>
                         </select>
+
+                        {/* PHASE 1 - Telemedicine: only offered on instant-confirm bookings */}
+                        {slotTime && (
+                            <>
+                                <label style={modalLabelStyle}>How would you like to consult?</label>
+                                <div style={{ display: 'flex', gap: 8, marginBottom: 12 }}>
+                                    {[
+                                        { value: 'in_person', label: 'In person' },
+                                        { value: 'video', label: 'Video call' },
+                                        { value: 'audio', label: 'Audio call' },
+                                    ].map(opt => (
+                                        <button
+                                            key={opt.value}
+                                            type="button"
+                                            onClick={() => setConsultationType(opt.value)}
+                                            style={{
+                                                flex: 1, padding: '8px 10px', borderRadius: 6, fontSize: 12,
+                                                cursor: 'pointer',
+                                                border: consultationType === opt.value ? '1px solid #0f4c81' : '1px solid #e2e8f0',
+                                                background: consultationType === opt.value ? '#0f4c81' : '#fff',
+                                                color: consultationType === opt.value ? '#fff' : '#4a5568',
+                                            }}
+                                        >
+                                            {opt.label}
+                                        </button>
+                                    ))}
+                                </div>
+                            </>
+                        )}
 
                         <label style={modalLabelStyle}>Reason for visit</label>
                         <input

@@ -73,6 +73,12 @@ class RolePermissionSeeder extends Seeder
         'compliance.view',       // See filings, calendar
         'compliance.manage',     // Create/update filings, mark complete, upload docs
 
+        // ── Telemedicine - Phase 1 ────────────────────────────────────────────
+        'telemedicine.view',     // HQ/branch staff oversight of encounters
+
+        // ── Mini EMR - Phase 3 ─────────────────────────────────────────────────
+        'emr.view',               // HQ/branch staff oversight of clinical records
+
         // ── Plans ─────────────────────────────────────────────────────────────
         'plans.view', 'plans.create', 'plans.edit',
 
@@ -126,6 +132,8 @@ class RolePermissionSeeder extends Seeder
                 'ai.tools', // ADDED
                 'help.admin', // ADDED
                 'import.enrollees', // ADDED
+                'telemedicine.view', // PHASE 1
+                'emr.view', // PHASE 3
             ],
         ],
         'branch_manager' => [
@@ -147,6 +155,8 @@ class RolePermissionSeeder extends Seeder
                 'ai.tools', // ADDED
                 'help.admin', // ADDED
                 'import.enrollees', // ADDED
+                'telemedicine.view', // PHASE 1
+                'emr.view', // PHASE 3
             ],
         ],
         'claims_supervisor' => [
