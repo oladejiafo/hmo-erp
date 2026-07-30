@@ -2,6 +2,8 @@
 
 namespace App\Models;
 
+use App\Traits\HasAuditLog; 
+
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\SoftDeletes;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
@@ -54,7 +56,7 @@ use App\Models\SystemSetting;
  */
 class PreAuthorisation extends Model
 {
-    use SoftDeletes;
+    use SoftDeletes, HasAuditLog;
 
     protected $table = 'pre_authorisations';
 

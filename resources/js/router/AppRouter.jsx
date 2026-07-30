@@ -108,6 +108,7 @@ import CorpProfilePage from "../pages/portals/corporate/CorpProfilePage";
 
 import CorpBroadcastPage from "../pages/portals/corporate/CorpBroadcastPage";
 import CorpBudgetDashboardPage from "../pages/portals/corporate/CorpBudgetDashboardPage";
+import CorpEmployeeUtilizationPage from "../pages/portals/corporate/CorpEmployeeUtilizationPage"; 
 import CorpPlanBuilderPage from "../pages/portals/corporate/CorpPlanBuilderPage";
 // import CorpPlanRequestsPage from "../pages/portals/corporate/CorpPlanRequestsPage";
 import CorpRenewalsPage from "../pages/portals/corporate/CorpRenewalsPage";
@@ -123,6 +124,7 @@ import FindHCPPage from "../pages/portals/enrollee/FindHCPPage";
 import MyTelemedicinePage from "../pages/portals/enrollee/MyTelemedicinePage"; // PHASE 1
 import TelemedicineRoomPage from "../pages/portals/enrollee/TelemedicineRoomPage"; // PHASE 1
 import MyComplaintsPage from "../pages/portals/enrollee/MyComplaintsPage";
+import MyConsentsPage from "../pages/portals/enrollee/MyConsentsPage"; 
 
 // ── Provider Portal pages ──────────────────────────────────────────────────
 import ProviderDashboardPage from "../pages/portals/provider/ProviderDashboardPage";
@@ -131,6 +133,9 @@ import ProviderPreAuthPage from "../pages/portals/provider/ProviderPreAuthPage";
 import ProviderClaimSubmitPage from "../pages/portals/provider/ProviderClaimSubmitPage";
 import ProviderVerifyPage from "../pages/portals/provider/ProviderVerifyPage";
 import ProviderTelemedicinePage from "../pages/portals/provider/ProviderTelemedicinePage"; // PHASE 1
+import ProviderPatientHistoryPage from "../pages/portals/provider/ProviderPatientHistoryPage"; // PHASE 3
+import ProviderStartEncounterPage from "../pages/portals/provider/ProviderStartEncounterPage"; // PHASE 3
+import EmrEncounterPage from "../pages/portals/provider/EmrEncounterPage"; // PHASE 3
 import ProviderConsultRoomPage from "../pages/portals/provider/ProviderConsultRoomPage"; // PHASE 1
 
 import ProviderClaimImportPage from "../pages/portals/provider/ProviderClaimImportPage";      // NEW
@@ -861,6 +866,7 @@ export default function AppRouter() {
 
                 <Route path="/corporate/broadcast" element={<CorpBroadcastPage />} />
                 <Route path="/corporate/budget" element={<CorpBudgetDashboardPage />} />
+                <Route path="/corporate/utilization" element={<CorpEmployeeUtilizationPage />} /> 
                 <Route path="/corporate/available-plans" element={<CorpPlanBuilderPage />} />
                 {/* <Route path="/corporate/plan-requests" element={<CorpPlanRequestsPage />} /> */}
                 <Route path="/corporate/renewals" element={<CorpRenewalsPage />} />
@@ -888,6 +894,7 @@ export default function AppRouter() {
                 <Route path="/enrollee/appointments" element={<MyAppointmentsPage />} />
                 <Route path="/enrollee/find-hcp" element={<FindHCPPage />} />
                 <Route path="/enrollee/telemedicine" element={<MyTelemedicinePage />} /> {/* PHASE 1 */}
+                <Route path="/enrollee/consents" element={<MyConsentsPage />} /> {/* PHASE 6 */}
                 <Route
                     path="/enrollee/complaints"
                     element={<MyComplaintsPage />}
@@ -930,6 +937,9 @@ export default function AppRouter() {
                 <Route path="/provider/tickets" element={<ProviderTicketsPage />} />
                 {/* <Route path="/provider/tickets/:id" element={<ProviderTicketDetailPage />} /> */}
                 <Route path="/provider/telemedicine" element={<ProviderTelemedicinePage />} /> {/* PHASE 1 */}
+                <Route path="/provider/emr/history" element={<ProviderPatientHistoryPage />} /> {/* PHASE 3 */}
+                <Route path="/provider/emr/start" element={<ProviderStartEncounterPage />} /> {/* PHASE 3 */}
+                <Route path="/provider/emr/encounters/:encounterId" element={<EmrEncounterPage />} /> {/* PHASE 3 */}
                 
             </Route>
 

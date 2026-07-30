@@ -9,6 +9,7 @@ use App\Models\HealthCareProvider;
 use App\Models\GeneratedReport;
 use App\Models\ReportSchedule;
 use App\Services\NhiaReportService;
+use App\Services\NdpaReportService;
 use Carbon\Carbon;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
@@ -18,7 +19,10 @@ use Illuminate\Support\Facades\Storage;
 
 class ReportController extends Controller
 {
-    public function __construct(private NhiaReportService $service) {}
+    public function __construct(
+        private NhiaReportService $service,
+        private NdpaReportService $ndpaService, // PHASE 6
+    ) {}
 
     // ─────────────────────────────────────────────────────────────────────────
     // EXISTING REPORT METHODS
@@ -306,7 +310,7 @@ class ReportController extends Controller
 
         // Generate synchronously for now - queue for async in production
         try {
-            $this->service->generate($report);
+            $report->isNdpaReport() ? $this->ndpaService->generate($report) : $this->service->generate($report); // PHASE 6
         } catch (\Throwable $e) {
             return response()->json(['message' => 'Report generation failed: ' . $e->getMessage()], 500);
         }

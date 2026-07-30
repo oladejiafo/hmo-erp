@@ -599,6 +599,94 @@ class CorporatePortalController extends Controller
             ->header('Content-Disposition', 'attachment; filename="' . $filename . '"');
     }
 
+        // ── Advanced Reporting: employee & category drill-down ─────────────────
+    // The CSV export above (exportUtilizationReport) already has per-employee
+    // numbers - this exposes the same data as JSON for an on-screen,
+    // searchable/sortable page instead of a download-only report, plus a
+    // breakdown by claim category that didn't exist anywhere yet.
+
+    public function employeeUtilization(Request $request): JsonResponse
+    {
+        $user = $request->user();
+        $corporate = $user->corporate;
+
+        if (!$corporate) {
+            return response()->json(['data' => [], 'meta' => []], 200);
+        }
+
+        $query = Enrollee::where('corporate_id', $corporate->id)->with('plan');
+
+        if ($request->search) {
+            $term = $request->search;
+            $query->where(function ($q) use ($term) {
+                $q->where('first_name', 'like', "%{$term}%")
+                    ->orWhere('last_name', 'like', "%{$term}%")
+                    ->orWhere('enrollee_id', 'like', "%{$term}%");
+            });
+        }
+
+        if ($request->plan_id) {
+            $query->where('plan_id', $request->plan_id);
+        }
+
+        $enrollees = $query->get()->map(function ($enrollee) {
+            $utilized = Claim::where('enrollee_id', $enrollee->id)
+                ->whereYear('created_at', now()->year)
+                ->whereIn('status', ['approved', 'paid'])
+                ->sum('total_amount_approved');
+
+            $claimCount = Claim::where('enrollee_id', $enrollee->id)
+                ->whereYear('created_at', now()->year)
+                ->count();
+
+            $ceiling = $enrollee->plan->max_benefit_value ?? 0;
+
+            return [
+                'id' => $enrollee->id,
+                'enrollee_id' => $enrollee->enrollee_id,
+                'name' => trim($enrollee->first_name . ' ' . $enrollee->last_name),
+                'plan_name' => $enrollee->plan->plan_name ?? 'N/A',
+                'status' => $enrollee->status,
+                'claim_count' => $claimCount,
+                'utilized' => (float) $utilized,
+                'ceiling' => (float) $ceiling,
+                'utilization_percent' => $ceiling > 0 ? round(($utilized / $ceiling) * 100, 1) : 0,
+            ];
+        });
+
+        $sortBy = $request->sort_by ?? 'utilization_percent';
+        $direction = $request->sort_dir === 'asc' ? 1 : -1;
+        $enrollees = $enrollees->sort(fn($a, $b) => $direction * ($a[$sortBy] <=> $b[$sortBy]))->values();
+
+        return response()->json(['data' => $enrollees]);
+    }
+
+    public function utilizationByCategory(Request $request): JsonResponse
+    {
+        $user = $request->user();
+        $corporate = $user->corporate;
+
+        if (!$corporate) {
+            return response()->json(['data' => []], 200);
+        }
+
+        $rows = Claim::whereHas('enrollee', fn($q) => $q->where('corporate_id', $corporate->id))
+            ->whereYear('created_at', now()->year)
+            ->whereIn('status', ['approved', 'paid'])
+            ->selectRaw('claim_type, COUNT(*) as claim_count, SUM(total_amount_approved) as total_amount')
+            ->groupBy('claim_type')
+            ->orderByDesc('total_amount')
+            ->get();
+
+        $data = $rows->map(fn($row) => [
+            'category' => $row->claim_type instanceof \App\Enums\ClaimType ? $row->claim_type->label() : $row->claim_type,
+            'claim_count' => (int) $row->claim_count,
+            'total_amount' => (float) $row->total_amount,
+        ]);
+
+        return response()->json(['data' => $data]);
+    }
+    
     public function invoices(Request $request): JsonResponse
     {
         $user = $request->user();

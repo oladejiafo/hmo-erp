@@ -14,6 +14,7 @@ import { useParams, useNavigate, useLocation } from 'react-router-dom';
 import { useMutation } from '@tanstack/react-query';
 import DailyIframe from '@daily-co/daily-js';
 import { closeProviderTelemedicineEncounter } from '../../../api/index';
+import Icd10Picker from '../../../components/emr/Icd10Picker'; // PHASE 3
 import { PhoneOff, Plus, Trash2, CheckCircle } from 'lucide-react';
 
 export default function ProviderConsultRoomPage() {
@@ -27,6 +28,7 @@ export default function ProviderConsultRoomPage() {
     const [notes, setNotes] = useState('');
     const [followUpAdvice, setFollowUpAdvice] = useState('');
     const [prescriptions, setPrescriptions] = useState([]);
+    const [diagnoses, setDiagnoses] = useState([]); // PHASE 3
 
     const joinUrl = location.state?.joinUrl;
 
@@ -55,6 +57,7 @@ export default function ProviderConsultRoomPage() {
             notes,
             follow_up_advice: followUpAdvice,
             prescriptions: prescriptions.filter(p => p.drug_name.trim()),
+            diagnoses: diagnoses.map(d => ({ icd10_code: d.icd10_code, type: d.type, notes: d.notes || null })), // PHASE 3
         }),
         onSuccess: () => {
             callFrameRef.current?.leave();
@@ -95,6 +98,9 @@ export default function ProviderConsultRoomPage() {
 
             <div style={panelStyle}>
                 <h2 style={panelTitleStyle}>Close consultation</h2>
+
+                <label style={labelStyle}>Diagnoses</label>
+                <Icd10Picker diagnoses={diagnoses} onChange={setDiagnoses} />
 
                 <label style={labelStyle}>Consultation notes</label>
                 <textarea

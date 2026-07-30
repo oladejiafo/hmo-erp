@@ -5,6 +5,8 @@
 
 namespace App\Models;
 
+use App\Traits\HasAuditLog;
+
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\SoftDeletes;
@@ -14,7 +16,7 @@ use Illuminate\Support\Str;
 
 class Plan extends Model
 {
-    use HasFactory, SoftDeletes;
+    use HasFactory, SoftDeletes, HasAuditLog;
 
     protected $fillable = [
         'corporate_id',

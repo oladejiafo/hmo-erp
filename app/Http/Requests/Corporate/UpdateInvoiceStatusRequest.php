@@ -1,5 +1,12 @@
 <?php
-
+/**
+ * FILE: app/Http/Requests/Corporate/UpdateInvoiceStatusRequest.php
+ *
+ * REBUILT: previously validated payment_method/transaction_reference/
+ * notes, none of which exist on corporate_invoices. This is for
+ * recording an OFFLINE payment (bank transfer confirmed manually) - see
+ * InvoiceService::markAsPaid().
+ */
 namespace App\Http\Requests\Corporate;
 
 use Illuminate\Foundation\Http\FormRequest;
@@ -14,10 +21,8 @@ class UpdateInvoiceStatusRequest extends FormRequest
     public function rules(): array
     {
         return [
-            'payment_date' => ['required', 'date'],
-            'payment_method' => ['required', 'string', 'in:bank_transfer,cash,cheque,pos'],
-            'transaction_reference' => ['nullable', 'string', 'max:100'],
-            'notes' => ['nullable', 'string', 'max:500'],
+            'paid_at' => ['nullable', 'date'],
+            'payment_reference' => ['nullable', 'string', 'max:100'],
         ];
     }
 }

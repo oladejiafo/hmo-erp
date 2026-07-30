@@ -1,10 +1,24 @@
 <?php
 /**
  * FILE: app/Models/Encounter.php
+ *
+ * FIX (see inline note on the branch() method): originally used the
+ * BelongsToBranch trait, which silently attaches a global scope filtering
+ * every query by Auth::user()->branch_id (unless the user's branch.type
+ * is literally 'HQ'). That's correct for branch-owned operational data
+ * (claims, payments), but wrong here: an encounter belongs to the
+ * enrollee, not to whichever branch the viewing user's login happens to
+ * be tagged with. The real, intentional scope on every query in this
+ * file is already enrollee_id - that's what actually controls visibility.
+ * Stacking a second, silent branch filter on top caused encounters to
+ * vanish from a member's own Telemedicine list whenever their user
+ * record's branch_id didn't exactly match the branch the encounter was
+ * created under, and would have done the same for
+ * EmrService::enrolleeHistory() across facilities - which defeats the
+ * actual purpose of Mini EMR (continuity of care across branches).
  */
 namespace App\Models;
 
-use App\Traits\BelongsToBranch;
 use App\Traits\HasAuditLog;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
@@ -12,7 +26,7 @@ use Illuminate\Database\Eloquent\Relations\HasMany;
 
 class Encounter extends Model
 {
-    use BelongsToBranch, HasAuditLog;
+    use HasAuditLog;
 
     protected $fillable = [
         'branch_id', 'appointment_id', 'enrollee_id', 'dependent_id',
@@ -29,6 +43,11 @@ class Encounter extends Model
     ];
 
     // ── Relationships ────────────────────────────────────────────────────
+
+    public function branch(): BelongsTo
+    {
+        return $this->belongsTo(Branch::class);
+    }
 
     public function appointment(): BelongsTo
     {

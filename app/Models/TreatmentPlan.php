@@ -1,17 +1,19 @@
 <?php
 /**
  * FILE: app/Models/TreatmentPlan.php
+ *
+ * FIX: dropped BelongsToBranch (silent branch-filtering global scope) -
+ * same reasoning as Encounter.php.
  */
 namespace App\Models;
 
-use App\Traits\BelongsToBranch;
 use App\Traits\HasAuditLog;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 
 class TreatmentPlan extends Model
 {
-    use BelongsToBranch, HasAuditLog;
+    use HasAuditLog;
 
     protected $fillable = [
         'branch_id', 'encounter_id', 'plan_text', 'target_outcomes',
@@ -21,6 +23,11 @@ class TreatmentPlan extends Model
     protected $casts = [
         'review_date' => 'date',
     ];
+
+    public function branch(): BelongsTo
+    {
+        return $this->belongsTo(Branch::class);
+    }
 
     public function encounter(): BelongsTo
     {

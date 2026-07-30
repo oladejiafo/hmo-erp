@@ -32,11 +32,11 @@ class CorporateInvoiceController extends Controller
         $this->authorize('corporates.invoices');
         
         $invoices = $corporate->invoices()
-            ->with(['plan'])
+            ->with(['plan', 'payments'])
             ->when($request->status, fn($q, $s) => $q->where('status', $s))
-            ->when($request->from_date, fn($q, $d) => $q->where('invoice_date', '>=', $d))
-            ->when($request->to_date, fn($q, $d) => $q->where('invoice_date', '<=', $d))
-            ->orderByDesc('invoice_date')
+            ->when($request->from_date, fn($q, $d) => $q->where('issue_date', '>=', $d))
+            ->when($request->to_date, fn($q, $d) => $q->where('issue_date', '<=', $d))
+            ->orderByDesc('issue_date')
             ->paginate($request->per_page ?? 20);
 
         return response()->json([
@@ -48,7 +48,7 @@ class CorporateInvoiceController extends Controller
                 'total' => $invoices->total(),
                 'total_outstanding' => $corporate->invoices()
                     ->whereIn('status', ['sent', 'overdue'])
-                    ->sum('amount_due'),
+                    ->sum('total_amount'),
             ],
         ]);
     }
@@ -146,6 +146,28 @@ class CorporateInvoiceController extends Controller
     }
 
     /**
+     * Download invoice PDF
+     * 
+     * @param Corporate $corporate
+     * @param CorporateInvoice $invoice
+     * @return \Symfony\Component\HttpFoundation\BinaryFileResponse|JsonResponse
+     */
+    public function download(Corporate $corporate, CorporateInvoice $invoice)
+    {
+        /** @disregard P1013 */
+        $this->authorize('corporates.invoices');
+        
+        // Ensure invoice belongs to corporate
+        if ($invoice->corporate_id !== $corporate->id) {
+            return response()->json(['message' => 'Invoice not found for this corporate'], 404);
+        }
+
+        $pdfPath = $this->invoiceService->generatePdf($invoice);
+
+        return response()->download($pdfPath, "invoice-{$invoice->invoice_number}.pdf")->deleteFileAfterSend();
+    }
+
+        /**
      * Generate invoice for corporate
      */
     public function generateInvoice(Corporate $corporate, array $data): CorporateInvoice
@@ -186,27 +208,5 @@ class CorporateInvoiceController extends Controller
         }
 
         return $invoice;
-    }
-    
-    /**
-     * Download invoice PDF
-     * 
-     * @param Corporate $corporate
-     * @param CorporateInvoice $invoice
-     * @return \Symfony\Component\HttpFoundation\BinaryFileResponse|JsonResponse
-     */
-    public function download(Corporate $corporate, CorporateInvoice $invoice)
-    {
-        /** @disregard P1013 */
-        $this->authorize('corporates.invoices');
-        
-        // Ensure invoice belongs to corporate
-        if ($invoice->corporate_id !== $corporate->id) {
-            return response()->json(['message' => 'Invoice not found for this corporate'], 404);
-        }
-
-        $pdfPath = $this->invoiceService->generatePdf($invoice);
-
-        return response()->download($pdfPath, "invoice-{$invoice->invoice_number}.pdf")->deleteFileAfterSend();
     }
 }

@@ -25,7 +25,7 @@ return new class extends Migration
             $table->string('phone', 20)->nullable();
             $table->string('password');
 
-            $table->foreignId('corporate_id')->nullable()->constrained()->nullOnDelete();
+            $table->foreignId('corporate_id')->nullable(); // FK constraint added later - see 2026_08_26_000003_add_corporate_id_foreign_key_to_users_table.php. The corporates table doesn't exist yet at this point in migration order; on MySQL (which enforces FKs, unlike SQLite by default) this was breaking every fresh install.
             $table->string('user_type')->nullable()->index();
             
             $table->string('two_factor_secret')->nullable();

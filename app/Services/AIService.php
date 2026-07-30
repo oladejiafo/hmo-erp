@@ -3,7 +3,7 @@ namespace App\Services;
 
 use Illuminate\Support\Facades\Http;
 use Illuminate\Support\FacadesLog;
-use Phpml\Clustering\DBSCAN;
+use App\Support\Clustering\DBSCAN; // native replacement for Phpml\Clustering\DBSCAN - see class docblock for why
 use Illuminate\Support\Facades\Log;
 
 class AIService

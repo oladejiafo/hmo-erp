@@ -2,6 +2,8 @@
 
 namespace App\Models;
 
+use App\Traits\HasAuditLog;
+
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 
@@ -24,6 +26,8 @@ use Illuminate\Database\Eloquent\Relations\BelongsTo;
  */
 class HcpBankDetail extends Model
 {
+    use HasAuditLog;
+    
     protected $table = 'hcp_bank_details';
 
     protected $fillable = [
@@ -43,6 +47,7 @@ class HcpBankDetail extends Model
     protected $casts = [
         'is_verified' => 'boolean',
         'verified_at' => 'datetime',
+        'account_number' => 'encrypted',
     ];
 
     // ── Relationships ─────────────────────────────────────────────────────────

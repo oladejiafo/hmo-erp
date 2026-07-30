@@ -14,7 +14,7 @@ import { Outlet, NavLink, useNavigate,useLocation } from 'react-router-dom';
 import {
     LayoutDashboard, CreditCard, Activity, FileText,
     MapPin, MessageSquare, LogOut, Menu, X, Bell,
-    Receipt, Calendar, ChevronDown, Video,
+    Receipt, Calendar, ChevronDown, Video, ShieldCheck,
 } from 'lucide-react';
 
 import { useAuth } from '../../contexts/AuthContext';
@@ -35,6 +35,7 @@ const moreNavItems = [
     { path: '/enrollee/claims',          label: 'Claims',        icon: FileText },
     { path: '/enrollee/benefits',       label: 'Benefits',      icon: Activity },
     { path: '/enrollee/complaints',     label: 'Complaints',    icon: MessageSquare },
+    { path: '/enrollee/consents',       label: 'Privacy & Consent', icon: ShieldCheck },
 ];
 
 const allNavItems = [...primaryNavItems, ...moreNavItems];

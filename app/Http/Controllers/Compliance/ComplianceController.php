@@ -315,4 +315,99 @@ class ComplianceController extends Controller
 
         return $base;
     }
+
+    // ── PHASE 6 - Data breach register ──────────────────────────────────────
+    // ROUTES (add to routes/api.php):
+    //   Route::middleware('permission:compliance.view')->prefix('compliance')->group(function () {
+    //       Route::get('breaches',                [ComplianceController::class, 'breachIndex']);
+    //       Route::get('breaches/{breach}',        [ComplianceController::class, 'breachShow']);
+    //       Route::post('breaches',                [ComplianceController::class, 'breachStore'])
+    //            ->middleware('permission:compliance.manage');
+    //       Route::put('breaches/{breach}',        [ComplianceController::class, 'breachUpdate'])
+    //            ->middleware('permission:compliance.manage');
+    //   });
+
+    public function breachIndex(Request $request): JsonResponse
+    {
+        $query = \App\Models\DataBreachIncident::with('reportedBy:id,name')->orderByDesc('discovered_at');
+
+        if ($request->status) {
+            $query->where('status', $request->status);
+        }
+
+        $incidents = $query->get()->map(fn($b) => [
+            'id' => $b->id,
+            'title' => $b->title,
+            'severity' => $b->severity,
+            'status' => $b->status,
+            'affected_records_count' => $b->affected_records_count,
+            'discovered_at' => $b->discovered_at->toISOString(),
+            'notification_deadline' => $b->notificationDeadline()->toISOString(),
+            'is_notification_overdue' => $b->isNotificationOverdue(),
+            'regulator_notified' => $b->regulator_notified,
+            'data_subjects_notified' => $b->data_subjects_notified,
+            'reported_by_name' => $b->reportedBy?->name,
+        ]);
+
+        return response()->json(['data' => $incidents]);
+    }
+
+    public function breachShow(\App\Models\DataBreachIncident $breach): JsonResponse
+    {
+        return response()->json(['data' => $breach->load('reportedBy:id,name', 'branch:id,name')]);
+    }
+
+    public function breachStore(Request $request): JsonResponse
+    {
+        $request->validate([
+            'title' => 'required|string|max:255',
+            'description' => 'required|string',
+            'data_categories_affected' => 'required|string|max:255',
+            'affected_records_count' => 'required|integer|min:0',
+            'severity' => 'required|string|in:low,medium,high,critical',
+            'occurred_at' => 'nullable|date',
+            'discovered_at' => 'required|date',
+        ]);
+
+        $breach = \App\Models\DataBreachIncident::create([
+            'branch_id' => $request->user()->branch_id,
+            'title' => $request->title,
+            'description' => $request->description,
+            'data_categories_affected' => $request->data_categories_affected,
+            'affected_records_count' => $request->affected_records_count,
+            'severity' => $request->severity,
+            'occurred_at' => $request->occurred_at,
+            'discovered_at' => $request->discovered_at,
+            'status' => 'open',
+            'reported_by' => $request->user()->id,
+        ]);
+
+        return response()->json(['message' => 'Incident logged.', 'data' => ['id' => $breach->id]], 201);
+    }
+
+    public function breachUpdate(Request $request, \App\Models\DataBreachIncident $breach): JsonResponse
+    {
+        $request->validate([
+            'regulator_notified' => 'nullable|boolean',
+            'data_subjects_notified' => 'nullable|boolean',
+            'remediation_actions' => 'nullable|string',
+            'status' => 'nullable|string|in:open,contained,resolved',
+        ]);
+
+        $updates = $request->only(['remediation_actions', 'status']);
+
+        if ($request->has('regulator_notified') && $request->regulator_notified && !$breach->regulator_notified) {
+            $updates['regulator_notified'] = true;
+            $updates['regulator_notified_at'] = now();
+        }
+
+        if ($request->has('data_subjects_notified') && $request->data_subjects_notified && !$breach->data_subjects_notified) {
+            $updates['data_subjects_notified'] = true;
+            $updates['data_subjects_notified_at'] = now();
+        }
+
+        $breach->update($updates);
+
+        return response()->json(['message' => 'Incident updated.']);
+    }
 }

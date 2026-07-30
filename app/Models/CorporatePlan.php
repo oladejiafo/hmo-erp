@@ -37,6 +37,18 @@ class CorporatePlan extends Model
         return $this->belongsTo(Corporate::class);
     }
 
+    /**
+     * WARNING: this looks like a normal relationship but isn't reliable.
+     * It joins Enrollee.plan_id against CorporatePlan.id, but
+     * Enrollee.plan_id actually references the `plans` table (the Plan
+     * model), not corporate_plans. Any enrollees this returns match by
+     * coincidental numeric ID overlap, not a real relationship. Found
+     * while fixing CorporatePlanResource, which used to call this -
+     * that usage was removed rather than "fixed", since fixing it
+     * properly means redirecting to the `plans` system this model
+     * doesn't represent. Left here rather than deleted since nothing
+     * else currently calls it, but don't trust its output.
+     */
     public function enrollees()
     {
         return $this->hasMany(Enrollee::class, 'plan_id');

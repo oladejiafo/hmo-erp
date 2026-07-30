@@ -9,6 +9,7 @@ import {
     LayoutDashboard, FileText, ShieldCheck, UploadCloud,
     Wallet, Scale, MessageSquare, ScanLine,
     LogOut, Menu, X, Bell, Stethoscope, Video,
+    History, ListPlus,
 } from 'lucide-react';
 import { useAuth } from '../../contexts/AuthContext';
 
@@ -16,6 +17,8 @@ const navItems = [
     { path: '/provider',                label: 'Dashboard',           icon: LayoutDashboard, exact: true },
     { path: '/provider/verify',         label: 'Verify',              icon: ScanLine, exact: true },
     { path: '/provider/telemedicine',   label: 'Telemedicine',        icon: Video, exact: true }, // PHASE 1
+    { path: '/provider/emr/start',      label: 'Start Visit',         icon: ListPlus, exact: true }, // PHASE 3
+    { path: '/provider/emr/history',    label: 'Patient History',     icon: History, exact: true }, // PHASE 3
     { path: '/provider/claims',         label: 'Claims',              icon: FileText, exact: true },  // ← ADD exact: true
     { path: '/provider/claims/import',  label: 'Bulk Upload',         icon: UploadCloud },
     { path: '/provider/pre-auths',      label: 'Pre-Authorisations',  icon: ShieldCheck, exact: true },

@@ -2,11 +2,15 @@
 
 namespace App\Models;
 
+use App\Traits\HasAuditLog;
+
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 
 class FraudFlag extends Model
 {
+    use HasAuditLog;
+    
     protected $fillable = [
         'claim_id', 'hcp_id', 'enrollee_id', 'flag_type',
         'flag_score', 'details', 'description', 'status',

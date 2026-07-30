@@ -13,9 +13,11 @@ class Appointment extends Model
 
     protected $fillable = [
         'branch_id', 'enrollee_id', 'dependent_id', 'hcp_id',
+        'doctor_id', // fix: column existed since the doctors migration, was never added here - appointments were silently saving with doctor_id=null
         'preferred_date', 'preferred_time_slot', 'reason', 'notes',
         'status', 'confirmed_date', 'confirmed_time', 'confirmed_by',
         'cancellation_reason',
+        'consultation_type', // PHASE 1
     ];
 
     protected $casts = [

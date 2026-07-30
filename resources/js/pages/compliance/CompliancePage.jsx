@@ -16,11 +16,12 @@ import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { toast } from 'react-toastify';
 import {
     CalendarDays, Plus, CheckCircle, Upload, ChevronRight,
-    AlertTriangle, Clock, FileText, Filter,
+    AlertTriangle, Clock, FileText, Filter, AlertOctagon, X,
 } from 'lucide-react';
 import {
     fetchFilings, fetchComplianceSummary, createFiling,
     completeFiling, uploadFilingDoc,
+    fetchBreaches, createBreach, updateBreach, // PHASE 6
 } from '../../api/index';
 import { PageHeader, LoadingSpinner, ErrorAlert, Pagination } from '../../components/ui/index';
 import { formatDate } from '../../utils/format';
@@ -97,6 +98,7 @@ export default function CompliancePage() {
                 {[
                     { key: 'calendar', label: 'Calendar' },
                     { key: 'filings',  label: 'All Filings' },
+                    { key: 'breaches', label: 'Data Breaches' },
                 ].map(t => (
                     <li key={t.key} className="nav-item">
                         <button
@@ -118,6 +120,9 @@ export default function CompliancePage() {
                     canManage={canManage}
                     qc={qc}
                 />
+            )}
+            {activeTab === 'breaches' && (
+                <BreachesTab canManage={canManage} qc={qc} />
             )}
 
             {showCreate && (
@@ -647,6 +652,281 @@ function FilingDetailModal({ filing, canManage, onClose, onUpdate }) {
                                 </button>
                             )}
                         </div>
+                        <button className="btn btn-outline-secondary btn-sm" onClick={onClose}>Close</button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    );
+}
+/* ── PHASE 6 - Data Breach Register ──────────────────────────────────────────── */
+
+const SEVERITY_META = {
+    low:      { label: 'Low',      color: '#166534', bg: '#f0fdf4' },
+    medium:   { label: 'Medium',   color: '#d97706', bg: '#fffbeb' },
+    high:     { label: 'High',     color: '#c2410c', bg: '#fff7ed' },
+    critical: { label: 'Critical', color: '#dc2626', bg: '#fef2f2' },
+};
+
+const BREACH_STATUS_META = {
+    open:       { label: 'Open',       color: '#dc2626', bg: '#fef2f2' },
+    contained:  { label: 'Contained',  color: '#d97706', bg: '#fffbeb' },
+    resolved:   { label: 'Resolved',   color: '#166534', bg: '#f0fdf4' },
+};
+
+function BreachesTab({ canManage, qc }) {
+    const [status, setStatus] = useState('');
+    const [showCreate, setShowCreate] = useState(false);
+    const [detail, setDetail] = useState(null);
+
+    const { data, isLoading, isError, refetch } = useQuery({
+        queryKey: ['breaches', status],
+        queryFn: () => fetchBreaches({ status: status || undefined }),
+    });
+
+    const breaches = data?.data ?? [];
+
+    if (isLoading) return <div className="card border-0 shadow-sm" style={{ borderRadius: '0 8px 8px 8px' }}><div className="card-body py-5"><LoadingSpinner /></div></div>;
+    if (isError)   return <div className="card border-0 shadow-sm" style={{ borderRadius: '0 8px 8px 8px' }}><div className="card-body"><ErrorAlert message="Failed to load breach register." onRetry={refetch} /></div></div>;
+
+    return (
+        <div className="card border-0 shadow-sm" style={{ borderRadius: '0 8px 8px 8px' }}>
+            <div className="card-header bg-white border-bottom py-3 d-flex align-items-center justify-content-between gap-3">
+                <select className="form-select form-select-sm" style={{ width: 160 }}
+                        value={status} onChange={e => setStatus(e.target.value)}>
+                    <option value="">All Statuses</option>
+                    {Object.entries(BREACH_STATUS_META).map(([k, v]) => (
+                        <option key={k} value={k}>{v.label}</option>
+                    ))}
+                </select>
+                {canManage && (
+                    <button className="btn btn-sm btn-danger d-flex align-items-center gap-1" onClick={() => setShowCreate(true)}>
+                        <Plus size={14} /> Log Incident
+                    </button>
+                )}
+            </div>
+
+            {breaches.length === 0 ? (
+                <div className="card-body text-center py-5 text-muted">
+                    <AlertOctagon size={36} className="mb-3 opacity-25" />
+                    <div>No incidents logged. That's a good thing.</div>
+                </div>
+            ) : (
+                <div className="table-responsive">
+                    <table className="table table-hover align-middle mb-0" style={{ fontSize: 13 }}>
+                        <thead style={{ background: '#f8fafc' }}>
+                            <tr>
+                                <th className="ps-4" style={{ fontWeight: 600, color: '#374151' }}>Incident</th>
+                                <th>Severity</th>
+                                <th>Discovered</th>
+                                <th>Affected Records</th>
+                                <th>Regulator Notified</th>
+                                <th>Status</th>
+                                <th></th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {breaches.map(b => (
+                                <tr key={b.id} onClick={() => setDetail(b)} style={{ cursor: 'pointer' }}>
+                                    <td className="ps-4">
+                                        <div style={{ fontWeight: 600, color: '#111' }}>{b.title}</div>
+                                        {b.is_notification_overdue && (
+                                            <div style={{ fontSize: 10, color: '#dc2626', fontWeight: 700 }}>
+                                                <AlertTriangle size={10} style={{ verticalAlign: 'middle' }} /> Notification deadline passed
+                                            </div>
+                                        )}
+                                    </td>
+                                    <td>
+                                        <span style={{ padding: '2px 10px', borderRadius: 10, fontSize: 11, fontWeight: 600, color: SEVERITY_META[b.severity]?.color, background: SEVERITY_META[b.severity]?.bg }}>
+                                            {SEVERITY_META[b.severity]?.label ?? b.severity}
+                                        </span>
+                                    </td>
+                                    <td style={{ color: '#374151' }}>{formatDate(b.discovered_at)}</td>
+                                    <td style={{ color: '#374151' }}>{b.affected_records_count}</td>
+                                    <td>{b.regulator_notified ? <CheckCircle size={15} color="#166534" /> : <span style={{ color: '#a0aec0', fontSize: 11 }}>No</span>}</td>
+                                    <td>
+                                        <span style={{ padding: '2px 10px', borderRadius: 10, fontSize: 11, fontWeight: 600, color: BREACH_STATUS_META[b.status]?.color, background: BREACH_STATUS_META[b.status]?.bg }}>
+                                            {BREACH_STATUS_META[b.status]?.label ?? b.status}
+                                        </span>
+                                    </td>
+                                    <td><ChevronRight size={14} className="text-muted" /></td>
+                                </tr>
+                            ))}
+                        </tbody>
+                    </table>
+                </div>
+            )}
+
+            {showCreate && (
+                <CreateBreachModal
+                    onClose={() => setShowCreate(false)}
+                    onSuccess={() => {
+                        qc.invalidateQueries({ queryKey: ['breaches'] });
+                        setShowCreate(false);
+                    }}
+                />
+            )}
+
+            {detail && (
+                <BreachDetailModal
+                    breach={detail}
+                    canManage={canManage}
+                    onClose={() => setDetail(null)}
+                    onSuccess={() => {
+                        qc.invalidateQueries({ queryKey: ['breaches'] });
+                        setDetail(null);
+                    }}
+                />
+            )}
+        </div>
+    );
+}
+
+function CreateBreachModal({ onClose, onSuccess }) {
+    const [form, setForm] = useState({
+        title: '', description: '', data_categories_affected: '',
+        affected_records_count: '', severity: 'medium', discovered_at: '',
+    });
+
+    const mutation = useMutation({
+        mutationFn: () => createBreach(form),
+        onSuccess: () => { toast.success('Incident logged.'); onSuccess(); },
+        onError: (err) => toast.error(err.response?.data?.message ?? 'Could not log the incident.'),
+    });
+
+    return (
+        <div className="modal d-block" style={{ background: 'rgba(0,0,0,0.4)' }} onClick={onClose}>
+            <div className="modal-dialog" onClick={e => e.stopPropagation()}>
+                <div className="modal-content">
+                    <div className="modal-header">
+                        <h6 className="modal-title d-flex align-items-center gap-2">
+                            <AlertOctagon size={16} color="#dc2626" /> Log a Data Breach Incident
+                        </h6>
+                        <button className="btn-close" onClick={onClose} />
+                    </div>
+                    <div className="modal-body d-flex flex-column gap-3">
+                        <div>
+                            <label className="form-label small fw-semibold">Title</label>
+                            <input className="form-control form-control-sm" value={form.title}
+                                   onChange={e => setForm(f => ({ ...f, title: e.target.value }))}
+                                   placeholder="Brief summary of what happened" />
+                        </div>
+                        <div>
+                            <label className="form-label small fw-semibold">What happened</label>
+                            <textarea className="form-control form-control-sm" rows={3} value={form.description}
+                                      onChange={e => setForm(f => ({ ...f, description: e.target.value }))} />
+                        </div>
+                        <div>
+                            <label className="form-label small fw-semibold">Data categories affected</label>
+                            <input className="form-control form-control-sm" value={form.data_categories_affected}
+                                   onChange={e => setForm(f => ({ ...f, data_categories_affected: e.target.value }))}
+                                   placeholder="e.g. NIN, bank details, health records" />
+                        </div>
+                        <div className="row g-2">
+                            <div className="col-6">
+                                <label className="form-label small fw-semibold">Affected records</label>
+                                <input type="number" min="0" className="form-control form-control-sm" value={form.affected_records_count}
+                                       onChange={e => setForm(f => ({ ...f, affected_records_count: e.target.value }))} />
+                            </div>
+                            <div className="col-6">
+                                <label className="form-label small fw-semibold">Severity</label>
+                                <select className="form-select form-select-sm" value={form.severity}
+                                        onChange={e => setForm(f => ({ ...f, severity: e.target.value }))}>
+                                    {Object.entries(SEVERITY_META).map(([k, v]) => (
+                                        <option key={k} value={k}>{v.label}</option>
+                                    ))}
+                                </select>
+                            </div>
+                        </div>
+                        <div>
+                            <label className="form-label small fw-semibold">Discovered at</label>
+                            <input type="datetime-local" className="form-control form-control-sm" value={form.discovered_at}
+                                   onChange={e => setForm(f => ({ ...f, discovered_at: e.target.value }))} />
+                        </div>
+                    </div>
+                    <div className="modal-footer">
+                        <button className="btn btn-outline-secondary btn-sm" onClick={onClose}>Cancel</button>
+                        <button className="btn btn-danger btn-sm d-flex align-items-center gap-1"
+                                disabled={mutation.isPending || !form.title || !form.discovered_at}
+                                onClick={() => mutation.mutate()}>
+                            {mutation.isPending ? <span className="spinner-border spinner-border-sm" /> : null}
+                            Log Incident
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    );
+}
+
+function BreachDetailModal({ breach, canManage, onClose, onSuccess }) {
+    const [remediation, setRemediation] = useState(breach.remediation_actions ?? '');
+
+    const mutation = useMutation({
+        mutationFn: (payload) => updateBreach(breach.id, payload),
+        onSuccess: () => { toast.success('Incident updated.'); onSuccess(); },
+        onError: (err) => toast.error(err.response?.data?.message ?? 'Update failed.'),
+    });
+
+    return (
+        <div className="modal d-block" style={{ background: 'rgba(0,0,0,0.4)' }} onClick={onClose}>
+            <div className="modal-dialog" onClick={e => e.stopPropagation()}>
+                <div className="modal-content">
+                    <div className="modal-header">
+                        <h6 className="modal-title">{breach.title}</h6>
+                        <button className="btn-close" onClick={onClose} />
+                    </div>
+                    <div className="modal-body d-flex flex-column gap-3">
+                        <div className="d-flex gap-2">
+                            <span style={{ padding: '2px 10px', borderRadius: 10, fontSize: 11, fontWeight: 600, color: SEVERITY_META[breach.severity]?.color, background: SEVERITY_META[breach.severity]?.bg }}>
+                                {SEVERITY_META[breach.severity]?.label}
+                            </span>
+                            <span style={{ padding: '2px 10px', borderRadius: 10, fontSize: 11, fontWeight: 600, color: BREACH_STATUS_META[breach.status]?.color, background: BREACH_STATUS_META[breach.status]?.bg }}>
+                                {BREACH_STATUS_META[breach.status]?.label}
+                            </span>
+                        </div>
+
+                        {canManage && (
+                            <>
+                                <div className="form-check">
+                                    <input className="form-check-input" type="checkbox" id="regNotified"
+                                           checked={!!breach.regulator_notified}
+                                           onChange={e => mutation.mutate({ regulator_notified: e.target.checked })} />
+                                    <label className="form-check-label small" htmlFor="regNotified">Regulator notified</label>
+                                </div>
+                                <div className="form-check">
+                                    <input className="form-check-input" type="checkbox" id="subjNotified"
+                                           checked={!!breach.data_subjects_notified}
+                                           onChange={e => mutation.mutate({ data_subjects_notified: e.target.checked })} />
+                                    <label className="form-check-label small" htmlFor="subjNotified">Affected data subjects notified</label>
+                                </div>
+
+                                <div>
+                                    <label className="form-label small fw-semibold">Remediation actions</label>
+                                    <textarea className="form-control form-control-sm" rows={3} value={remediation}
+                                              onChange={e => setRemediation(e.target.value)} />
+                                </div>
+
+                                <div>
+                                    <label className="form-label small fw-semibold">Status</label>
+                                    <select className="form-select form-select-sm" value={breach.status}
+                                            onChange={e => mutation.mutate({ status: e.target.value })}>
+                                        {Object.entries(BREACH_STATUS_META).map(([k, v]) => (
+                                            <option key={k} value={k}>{v.label}</option>
+                                        ))}
+                                    </select>
+                                </div>
+                            </>
+                        )}
+                    </div>
+                    <div className="modal-footer">
+                        {canManage && (
+                            <button className="btn btn-primary btn-sm"
+                                    disabled={mutation.isPending}
+                                    onClick={() => mutation.mutate({ remediation_actions: remediation })}>
+                                Save remediation notes
+                            </button>
+                        )}
                         <button className="btn btn-outline-secondary btn-sm" onClick={onClose}>Close</button>
                     </div>
                 </div>

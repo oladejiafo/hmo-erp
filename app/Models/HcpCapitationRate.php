@@ -2,6 +2,8 @@
 
 namespace App\Models;
 
+use App\Traits\HasAuditLog; 
+
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Builder;
@@ -16,6 +18,8 @@ use Carbon\Carbon;
  */
 class HcpCapitationRate extends Model
 {
+    use HasAuditLog;
+    
     protected $table = 'hcp_capitation_rates';
 
     protected $fillable = [

@@ -179,6 +179,11 @@ Route::middleware(['auth:sanctum', 'branch.isolation'])->group(function () {
             Route::get('{corporate}/invoices', [CorporateInvoiceController::class, 'index'])
                 ->middleware('permission:corporates.invoices');
 
+            Route::get('{corporate}/invoices/{invoice}', [CorporateInvoiceController::class, 'show'])
+                ->middleware('permission:corporates.invoices'); // was never routed
+            Route::get('{corporate}/invoices/{invoice}/download', [CorporateInvoiceController::class, 'download'])
+                ->middleware('permission:corporates.invoices'); // was never routed
+
         });
 
     Route::middleware('permission:plan_requests.view')
@@ -350,6 +355,8 @@ Route::middleware(['auth:sanctum', 'branch.isolation'])->group(function () {
             Route::get('filings', [ComplianceController::class, 'index']);
             Route::get('filings/summary', [ComplianceController::class, 'summary']);
             Route::get('filings/{filing}', [ComplianceController::class, 'show']);
+            Route::get('breaches', [ComplianceController::class, 'breachIndex']); // PHASE 6
+            Route::get('breaches/{breach}', [ComplianceController::class, 'breachShow']);
         });
 
     // ── Tickets - READ only ──────────────────────────────────────────────
@@ -418,7 +425,7 @@ Route::middleware(['auth:sanctum', 'branch.isolation'])->group(function () {
             // PHASE 1 - Telemedicine
             Route::get('/telemedicine/encounters', [EnrolleePortalController::class, 'myEncounters']);
             Route::get('/telemedicine/prescriptions', [EnrolleePortalController::class, 'myPrescriptions']);
-
+            Route::get('/consents', [EnrolleePortalController::class, 'myConsents']); 
         });
 
         // Corporate Portal - READ only
@@ -438,6 +445,8 @@ Route::middleware(['auth:sanctum', 'branch.isolation'])->group(function () {
 
             Route::get('/renewal-status', [App\Http\Controllers\Portal\CorporatePortalController::class, 'renewalStatus']);
             Route::get('/utilization-report/export', [App\Http\Controllers\Portal\CorporatePortalController::class, 'exportUtilizationReport']);
+            Route::get('/utilization/employees', [App\Http\Controllers\Portal\CorporatePortalController::class, 'employeeUtilization']);
+            Route::get('/utilization/by-category', [App\Http\Controllers\Portal\CorporatePortalController::class, 'utilizationByCategory']);
 
         });
 
@@ -543,6 +552,7 @@ Route::middleware(['auth:sanctum', 'branch.isolation', 'license'])->group(functi
     // ── Corporate Invoices - WRITE operations ────────────────────────────
     Route::middleware('permission:corporates.invoices')->post('corporates/{corporate}/invoices', [CorporateInvoiceController::class, 'store']);
     Route::middleware('permission:corporates.invoices')->patch('corporates/{corporate}/invoices/{invoice}/mark-paid', [CorporateInvoiceController::class, 'markPaid']);
+    Route::middleware('permission:corporates.invoices')->post('corporates/{corporate}/invoices/{invoice}/send', [CorporateInvoiceController::class, 'send']); // was never routed
 
     // ── Enrollees - WRITE operations ─────────────────────────────────────
     Route::middleware('permission:enrollees.create')->post('enrollees', [EnrolleeController::class, 'store']);
@@ -695,6 +705,8 @@ Route::middleware(['auth:sanctum', 'branch.isolation', 'license'])->group(functi
             Route::middleware('permission:compliance.manage')->post('filings/{filing}/complete', [ComplianceController::class, 'complete']);
             Route::middleware('permission:compliance.manage')->post('filings/{filing}/documents', [ComplianceController::class, 'uploadDocument']);
             Route::middleware('permission:compliance.manage')->delete('filings/{filing}/documents/{doc}', [ComplianceController::class, 'deleteDocument']);
+            Route::middleware('permission:compliance.manage')->post('breaches', [ComplianceController::class, 'breachStore']); // PHASE 6
+            Route::middleware('permission:compliance.manage')->put('breaches/{breach}', [ComplianceController::class, 'breachUpdate']); 
         });
 
     // ── Tickets - WRITE operations ───────────────────────────────────────
@@ -750,6 +762,7 @@ Route::middleware(['auth:sanctum', 'branch.isolation', 'license'])->group(functi
 
             // PHASE 1 - Telemedicine
             Route::post('/telemedicine/encounters/{encounter}/join', [App\Http\Controllers\Portal\EnrolleePortalController::class, 'joinTelemedicine']);
+            Route::post('/consents', [App\Http\Controllers\Portal\EnrolleePortalController::class, 'updateConsent']);
         });
 
         // Corporate Portal - WRITE

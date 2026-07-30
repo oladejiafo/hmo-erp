@@ -947,4 +947,60 @@ class EnrolleePortalController extends Controller
             ]),
         ]);
     }
+
+    // - Consent management ────────────────────────────────────────
+
+    public function myConsents(Request $request): JsonResponse
+    {
+        $enrollee = $request->user()->enrollee;
+        if (!$enrollee) return response()->json(['data' => []], 200);
+
+        $status = app(\App\Services\ConsentService::class)->currentStatus($enrollee);
+
+        $data = collect(\App\Models\Consent::PURPOSES)->map(function ($description, $purpose) use ($status) {
+            $latest = $status->get($purpose);
+            return [
+                'purpose' => $purpose,
+                'description' => $description,
+                'granted' => $latest?->granted ?? false,
+                'decided_at' => $latest?->decided_at?->toISOString(),
+                'has_ever_decided' => $latest !== null,
+            ];
+        })->values();
+
+        return response()->json(['data' => $data]);
+    }
+
+    public function updateConsent(Request $request): JsonResponse
+    {
+        $enrollee = $request->user()->enrollee;
+        if (!$enrollee) return response()->json(['message' => 'Enrollee not found'], 404);
+
+        $request->validate([
+            'purpose' => 'required|string|in:' . implode(',', array_keys(\App\Models\Consent::PURPOSES)),
+            'granted' => 'required|boolean',
+        ]);
+
+        // data_processing is what makes the service usable at all - can't be revoked
+        // through self-service without also ending enrollment, so it's blocked here
+        // rather than silently accepted and ignored.
+        if ($request->purpose === 'data_processing' && !$request->granted) {
+            return response()->json([
+                'message' => 'Data processing consent is required to use the service. Contact support if you wish to withdraw entirely.',
+            ], 422);
+        }
+
+        $consent = app(\App\Services\ConsentService::class)->decide(
+            $enrollee,
+            $request->purpose,
+            (bool) $request->granted,
+            $request->ip(),
+            $request->userAgent(),
+        );
+
+        return response()->json([
+            'message' => $request->granted ? 'Consent granted.' : 'Consent withdrawn.',
+            'data' => ['purpose' => $consent->purpose, 'granted' => $consent->granted, 'decided_at' => $consent->decided_at->toISOString()],
+        ]);
+    }
 }

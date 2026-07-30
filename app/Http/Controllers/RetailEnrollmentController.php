@@ -203,6 +203,12 @@ class RetailEnrollmentController extends Controller
                 'consent_version' => config('hmo.privacy_notice_version', 'v1'),
             ]);
 
+            // PHASE 6 - real per-purpose consent record, alongside the legacy
+            // fields above (kept for backward compatibility, not removed).
+            app(\App\Services\ConsentService::class)->decide(
+                $enrollee, 'data_processing', true, $request->ip(), $request->userAgent()
+            );
+
             $depIndex = 1;
             foreach ($request->dependents ?? [] as $dep) {
                 // FLAGGED SEPARATELY: DependentController::store() (the real,

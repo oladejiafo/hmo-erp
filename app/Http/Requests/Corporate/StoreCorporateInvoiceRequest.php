@@ -14,11 +14,14 @@ class StoreCorporateInvoiceRequest extends FormRequest
     public function rules(): array
     {
         return [
+            'plan_id'     => ['nullable', 'exists:plans,id'], // corrected - see CorporateInvoice::plan() for why
             'description' => ['nullable', 'string', 'max:500'],
             'subtotal'    => ['required', 'numeric', 'min:0'],
             'tax_rate'    => ['nullable', 'numeric', 'min:0', 'max:100'],
             'issue_date'  => ['required', 'date'],
             'due_date'    => ['required', 'date', 'after_or_equal:issue_date'],
+            'period_start' => ['nullable', 'date'],
+            'period_end'   => ['nullable', 'date', 'after_or_equal:period_start'],
         ];
     }
 

@@ -23,6 +23,7 @@ class Enrollee extends Model
         'phone', 'email', 'address', 'state_of_residence', 'lga',
         'photo_path', 'nin', 'staff_id', 'primary_hcp_id',
         'status', 'enrollment_date', 'expiry_date', 'benefit_balance',
+        'consent_given_at', 'consent_version',
     ];
 
     protected $casts = [
@@ -31,6 +32,7 @@ class Enrollee extends Model
         'enrollment_date' => 'date',
         'expiry_date'     => 'date',
         'benefit_balance' => 'decimal:2',
+        'nin'             => 'encrypted', 
     ];
 
     // ─── Helpers ──────────────────────────────────────────────────────────────

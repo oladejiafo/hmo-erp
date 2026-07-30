@@ -24,10 +24,15 @@ class GeneratedReport extends Model
         'annual_report'=>'Annual Report',
         'ffs_remittance_advice'=>'FFS Remittance Advice',
         'corporate_cost_report'=>'Corporate Cost Report',
+        'ndpa_data_processing_register'=>'NDPA Data Processing Register', // PHASE 6
+        'ndpa_consent_audit'=>'NDPA Consent Audit Log', // PHASE 6
     ];
     const NHIA_REPORTS = [
         'monthly_claims_returns','capitation_payment_schedule',
         'quarterly_utilisation','ffs_claims_register','annual_report',
+    ];
+    const NDPA_REPORTS = [
+        'ndpa_data_processing_register','ndpa_consent_audit',
     ];
     public function generatedBy(): BelongsTo  { return $this->belongsTo(User::class,'generated_by'); }
     public function hcp(): BelongsTo          { return $this->belongsTo(HealthCareProvider::class,'hcp_id'); }
@@ -37,4 +42,5 @@ class GeneratedReport extends Model
     public function getDownloadUrlXlsxAttribute(): ?string { return $this->file_path_xlsx ? Storage::url($this->file_path_xlsx) : null; }
     public function getDownloadUrlPdfAttribute(): ?string  { return $this->file_path_pdf  ? Storage::url($this->file_path_pdf)  : null; }
     public function isNhiaReport(): bool { return in_array($this->report_type, self::NHIA_REPORTS); }
+    public function isNdpaReport(): bool { return in_array($this->report_type, self::NDPA_REPORTS); } // PHASE 6
 }

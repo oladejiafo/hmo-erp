@@ -406,6 +406,12 @@ export const uploadFilingDoc = (id, formData) => apiClient.post(`/compliance/fil
 export const fetchComplianceSummary = () => apiClient.get('/compliance/filings/summary').then(r => r.data);
 export const completeFiling = (id, data) => apiClient.post(`/compliance/filings/${id}/complete`, data);
 
+// ============= PHASE 6 - DATA BREACH REGISTER =============
+export const fetchBreaches = (params) => apiClient.get('/compliance/breaches', { params }).then(r => r.data);
+export const fetchBreach = (id) => apiClient.get(`/compliance/breaches/${id}`).then(r => r.data);
+export const createBreach = (data) => apiClient.post('/compliance/breaches', data);
+export const updateBreach = (id, data) => apiClient.put(`/compliance/breaches/${id}`, data);
+
 // ============= 🆕 NOTIFICATIONS / ALERTS =============
 export const fetchNotifications = (params) => apiClient.get('/notifications', { params }).then(r => r.data);
 export const markNotificationRead = (id) => apiClient.patch(`/notifications/${id}/read`);
@@ -438,6 +444,12 @@ export const upgradeEnrolleeTier = corpPortalUpgradeEnrolleeTier;
 
 export const fetchCorpPortalBudget = () =>
     apiClient.get('/portal/corporate/budget').then(r => r.data);
+
+export const fetchCorpEmployeeUtilization = (params) =>
+    apiClient.get('/portal/corporate/utilization/employees', { params }).then(r => r.data);
+
+export const fetchCorpUtilizationByCategory = () =>
+    apiClient.get('/portal/corporate/utilization/by-category').then(r => r.data);
 
 export const estimateCorpPlan = (data) =>
     apiClient.post('/portal/corporate/plan-requests/estimate', data).then(r => r.data);
@@ -527,6 +539,14 @@ export const joinEnrolleeTelemedicine = (encounterId) =>
 export const fetchEnrolleePrescriptions = () =>
     apiClient.get('/portal/enrollee/telemedicine/prescriptions').then(r => r.data);
 
+// ── Enrollee — consent management (PHASE 6) ─────────────────────────────────
+export const fetchEnrolleeConsents = () =>
+    apiClient.get('/portal/enrollee/consents').then(r => r.data);
+
+export const updateEnrolleeConsent = (purpose, granted) =>
+    apiClient.post('/portal/enrollee/consents', { purpose, granted }).then(r => r.data);
+
+
 export const searchDoctors = (params) =>
     apiClient.get('/portal/enrollee/doctors/search', { params }).then(r => r.data);
 
@@ -592,6 +612,22 @@ export const joinProviderTelemedicine = (encounterId) =>
 
 export const closeProviderTelemedicineEncounter = (encounterId, payload) =>
     apiClient.post(`/portal/provider/telemedicine/encounters/${encounterId}/close`, payload).then(r => r.data);
+
+// ── Provider — Mini EMR (PHASE 3) ────────────────────────────────────────────
+export const searchIcd10 = (term) =>
+    apiClient.get('/portal/provider/emr/icd10/search', { params: { q: term } }).then(r => r.data);
+
+export const fetchPatientHistory = (enrolleeId) =>
+    apiClient.get(`/portal/provider/emr/enrollees/${enrolleeId}/history`).then(r => r.data);
+
+export const createEmrEncounter = (payload) =>
+    apiClient.post('/portal/provider/emr/encounters', payload).then(r => r.data);
+
+export const saveTreatmentPlan = (encounterId, payload) =>
+    apiClient.post(`/portal/provider/emr/encounters/${encounterId}/treatment-plan`, payload).then(r => r.data);
+
+export const closeEmrEncounter = (encounterId, payload) =>
+    apiClient.post(`/portal/provider/emr/encounters/${encounterId}/close`, payload).then(r => r.data);
 
 
 // ── Provider bulk claims import ─────────────────────────────────────────────
@@ -816,6 +852,7 @@ export default {
     corpPortalBulkUpload, fetchCorpPortalProfile, updateCorpPortalProfile,
     
     fetchCorpAvailablePlans, corpPortalUpgradeEnrolleeTier, upgradeEnrolleeTier, fetchCorpPortalBudget, estimateCorpPlan,
+    fetchCorpEmployeeUtilization, fetchCorpUtilizationByCategory,
     submitCorpPlanRequest, fetchCorpPlanRequests, sendCorpBroadcast, fetchPlanRequests, fetchPlanRequest,
     approvePlanRequest, rejectPlanRequest,
 
@@ -841,6 +878,7 @@ export default {
     uploadProviderClaimImport, confirmProviderImportMapping, fetchProviderImportRows, pushProviderImportBatch, fetchProviderPayments, fetchProviderReconciliation, fetchProviderTickets, submitProviderTicket, fetchProviderTicketThread, replyProviderTicket,
     fetchProviderAppointments, confirmProviderAppointment, verifyProviderQrCode,
     fetchProviderTelemedicineQueue, joinProviderTelemedicine, closeProviderTelemedicineEncounter,
+    searchIcd10, fetchPatientHistory, createEmrEncounter, saveTreatmentPlan, closeEmrEncounter,
 
     // Users
     fetchUsers, fetchUser,fetchUserById, createUser, updateUser, deleteUser,

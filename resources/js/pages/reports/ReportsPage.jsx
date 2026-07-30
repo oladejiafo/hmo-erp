@@ -33,6 +33,8 @@ const REPORT_TYPES = [
     { key:'annual_report',               label:'Annual Report',                freq:'Annual',    nhia:true,  icon:'📅' },
     { key:'ffs_remittance_advice',       label:'FFS Remittance Advice (HCP)',  freq:'Per Batch', nhia:false, icon:'📨' },
     { key:'corporate_cost_report',       label:'Corporate Cost Report',        freq:'Monthly',   nhia:false, icon:'🏢' },
+    { key:'ndpa_data_processing_register', label:'NDPA Data Processing Register', freq:'On demand', nhia:false, icon:'🔒' },
+    { key:'ndpa_consent_audit',          label:'NDPA Consent Audit Log',       freq:'On demand', nhia:false, icon:'📝' },
 ];
 
 const STATUS_STYLE = {

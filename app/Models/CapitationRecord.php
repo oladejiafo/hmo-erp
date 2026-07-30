@@ -2,6 +2,7 @@
 
 namespace App\Models;
 
+use App\Traits\HasAuditLog; 
 use App\Traits\BelongsToBranch;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
@@ -19,7 +20,7 @@ use Carbon\Carbon;
  */
 class CapitationRecord extends Model
 {
-    use BelongsToBranch;
+    use BelongsToBranch,  HasAuditLog;
 
     protected $fillable = [
         'run_id', 'hcp_id', 'branch_id',

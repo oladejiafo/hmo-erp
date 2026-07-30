@@ -14,7 +14,7 @@ import { Outlet, NavLink, useNavigate, useLocation } from 'react-router-dom';
 import {
     LayoutDashboard, Users, FileText, CreditCard,
     LogOut, Menu, X, Bell, User, Building2,
-    Wallet, Layers, FileCheck, Megaphone, RefreshCw, ChevronDown,
+    Wallet, Layers, FileCheck, Megaphone, RefreshCw, ChevronDown, BarChart3,
 } from 'lucide-react';
 import { useAuth } from '../../contexts/AuthContext';
 
@@ -31,6 +31,7 @@ const primaryNavItems = [
 const manageNavItems = [
     { path: '/corporate/invoices',       label: 'Invoices',        icon: CreditCard },
     { path: '/corporate/budget',         label: 'Budget',          icon: Wallet },
+    { path: '/corporate/utilization',    label: 'Utilization',     icon: BarChart3 }, 
     { path: '/corporate/renewals',       label: 'Renewals',        icon: RefreshCw },
     { path: '/corporate/available-plans', label: 'Plan Builder',   icon: Layers },
     { path: '/corporate/broadcast',      label: 'Broadcast',       icon: Megaphone },

@@ -2,12 +2,14 @@
 
 namespace App\Models;
 
+use App\Traits\HasAuditLog; 
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\MorphTo;
 
 class LedgerEntry extends Model
 {
+    use HasAuditLog;
     public $timestamps = false;  // only has created_at
 
     protected $fillable = [

@@ -1,19 +1,27 @@
 <?php
 /**
  * FILE: app/Models/Diagnosis.php
+ *
+ * FIX: dropped BelongsToBranch (silent branch-filtering global scope) -
+ * same reasoning as Encounter.php. Diagnoses are reached only through
+ * their parent encounter, which is itself correctly scoped by enrollee_id.
  */
 namespace App\Models;
 
-use App\Traits\BelongsToBranch;
 use App\Traits\HasAuditLog;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 
 class Diagnosis extends Model
 {
-    use BelongsToBranch, HasAuditLog;
+    use HasAuditLog;
 
     protected $fillable = ['branch_id', 'encounter_id', 'icd10_code', 'type', 'notes'];
+
+    public function branch(): BelongsTo
+    {
+        return $this->belongsTo(Branch::class);
+    }
 
     public function encounter(): BelongsTo
     {

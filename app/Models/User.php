@@ -74,9 +74,14 @@ class User extends Authenticatable implements AuditableContract
         return $this->belongsTo(Corporate::class, 'corporate_id');
     }
 
+    // public function enrollee()
+    // {
+    //     return $this->belongsTo(Enrollee::class, 'enrollee_id');
+    // }
     public function enrollee()
     {
-        return $this->belongsTo(Enrollee::class, 'enrollee_id');
+        return $this->belongsTo(Enrollee::class, 'enrollee_id')
+            ->withoutGlobalScope(\App\Scopes\BranchScope::class);
     }
 
     // [PHASE 2]

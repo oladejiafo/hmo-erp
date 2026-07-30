@@ -90,7 +90,7 @@ return new class extends Migration
             $table->text('rejection_reason')->nullable();
 
             $table->string('source')->default('manual');
-            $table->foreignId('import_batch_id')->nullable()->constrained('claim_import_batches')->nullOnDelete();
+            $table->foreignId('import_batch_id')->nullable(); // FK constraint added later - see 2026_08_26_000004_add_import_batch_id_foreign_key_to_claims_table.php. claim_import_batches doesn't exist yet at this point in migration order.
             $table->string('hcp_invoice_ref')->nullable()->index();
 
             $table->timestamp('auto_validated_at')->nullable();

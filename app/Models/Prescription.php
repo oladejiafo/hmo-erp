@@ -1,17 +1,20 @@
 <?php
 /**
  * FILE: app/Models/Prescription.php
+ *
+ * FIX: dropped BelongsToBranch (silent branch-filtering global scope) -
+ * same reasoning as Encounter.php. A prescription is visible by
+ * enrollee_id, not by the viewing user's branch.
  */
 namespace App\Models;
 
-use App\Traits\BelongsToBranch;
 use App\Traits\HasAuditLog;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 
 class Prescription extends Model
 {
-    use BelongsToBranch, HasAuditLog;
+    use HasAuditLog;
 
     protected $fillable = [
         'branch_id', 'encounter_id', 'enrollee_id',
@@ -22,6 +25,11 @@ class Prescription extends Model
     protected $casts = [
         'issued_at' => 'datetime',
     ];
+
+    public function branch(): BelongsTo
+    {
+        return $this->belongsTo(Branch::class);
+    }
 
     public function encounter(): BelongsTo
     {
